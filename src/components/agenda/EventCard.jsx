@@ -27,7 +27,7 @@ export default function EventCard({ occ, height, isPast, faltas = 0, onClick }) 
       type="button"
       onClick={onClick}
       style={{ ...style, opacity }}
-      className={`flex h-full w-full flex-col overflow-hidden rounded-md px-1.5 leading-tight ${
+      className={`flex h-full w-full flex-col overflow-hidden rounded-md px-1.5 text-left leading-tight ${
         compact ? 'py-0.5' : 'py-1'
       }`}
     >

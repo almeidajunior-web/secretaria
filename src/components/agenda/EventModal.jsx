@@ -68,6 +68,13 @@ export default function EventModal({
   const toggleTag = (tag) =>
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
 
+  // Classes default to "Confirmado" (presence as default); absences are only
+  // the past occurrences the user explicitly marks otherwise.
+  const toggleAula = () => {
+    if (!isAula) setStatus('confirmed')
+    setIsAula((v) => !v)
+  }
+
   const deleteTag = (tag) => {
     onDeleteTag(tag)
     setTags((prev) => prev.filter((t) => t !== tag))
@@ -225,7 +232,7 @@ export default function EventModal({
           <div>
             <button
               type="button"
-              onClick={() => setIsAula((v) => !v)}
+              onClick={toggleAula}
               className={[
                 'flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium',
                 isAula
