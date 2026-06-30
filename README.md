@@ -41,6 +41,35 @@ npm run preview
 - Mini-calendário na barra lateral e navegação entre módulos
 - Tema claro/noturno persistente
 
+## Publicar online
+
+O projeto é uma SPA estática (sem backend) e já está pronto para deploy. O
+`base` do Vite usa caminhos relativos, então o mesmo build funciona tanto na
+raiz quanto em subpasta.
+
+### Opção 1 — GitHub Pages (automático, recomendado)
+
+Já existe um workflow em `.github/workflows/deploy.yml` que faz build e publica
+a cada push. Para ativar (uma única vez):
+
+1. No GitHub, vá em **Settings → Pages**.
+2. Em **Build and deployment → Source**, selecione **GitHub Actions**.
+
+A partir daí, todo push para o branch dispara o deploy. O link público aparece
+em **Settings → Pages** e na aba **Actions** (algo como
+`https://<usuário>.github.io/secretaria/`).
+
+### Opção 2 — Netlify
+
+Importe o repositório em [netlify.com](https://app.netlify.com). O arquivo
+`netlify.toml` já define `npm run build` e a pasta `dist`. É só confirmar.
+
+### Opção 3 — Vercel
+
+Importe o repositório em [vercel.com](https://vercel.com). O Vercel detecta o
+Vite automaticamente (build `vite build`, saída `dist`) — nenhuma configuração
+extra é necessária.
+
 ## Estrutura
 
 ```
