@@ -27,8 +27,7 @@ export function buildSeedEvents() {
       recurrence: 'none',
       isAula: false,
       faltasMax: null,
-      faltasAtual: 0,
-      presenca: {},
+      occStatus: {},
     },
     {
       id: id(),
@@ -42,8 +41,7 @@ export function buildSeedEvents() {
       recurrence: 'weekly',
       isAula: true,
       faltasMax: 15,
-      faltasAtual: 3,
-      presenca: {},
+      occStatus: {},
     },
     {
       id: id(),
@@ -57,8 +55,7 @@ export function buildSeedEvents() {
       recurrence: 'none',
       isAula: false,
       faltasMax: null,
-      faltasAtual: 0,
-      presenca: {},
+      occStatus: {},
     },
     {
       id: id(),
@@ -72,8 +69,7 @@ export function buildSeedEvents() {
       recurrence: 'none',
       isAula: false,
       faltasMax: null,
-      faltasAtual: 0,
-      presenca: {},
+      occStatus: {},
     },
     {
       id: id(),
@@ -87,8 +83,7 @@ export function buildSeedEvents() {
       recurrence: 'weekly',
       isAula: true,
       faltasMax: 15,
-      faltasAtual: 3,
-      presenca: {},
+      occStatus: {},
     },
     {
       id: id(),
@@ -102,8 +97,7 @@ export function buildSeedEvents() {
       recurrence: 'none',
       isAula: false,
       faltasMax: null,
-      faltasAtual: 0,
-      presenca: {},
+      occStatus: {},
     },
     {
       id: id(),
@@ -117,8 +111,7 @@ export function buildSeedEvents() {
       recurrence: 'none',
       isAula: false,
       faltasMax: null,
-      faltasAtual: 0,
-      presenca: {},
+      occStatus: {},
     },
   ]
 }

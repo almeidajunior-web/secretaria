@@ -7,6 +7,7 @@ import {
   getDate,
   getMonth,
   differenceInCalendarDays,
+  addDays,
 } from 'date-fns'
 
 // True when `event` has an occurrence on `day` (time of day ignored).
@@ -56,7 +57,7 @@ export function occursOn(event, day) {
 
 // Returns a concrete occurrence of `event` on `day`, preserving the original
 // time of day, or null if it does not occur. `occKey` identifies the specific
-// occurrence (used for per-occurrence presence tracking).
+// occurrence and `status` is the effective (per-occurrence) status.
 export function getOccurrence(event, day) {
   if (!occursOn(event, day)) return null
 
@@ -66,15 +67,44 @@ export function getOccurrence(event, day) {
   const end = new Date(start.getTime() + durationMs)
   const occKey = formatKey(day)
 
+  // A single occurrence may override the series status (e.g. marking one class
+  // as attended). Falls back to the event's base status.
+  const status = (event.occStatus && event.occStatus[occKey]) || event.status
+
   return {
     ...event,
     start,
     end,
+    status,
+    baseStatus: event.status,
     eventId: event.id,
     occKey,
-    // Per-occurrence presence state for this specific day.
-    occPresenca: event.presenca ? event.presenca[occKey] : undefined,
   }
+}
+
+// Counts absences for a class event: every past occurrence whose effective
+// status is not "confirmed" (the chosen rule: only Confirmado = presença).
+export function computeFaltas(event, now = new Date()) {
+  if (!event.isAula) return 0
+
+  const isAbsence = (occ) => occ && occ.end < now && occ.status !== 'confirmed'
+
+  if (event.recurrence === 'none') {
+    return isAbsence(getOccurrence(event, event.start)) ? 1 : 0
+  }
+
+  let count = 0
+  const today = startOfDay(now)
+  let cursor = startOfDay(event.start)
+  let guard = 0
+  while (cursor <= today && guard < 1000) {
+    guard += 1
+    if (occursOn(event, cursor) && isAbsence(getOccurrence(event, cursor))) {
+      count += 1
+    }
+    cursor = addDays(cursor, 1)
+  }
+  return count
 }
 
 // Stable key for an occurrence date (yyyy-MM-dd).

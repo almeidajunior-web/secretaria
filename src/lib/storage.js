@@ -25,8 +25,7 @@ function reviveEvent(raw) {
     start: new Date(raw.start),
     end: new Date(raw.end),
     tags: raw.tags || [],
-    presenca: raw.presenca || {},
-    faltasAtual: raw.faltasAtual || 0,
+    occStatus: raw.occStatus || {},
     recurrenceDays: raw.recurrenceDays || [],
     recurrenceUntil: raw.recurrenceUntil ? new Date(raw.recurrenceUntil) : null,
   }

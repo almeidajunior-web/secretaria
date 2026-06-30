@@ -1,12 +1,13 @@
 import { getDay } from 'date-fns'
 import { isSameDay, GRID_HEIGHT } from '../../lib/date'
 import { WEEKDAYS_SHORT } from '../../constants'
-import { useNow, HourGutter, GridLines, DayColumn } from './WeekView'
+import { useNow, useFaltas, HourGutter, GridLines, DayColumn } from './WeekView'
 
 // Single-day grid. Reuses the week grid's column, gutter and now-line so the
 // two views stay visually identical.
 export default function DayView({ currentDate, events, onSlotClick, onEventClick }) {
   const now = useNow()
+  const faltasByEvent = useFaltas(events, now)
   const today = isSameDay(currentDate, now)
 
   return (
@@ -35,6 +36,7 @@ export default function DayView({ currentDate, events, onSlotClick, onEventClick
             day={currentDate}
             events={events}
             now={now}
+            faltasByEvent={faltasByEvent}
             onSlotClick={onSlotClick}
             onEventClick={onEventClick}
           />

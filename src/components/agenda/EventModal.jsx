@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getDay } from 'date-fns'
-import { GraduationCap } from 'lucide-react'
+import { GraduationCap, OctagonAlert } from 'lucide-react'
 import {
   toInputValue,
   fromInputValue,
   toDateInput,
   fromDateInput,
 } from '../../lib/date'
+import { computeFaltas } from '../../lib/recurrence'
 import { EVENT_COLORS, STATUSES } from '../../constants'
 import TagSelector from './TagSelector'
 import RecurrenceField from './RecurrenceField'
@@ -37,7 +38,26 @@ export default function EventModal({
   const [faltasMax, setFaltasMax] = useState(
     initial.faltasMax == null ? '' : String(initial.faltasMax)
   )
-  const [faltasAtual, setFaltasAtual] = useState(initial.faltasAtual || 0)
+
+  // Absences are derived from the per-occurrence status, so we preview the
+  // count live as the relevant fields change.
+  const derivedFaltas = useMemo(
+    () =>
+      computeFaltas({
+        ...initial,
+        isAula,
+        start: fromInputValue(start),
+        end: fromInputValue(end),
+        recurrence,
+        recurrenceDays: recurrence === 'custom' ? recurrenceDays : [],
+        recurrenceUntil:
+          recurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
+        occStatus: initial.occStatus || {},
+      }),
+    [initial, isAula, start, end, recurrence, recurrenceDays, recurrenceUntil]
+  )
+  const limitReached =
+    isAula && faltasMax !== '' && Number(faltasMax) > 0 && derivedFaltas >= Number(faltasMax)
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -80,8 +100,7 @@ export default function EventModal({
         recurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
       isAula,
       faltasMax: isAula ? (faltasMax === '' ? null : Number(faltasMax)) : null,
-      faltasAtual: isAula ? Number(faltasAtual) || 0 : 0,
-      presenca: initial.presenca || {},
+      occStatus: initial.occStatus || {},
     })
   }
 
@@ -219,7 +238,7 @@ export default function EventModal({
             </button>
 
             {isAula && (
-              <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg border border-border bg-app-bg p-3">
+              <div className="mt-3 flex flex-col gap-3 rounded-lg border border-border bg-app-bg p-3">
                 <Field label="Limite de faltas">
                   <input
                     type="number"
@@ -229,15 +248,21 @@ export default function EventModal({
                     className={inputClass}
                   />
                 </Field>
-                <Field label="Faltas atuais">
-                  <input
-                    type="number"
-                    min="0"
-                    value={faltasAtual}
-                    onChange={(e) => setFaltasAtual(e.target.value)}
-                    className={inputClass}
-                  />
-                </Field>
+                <p className="text-[11px] text-text-secondary">
+                  Faltas (automático):{' '}
+                  <span className="font-semibold text-text">{derivedFaltas}</span>
+                  {faltasMax !== '' && ` de ${faltasMax}`}
+                </p>
+                <p className="text-[11px] leading-relaxed text-text-muted">
+                  Conta as aulas passadas sem status “Confirmado”. Marque a presença pelo
+                  status de cada aula.
+                </p>
+                {limitReached && (
+                  <div className="flex items-center gap-2 rounded-md bg-danger/10 px-2 py-1.5 text-[11px] font-medium text-danger">
+                    <OctagonAlert size={14} className="shrink-0" />
+                    Limite de faltas atingido
+                  </div>
+                )}
               </div>
             )}
           </div>

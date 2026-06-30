@@ -4,17 +4,18 @@ import {
   MapPin,
   Tag,
   AlertTriangle,
+  OctagonAlert,
   Pencil,
   Trash2,
-  Check,
-  X,
 } from 'lucide-react'
 import { fmt } from '../../lib/date'
+import { computeFaltas } from '../../lib/recurrence'
+import { STATUSES } from '../../constants'
 
-const WIDTH = 264
+const WIDTH = 268
 
 // Detail popover anchored next to a clicked event. Reads the live event from
-// `events` so presence toggles update the badge and buttons immediately.
+// `events` so the editable status, derived absences and warnings stay current.
 export default function EventPopover({
   occ,
   events,
@@ -22,7 +23,7 @@ export default function EventPopover({
   onClose,
   onEdit,
   onDelete,
-  onTogglePresence,
+  onSetStatus,
 }) {
   const ref = useRef(null)
   const [pos, setPos] = useState({ left: rect.right + 8, top: rect.top })
@@ -50,11 +51,14 @@ export default function EventPopover({
   }, [onClose])
 
   const live = events.find((e) => e.id === occ.eventId) || occ
+  const currentStatus =
+    live.recurrence === 'none'
+      ? live.status
+      : (live.occStatus || {})[occ.occKey] || live.status
   const faltasMax = live.faltasMax
-  const faltasAtual = live.faltasAtual || 0
-  const presence = (live.presenca || {})[occ.occKey]
-  const pct = faltasMax ? Math.round((faltasAtual / faltasMax) * 100) : 0
-  const isPast = occ.end < new Date()
+  const faltas = computeFaltas(live)
+  const pct = faltasMax ? Math.round((faltas / faltasMax) * 100) : 0
+  const limitReached = live.isAula && faltasMax && faltas >= faltasMax
 
   return (
     <div
@@ -72,33 +76,44 @@ export default function EventPopover({
         </Row>
         {occ.local && <Row icon={MapPin}>{occ.local}</Row>}
         {occ.tags?.length > 0 && <Row icon={Tag}>{occ.tags.join(', ')}</Row>}
-        {occ.isAula && faltasMax > 0 && (
+        {live.isAula && faltasMax > 0 && (
           <Row icon={AlertTriangle}>
             <span className={pct >= 75 ? 'font-medium text-danger' : ''}>
-              Faltas: {faltasAtual}/{faltasMax} ({pct}%)
+              Faltas: {faltas}/{faltasMax} ({pct}%)
             </span>
           </Row>
         )}
+        {limitReached && (
+          <div className="flex items-center gap-2 rounded-md bg-danger/10 px-2 py-1 font-medium text-danger">
+            <OctagonAlert size={14} className="shrink-0" />
+            Limite de faltas atingido
+          </div>
+        )}
       </div>
 
-      {occ.isAula && isPast && (
-        <div className="mt-3 flex gap-2">
-          <PresenceButton
-            active={presence === 'present'}
-            tone="success"
-            icon={Check}
-            label="Presente"
-            onClick={() => onTogglePresence(occ.eventId, occ.occKey, 'present')}
-          />
-          <PresenceButton
-            active={presence === 'absent'}
-            tone="danger"
-            icon={X}
-            label="Falta"
-            onClick={() => onTogglePresence(occ.eventId, occ.occKey, 'absent')}
-          />
+      <div className="mt-3">
+        <p className="mb-1.5 text-[11px] font-medium text-text-secondary">Status</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {STATUSES.map((s) => {
+            const active = s.value === currentStatus
+            return (
+              <button
+                key={s.value}
+                type="button"
+                onClick={() => onSetStatus(occ.eventId, occ.occKey, s.value)}
+                className={[
+                  'rounded-md border px-2 py-1.5 text-[11px] font-medium',
+                  active
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-border text-text-secondary hover:bg-accent-soft/60',
+                ].join(' ')}
+              >
+                {s.label}
+              </button>
+            )
+          })}
         </div>
-      )}
+      </div>
 
       <div className="mt-3 flex gap-2 border-t border-border pt-3">
         <button
@@ -128,25 +143,5 @@ function Row({ icon: Icon, children }) {
       <Icon size={13} className="shrink-0 text-text-muted" />
       <span className="truncate">{children}</span>
     </div>
-  )
-}
-
-function PresenceButton({ active, tone, icon: Icon, label, onClick }) {
-  const activeClass =
-    tone === 'success'
-      ? 'border-success bg-success text-white'
-      : 'border-danger bg-danger text-white'
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        'flex flex-1 items-center justify-center gap-1.5 rounded-md border py-1.5 text-xs font-medium',
-        active ? activeClass : 'border-border text-text-secondary hover:bg-accent-soft',
-      ].join(' ')}
-    >
-      <Icon size={13} />
-      {label}
-    </button>
   )
 }

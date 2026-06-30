@@ -1,67 +1,107 @@
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, GraduationCap, OctagonAlert } from 'lucide-react'
 import { fmt } from '../../lib/date'
 import { withAlpha } from '../../constants'
 
 const REFUSED_GRAY = '#9CA3AF'
 
-// Visual representation of one event occurrence inside the time grid. The four
-// statuses map to four distinct looks. Colors are data-driven, so the color
-// styling is necessarily inline.
-export default function EventCard({ occ, height, onClick }) {
-  const style = statusStyle(occ.status, occ.color)
-  const showTime = height > 28
-  const showFaltas = occ.isAula && occ.faltasMax && height > 42
+// Visual representation of one event occurrence inside the time grid. Adapts to
+// the available height: the title is always shown (truncated if needed) with
+// the time, and extra details appear as the box grows. Past occurrences are
+// dimmed; classes show a cap above the title and an alarm when the absence
+// limit is reached.
+export default function EventCard({ occ, height, isPast, faltas = 0, onClick }) {
+  const { style, textColor } = statusVisual(occ.status, occ.color)
+  const opacity = isPast ? 0.5 : occ.status === 'refused' ? 0.7 : 1
+
+  const compact = height < 38
+  const limitReached = occ.isAula && occ.faltasMax && faltas >= occ.faltasMax
+  const showCapRow = !compact && occ.isAula && height >= 44
+  const showTime = !compact && height >= 40
+  const showTags = !compact && height >= 66 && occ.tags?.length > 0
+  const showFaltas = !compact && occ.isAula && occ.faltasMax && height >= 58
+
+  const timeRange = `${fmt(occ.start, 'HH:mm')}–${fmt(occ.end, 'HH:mm')}`
 
   return (
     <button
       type="button"
       onClick={onClick}
-      style={style}
-      className="flex h-full w-full flex-col overflow-hidden rounded-md px-1.5 py-1 text-left leading-tight"
+      style={{ ...style, opacity }}
+      className={`flex h-full w-full flex-col overflow-hidden rounded-md px-1.5 leading-tight ${
+        compact ? 'py-0.5' : 'py-1'
+      }`}
     >
-      <span className="truncate text-[11px] font-medium">{occ.title}</span>
-      {showTime && (
-        <span className="text-[10px] opacity-90">
-          {fmt(occ.start, 'HH:mm')}–{fmt(occ.end, 'HH:mm')}
+      {showCapRow && (
+        <span className="flex items-center gap-1 opacity-80">
+          <GraduationCap size={11} />
+          {limitReached && <OctagonAlert size={11} />}
         </span>
       )}
+
+      {compact ? (
+        <span className="flex min-w-0 items-center gap-1">
+          {occ.isAula && <GraduationCap size={10} className="shrink-0 opacity-80" />}
+          {limitReached && <OctagonAlert size={10} className="shrink-0" />}
+          <span className="truncate text-[11px] font-medium">{occ.title}</span>
+          <span className="shrink-0 text-[10px] opacity-80">{timeRange}</span>
+        </span>
+      ) : (
+        <span className="truncate text-[11px] font-medium">{occ.title}</span>
+      )}
+
+      {showTime && <span className="text-[10px] opacity-90">{timeRange}</span>}
+
+      {showTags && (
+        <span className="mt-0.5 flex flex-wrap gap-1 overflow-hidden">
+          {occ.tags.slice(0, 3).map((t) => (
+            <span
+              key={t}
+              className="truncate rounded px-1 text-[9px]"
+              style={{ backgroundColor: withAlpha(textColor, 0.18) }}
+            >
+              {t}
+            </span>
+          ))}
+        </span>
+      )}
+
       {showFaltas && (
-        <span className="mt-auto inline-flex items-center gap-0.5 text-[10px]">
-          <AlertTriangle size={10} />
-          {occ.faltasAtual || 0}/{occ.faltasMax}
+        <span className="mt-auto inline-flex items-center gap-0.5 pt-0.5 text-[10px]">
+          {limitReached ? <OctagonAlert size={11} /> : <AlertTriangle size={10} />}
+          {faltas}/{occ.faltasMax}
         </span>
       )}
     </button>
   )
 }
 
-function statusStyle(status, color) {
+function statusVisual(status, color) {
   switch (status) {
     case 'confirmed':
-      return { backgroundColor: color, color: '#ffffff' }
+      return { style: { backgroundColor: color, color: '#ffffff' }, textColor: '#ffffff' }
     case 'unconfirmed':
       return {
-        backgroundColor: withAlpha(color, 0.06),
-        border: `1.5px solid ${color}`,
-        color,
+        style: { backgroundColor: withAlpha(color, 0.06), border: `1.5px solid ${color}`, color },
+        textColor: color,
       }
     case 'provisional':
       return {
-        backgroundColor: withAlpha(color, 0.06),
-        border: `1.5px dashed ${color}`,
-        color,
+        style: { backgroundColor: withAlpha(color, 0.06), border: `1.5px dashed ${color}`, color },
+        textColor: color,
       }
     case 'refused':
       return {
-        backgroundImage: `repeating-linear-gradient(45deg, ${withAlpha(
-          REFUSED_GRAY,
-          0.3
-        )} 0, ${withAlpha(REFUSED_GRAY, 0.3)} 1px, transparent 1px, transparent 7px)`,
-        border: `1px solid ${withAlpha(REFUSED_GRAY, 0.7)}`,
-        color: REFUSED_GRAY,
-        opacity: 0.65,
+        style: {
+          backgroundImage: `repeating-linear-gradient(45deg, ${withAlpha(
+            REFUSED_GRAY,
+            0.3
+          )} 0, ${withAlpha(REFUSED_GRAY, 0.3)} 1px, transparent 1px, transparent 7px)`,
+          border: `1px solid ${withAlpha(REFUSED_GRAY, 0.7)}`,
+          color: REFUSED_GRAY,
+        },
+        textColor: REFUSED_GRAY,
       }
     default:
-      return { backgroundColor: color, color: '#ffffff' }
+      return { style: { backgroundColor: color, color: '#ffffff' }, textColor: '#ffffff' }
   }
 }

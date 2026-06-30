@@ -34,9 +34,8 @@ function blankEvent(start) {
     recurrenceDays: [],
     recurrenceUntil: null,
     isAula: false,
-    faltasMax: '',
-    faltasAtual: 0,
-    presenca: {},
+    faltasMax: null,
+    occStatus: {},
   }
 }
 
@@ -48,7 +47,7 @@ export default function Agenda({
   addEvent,
   updateEvent,
   deleteEvent,
-  togglePresence,
+  setOccurrenceStatus,
   allTags,
   onCreateTag,
   onDeleteTag,
@@ -123,7 +122,7 @@ export default function Agenda({
           onClose={() => setPopover(null)}
           onEdit={openEdit}
           onDelete={handleDelete}
-          onTogglePresence={togglePresence}
+          onSetStatus={setOccurrenceStatus}
         />
       )}
 

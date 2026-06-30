@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getDay } from 'date-fns'
 import { CircleCheck, Wallet } from 'lucide-react'
 import {
@@ -12,7 +12,7 @@ import {
   layoutColumns,
   GRID_HEIGHT,
 } from '../../lib/date'
-import { occurrencesForDay } from '../../lib/recurrence'
+import { occurrencesForDay, computeFaltas } from '../../lib/recurrence'
 import {
   WEEKDAYS_SHORT,
   HOUR_START,
@@ -26,6 +26,7 @@ import EventCard from './EventCard'
 export default function WeekView({ currentDate, events, onSlotClick, onEventClick }) {
   const days = getWeekDays(currentDate)
   const now = useNow()
+  const faltasByEvent = useFaltas(events, now)
 
   return (
     <div className="thin-scroll h-full overflow-auto bg-surface">
@@ -46,6 +47,7 @@ export default function WeekView({ currentDate, events, onSlotClick, onEventClic
               day={day}
               events={events}
               now={now}
+              faltasByEvent={faltasByEvent}
               onSlotClick={onSlotClick}
               onEventClick={onEventClick}
             />
@@ -63,6 +65,17 @@ export function useNow() {
     return () => clearInterval(t)
   }, [])
   return now
+}
+
+// Derived absence count per class event (recomputed when events or time change).
+export function useFaltas(events, now) {
+  return useMemo(() => {
+    const map = {}
+    events.forEach((e) => {
+      if (e.isAula) map[e.id] = computeFaltas(e, now)
+    })
+    return map
+  }, [events, now])
 }
 
 function DayHeader({ day, now }) {
@@ -151,7 +164,7 @@ export function GridLines() {
   return <div className="pointer-events-none absolute inset-0">{lines}</div>
 }
 
-export function DayColumn({ day, events, now, onSlotClick, onEventClick }) {
+export function DayColumn({ day, events, now, faltasByEvent = {}, onSlotClick, onEventClick }) {
   const laid = layoutColumns(occurrencesForDay(events, day))
   const today = isSameDay(day, now)
   const nowMin = minutesOfDay(now)
@@ -185,6 +198,8 @@ export function DayColumn({ day, events, now, onSlotClick, onEventClick }) {
             <EventCard
               occ={o}
               height={height}
+              isPast={o.end < now}
+              faltas={faltasByEvent[o.eventId] || 0}
               onClick={(e) => {
                 e.stopPropagation()
                 onEventClick(o, e.currentTarget.getBoundingClientRect())

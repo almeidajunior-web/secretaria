@@ -45,27 +45,15 @@ export function useEvents() {
     )
   }, [])
 
-  // Toggles presence for one occurrence of a class and keeps the absence
-  // counter (faltasAtual) in sync. `type` is 'present' or 'absent'.
-  const togglePresence = useCallback((id, occKey, type) => {
+  // Sets the status of a single occurrence. Non-recurring events update their
+  // base status directly; recurring events store a per-occurrence override so
+  // each class day can be confirmed independently (drives the absence count).
+  const setOccurrenceStatus = useCallback((id, occKey, status) => {
     setEvents((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e
-        const presenca = { ...(e.presenca || {}) }
-        const current = presenca[occKey]
-        let faltas = e.faltasAtual || 0
-
-        if (current === type) {
-          // Clicking the active state clears it.
-          delete presenca[occKey]
-          if (current === 'absent') faltas -= 1
-        } else {
-          if (current === 'absent') faltas -= 1
-          presenca[occKey] = type
-          if (type === 'absent') faltas += 1
-        }
-
-        return { ...e, presenca, faltasAtual: Math.max(0, faltas) }
+        if (e.recurrence === 'none') return { ...e, status }
+        return { ...e, occStatus: { ...(e.occStatus || {}), [occKey]: status } }
       })
     )
   }, [])
@@ -75,7 +63,7 @@ export function useEvents() {
     addEvent,
     updateEvent,
     deleteEvent,
-    togglePresence,
+    setOccurrenceStatus,
     removeTagFromAllEvents,
   }
 }

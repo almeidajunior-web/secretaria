@@ -7,6 +7,7 @@ import { WEEKDAYS_SHORT, withAlpha } from '../../constants'
 // clicking a day drills into its day view.
 export default function MonthView({ currentDate, events, onSelectDay }) {
   const days = getMonthGridDays(currentDate)
+  const now = new Date()
 
   return (
     <div className="flex h-full flex-col bg-surface">
@@ -54,7 +55,11 @@ export default function MonthView({ currentDate, events, onSelectDay }) {
                   <span
                     key={`${o.eventId}_${o.occKey}`}
                     className="truncate rounded px-1 py-0.5 text-[10px] font-medium"
-                    style={{ backgroundColor: withAlpha(o.color, 0.13), color: o.color }}
+                    style={{
+                      backgroundColor: withAlpha(o.color, 0.13),
+                      color: o.color,
+                      opacity: o.end < now ? 0.5 : 1,
+                    }}
                   >
                     {fmt(o.start, 'HH:mm')} {o.title}
                   </span>
