@@ -14,10 +14,11 @@ export const EVENT_COLORS = [
   '#6B7280',
 ]
 
-export const TAGS = ['Trabalho', 'Faculdade', 'Pessoal', 'Saúde', 'Lazer']
-
 // Short weekday labels, week starting on Sunday (date-fns getDay() order).
 export const WEEKDAYS_SHORT = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
+
+// Single-letter weekday labels for compact pickers.
+export const WEEKDAYS_LETTERS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 
 export const MONTHS = [
   'Janeiro',
@@ -69,6 +70,7 @@ export const RECURRENCES = [
   { value: 'monthly', label: 'Mensal' },
   { value: 'yearly', label: 'Anual' },
   { value: 'weekdays', label: 'Dias úteis (seg–sex)' },
+  { value: 'custom', label: 'Personalizar…' },
 ]
 
 export const VIEWS = [

@@ -21,6 +21,11 @@ export function occursOn(event, day) {
   // Recurring series never produce occurrences before their start date.
   if (dayStart < seriesStart) return false
 
+  // Optional end date for the series ("repetir até").
+  if (event.recurrenceUntil && dayStart > startOfDay(event.recurrenceUntil)) {
+    return false
+  }
+
   switch (event.recurrence) {
     case 'daily':
       return true
@@ -38,6 +43,11 @@ export function occursOn(event, day) {
     case 'weekdays': {
       const wd = getDay(day)
       return wd >= 1 && wd <= 5
+    }
+    case 'custom': {
+      // Repeats on any of the selected weekdays.
+      const days = event.recurrenceDays || []
+      return days.includes(getDay(day))
     }
     default:
       return false

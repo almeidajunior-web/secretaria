@@ -100,6 +100,17 @@ export function fromInputValue(value) {
   return new Date(value)
 }
 
+// <input type="date"> serialization (date-only, no timezone drift).
+export function toDateInput(date) {
+  return date ? format(date, 'yyyy-MM-dd') : ''
+}
+
+export function fromDateInput(value) {
+  if (!value) return null
+  const [y, m, d] = value.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 // Assigns side-by-side columns to overlapping occurrences in a single day.
 export function layoutColumns(occurrences) {
   const sorted = [...occurrences].sort((a, b) => a.start - b.start)

@@ -31,6 +31,8 @@ function blankEvent(start) {
     tags: [],
     status: 'unconfirmed',
     recurrence: 'none',
+    recurrenceDays: [],
+    recurrenceUntil: null,
     isAula: false,
     faltasMax: '',
     faltasAtual: 0,
@@ -47,6 +49,9 @@ export default function Agenda({
   updateEvent,
   deleteEvent,
   togglePresence,
+  allTags,
+  onCreateTag,
+  onDeleteTag,
 }) {
   const [view, setView] = useState('week')
   const [modal, setModal] = useState(null) // { event }
@@ -125,6 +130,9 @@ export default function Agenda({
       {modal && (
         <EventModal
           initial={modal.event}
+          allTags={allTags}
+          onCreateTag={onCreateTag}
+          onDeleteTag={onDeleteTag}
           onSave={handleSave}
           onClose={() => setModal(null)}
         />

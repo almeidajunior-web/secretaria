@@ -1,16 +1,26 @@
 import { useEffect, useState } from 'react'
+import { getDay } from 'date-fns'
 import { GraduationCap } from 'lucide-react'
-import { toInputValue, fromInputValue } from '../../lib/date'
 import {
-  EVENT_COLORS,
-  TAGS,
-  STATUSES,
-  RECURRENCES,
-} from '../../constants'
+  toInputValue,
+  fromInputValue,
+  toDateInput,
+  fromDateInput,
+} from '../../lib/date'
+import { EVENT_COLORS, STATUSES } from '../../constants'
+import TagSelector from './TagSelector'
+import RecurrenceField from './RecurrenceField'
 
 // Create/edit form. `initial` is a full event object (blank for new events,
 // populated for edits). Title is required.
-export default function EventModal({ initial, onSave, onClose }) {
+export default function EventModal({
+  initial,
+  allTags,
+  onCreateTag,
+  onDeleteTag,
+  onSave,
+  onClose,
+}) {
   const [title, setTitle] = useState(initial.title || '')
   const [start, setStart] = useState(toInputValue(initial.start))
   const [end, setEnd] = useState(toInputValue(initial.end))
@@ -18,6 +28,10 @@ export default function EventModal({ initial, onSave, onClose }) {
   const [color, setColor] = useState(initial.color || EVENT_COLORS[0])
   const [tags, setTags] = useState(initial.tags || [])
   const [recurrence, setRecurrence] = useState(initial.recurrence || 'none')
+  const [recurrenceDays, setRecurrenceDays] = useState(initial.recurrenceDays || [])
+  const [recurrenceUntil, setRecurrenceUntil] = useState(
+    initial.recurrenceUntil ? toDateInput(initial.recurrenceUntil) : ''
+  )
   const [status, setStatus] = useState(initial.status || 'unconfirmed')
   const [isAula, setIsAula] = useState(!!initial.isAula)
   const [faltasMax, setFaltasMax] = useState(
@@ -34,6 +48,19 @@ export default function EventModal({ initial, onSave, onClose }) {
   const toggleTag = (tag) =>
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
 
+  const deleteTag = (tag) => {
+    onDeleteTag(tag)
+    setTags((prev) => prev.filter((t) => t !== tag))
+  }
+
+  const handleRecurrenceChange = (value) => {
+    setRecurrence(value)
+    // When switching to custom, seed the weekday from the event's start day.
+    if (value === 'custom' && recurrenceDays.length === 0) {
+      setRecurrenceDays([getDay(fromInputValue(start))])
+    }
+  }
+
   const canSave = title.trim().length > 0
 
   const handleSave = () => {
@@ -48,6 +75,9 @@ export default function EventModal({ initial, onSave, onClose }) {
       tags,
       status,
       recurrence,
+      recurrenceDays: recurrence === 'custom' ? recurrenceDays : [],
+      recurrenceUntil:
+        recurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
       isAula,
       faltasMax: isAula ? (faltasMax === '' ? null : Number(faltasMax)) : null,
       faltasAtual: isAula ? Number(faltasAtual) || 0 : 0,
@@ -99,15 +129,6 @@ export default function EventModal({ initial, onSave, onClose }) {
             </Field>
           </div>
 
-          <Field label="Local">
-            <input
-              value={local}
-              onChange={(e) => setLocal(e.target.value)}
-              placeholder="Local ou link"
-              className={inputClass}
-            />
-          </Field>
-
           <Field label="Cor">
             <div className="flex flex-wrap gap-2">
               {EVENT_COLORS.map((c) => {
@@ -132,40 +153,31 @@ export default function EventModal({ initial, onSave, onClose }) {
           </Field>
 
           <Field label="Tags">
-            <div className="flex flex-wrap gap-2">
-              {TAGS.map((tag) => {
-                const selected = tags.includes(tag)
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => toggleTag(tag)}
-                    className={[
-                      'rounded-full border px-3 py-1 text-xs font-medium',
-                      selected
-                        ? 'border-primary bg-accent-soft text-primary'
-                        : 'border-border text-text-secondary hover:bg-accent-soft/50',
-                    ].join(' ')}
-                  >
-                    {tag}
-                  </button>
-                )
-              })}
-            </div>
+            <TagSelector
+              allTags={allTags}
+              selected={tags}
+              onToggle={toggleTag}
+              onCreate={onCreateTag}
+              onDeleteTag={deleteTag}
+            />
           </Field>
 
-          <Field label="Recorrência">
-            <select
-              value={recurrence}
-              onChange={(e) => setRecurrence(e.target.value)}
+          <RecurrenceField
+            value={recurrence}
+            onChange={handleRecurrenceChange}
+            days={recurrenceDays}
+            onChangeDays={setRecurrenceDays}
+            until={recurrenceUntil}
+            onChangeUntil={setRecurrenceUntil}
+          />
+
+          <Field label="Local">
+            <input
+              value={local}
+              onChange={(e) => setLocal(e.target.value)}
+              placeholder="Local ou link"
               className={inputClass}
-            >
-              {RECURRENCES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
+            />
           </Field>
 
           <Field label="Status">

@@ -35,6 +35,16 @@ export function useEvents() {
     setEvents((prev) => prev.filter((e) => e.id !== id))
   }, [])
 
+  // Removes a tag from every event that references it (used when the tag is
+  // deleted from the managed tag list).
+  const removeTagFromAllEvents = useCallback((tag) => {
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.tags?.includes(tag) ? { ...e, tags: e.tags.filter((t) => t !== tag) } : e
+      )
+    )
+  }, [])
+
   // Toggles presence for one occurrence of a class and keeps the absence
   // counter (faltasAtual) in sync. `type` is 'present' or 'absent'.
   const togglePresence = useCallback((id, occKey, type) => {
@@ -60,5 +70,12 @@ export function useEvents() {
     )
   }, [])
 
-  return { events, addEvent, updateEvent, deleteEvent, togglePresence }
+  return {
+    events,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    togglePresence,
+    removeTagFromAllEvents,
+  }
 }

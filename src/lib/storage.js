@@ -4,6 +4,7 @@
 
 const KEYS = {
   events: 'secretaria:events',
+  tags: 'secretaria:tags',
   theme: 'secretaria:theme',
   schemaVersion: 'secretaria:schemaVersion',
 }
@@ -26,6 +27,8 @@ function reviveEvent(raw) {
     tags: raw.tags || [],
     presenca: raw.presenca || {},
     faltasAtual: raw.faltasAtual || 0,
+    recurrenceDays: raw.recurrenceDays || [],
+    recurrenceUntil: raw.recurrenceUntil ? new Date(raw.recurrenceUntil) : null,
   }
 }
 
@@ -34,6 +37,10 @@ function serializeEvent(event) {
     ...event,
     start: event.start instanceof Date ? event.start.toISOString() : event.start,
     end: event.end instanceof Date ? event.end.toISOString() : event.end,
+    recurrenceUntil:
+      event.recurrenceUntil instanceof Date
+        ? event.recurrenceUntil.toISOString()
+        : event.recurrenceUntil || null,
   }
 }
 
@@ -54,6 +61,21 @@ export function saveEvents(events) {
   ensureSchema()
   const payload = events.map(serializeEvent)
   localStorage.setItem(KEYS.events, JSON.stringify(payload))
+}
+
+export function loadTags() {
+  try {
+    const raw = localStorage.getItem(KEYS.tags)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveTags(tags) {
+  localStorage.setItem(KEYS.tags, JSON.stringify(tags))
 }
 
 export function loadTheme() {
