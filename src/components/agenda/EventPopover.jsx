@@ -5,11 +5,12 @@ import {
   Tag,
   AlertTriangle,
   OctagonAlert,
+  Link2,
   Pencil,
   Trash2,
 } from 'lucide-react'
 import { fmt } from '../../lib/date'
-import { computeFaltas } from '../../lib/recurrence'
+import { computeFaltasGroup } from '../../lib/recurrence'
 import { STATUSES } from '../../constants'
 
 const WIDTH = 268
@@ -56,9 +57,12 @@ export default function EventPopover({
       ? live.status
       : (live.occStatus || {})[occ.occKey] || live.status
   const faltasMax = live.faltasMax
-  const faltas = computeFaltas(live)
+  const faltas = computeFaltasGroup(events, live)
   const pct = faltasMax ? Math.round((faltas / faltasMax) * 100) : 0
   const limitReached = live.isAula && faltasMax && faltas >= faltasMax
+  const linkedNames = (live.linkedIds || [])
+    .map((id) => events.find((e) => e.id === id)?.title)
+    .filter(Boolean)
 
   return (
     <div
@@ -82,6 +86,9 @@ export default function EventPopover({
               Faltas: {faltas}/{faltasMax} ({pct}%)
             </span>
           </Row>
+        )}
+        {linkedNames.length > 0 && (
+          <Row icon={Link2}>Conectada com: {linkedNames.join(', ')}</Row>
         )}
         {limitReached && (
           <div className="flex items-center gap-2 rounded-md bg-danger/10 px-2 py-1 font-medium text-danger">

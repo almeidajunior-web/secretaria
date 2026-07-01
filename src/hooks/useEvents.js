@@ -26,6 +26,33 @@ function shiftedDays(event, origStart, newStart) {
   return (event.recurrenceDays || []).map((d) => (d + dd) % 7).sort((a, b) => a - b)
 }
 
+// Keeps class links symmetric: after `eventId` declares it wants to be linked
+// to exactly `desiredLinkedIds`, every other event's own `linkedIds` is
+// updated to agree (added where newly linked, removed where unlinked).
+function reconcileLinks(events, eventId, desiredLinkedIds) {
+  const desired = new Set(desiredLinkedIds || [])
+  return events.map((e) => {
+    if (e.id === eventId) return e
+    const has = (e.linkedIds || []).includes(eventId)
+    const should = desired.has(e.id)
+    if (has === should) return e
+    const linkedIds = should
+      ? [...(e.linkedIds || []), eventId]
+      : (e.linkedIds || []).filter((id) => id !== eventId)
+    return { ...e, linkedIds }
+  })
+}
+
+// Removes dangling references to a deleted event from every other event's
+// linkedIds.
+function unlinkEverywhere(events, eventId) {
+  return events.map((e) =>
+    e.linkedIds?.includes(eventId)
+      ? { ...e, linkedIds: e.linkedIds.filter((id) => id !== eventId) }
+      : e
+  )
+}
+
 // CRUD over the event collection with automatic persistence. Seeds example
 // data only when the store is empty.
 export function useEvents() {
@@ -43,15 +70,19 @@ export function useEvents() {
   }, [events])
 
   const addEvent = useCallback((event) => {
-    setEvents((prev) => [...prev, { ...event, id: genId() }])
+    const id = genId()
+    setEvents((prev) => reconcileLinks([...prev, { ...event, id }], id, event.linkedIds))
   }, [])
 
   const updateEvent = useCallback((event) => {
-    setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, ...event } : e)))
+    setEvents((prev) => {
+      const merged = prev.map((e) => (e.id === event.id ? { ...e, ...event } : e))
+      return reconcileLinks(merged, event.id, event.linkedIds)
+    })
   }, [])
 
   const deleteEvent = useCallback((id) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id))
+    setEvents((prev) => unlinkEverywhere(prev.filter((e) => e.id !== id), id))
   }, [])
 
   // Removes a tag from every event that references it (used when the tag is
@@ -126,7 +157,7 @@ export function useEvents() {
       const event = prev.find((e) => e.id === occ.eventId)
       if (!event) return prev
       if (event.recurrence === 'none' || scope === 'all') {
-        return prev.filter((e) => e.id !== event.id)
+        return unlinkEverywhere(prev.filter((e) => e.id !== event.id), event.id)
       }
       if (scope === 'this') {
         return prev.map((e) =>

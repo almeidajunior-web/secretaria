@@ -38,6 +38,7 @@ function blankEvent(start, end) {
     faltasMax: null,
     occStatus: {},
     exdates: [],
+    linkedIds: [],
   }
 }
 
@@ -172,6 +173,7 @@ export default function Agenda({
       {modal && (
         <EventModal
           initial={modal.event}
+          events={events}
           allTags={allTags}
           onCreateTag={onCreateTag}
           onDeleteTag={onDeleteTag}

@@ -12,7 +12,7 @@ import {
   layoutColumns,
   GRID_HEIGHT,
 } from '../../lib/date'
-import { occurrencesForDay, computeFaltas } from '../../lib/recurrence'
+import { occurrencesForDay, computeFaltasGroup } from '../../lib/recurrence'
 import {
   WEEKDAYS_SHORT,
   HOUR_START,
@@ -74,7 +74,7 @@ export function useFaltas(events, now) {
   return useMemo(() => {
     const map = {}
     events.forEach((e) => {
-      if (e.isAula) map[e.id] = computeFaltas(e, now)
+      if (e.isAula) map[e.id] = computeFaltasGroup(events, e, now)
     })
     return map
   }, [events, now])

@@ -11,11 +11,13 @@ import { computeFaltas } from '../../lib/recurrence'
 import { EVENT_COLORS, STATUSES } from '../../constants'
 import TagSelector from './TagSelector'
 import RecurrenceField from './RecurrenceField'
+import LinkedClassesField from './LinkedClassesField'
 
 // Create/edit form. `initial` is a full event object (blank for new events,
 // populated for edits). Title is required.
 export default function EventModal({
   initial,
+  events,
   allTags,
   onCreateTag,
   onDeleteTag,
@@ -38,24 +40,33 @@ export default function EventModal({
   const [faltasMax, setFaltasMax] = useState(
     initial.faltasMax == null ? '' : String(initial.faltasMax)
   )
+  const [linkedIds, setLinkedIds] = useState(initial.linkedIds || [])
+
+  const linkCandidates = (events || []).filter((e) => e.isAula && e.id !== initial.id)
+  const toggleLink = (id) =>
+    setLinkedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
   // Absences are derived from the per-occurrence status, so we preview the
-  // count live as the relevant fields change.
-  const derivedFaltas = useMemo(
-    () =>
-      computeFaltas({
-        ...initial,
-        isAula,
-        start: fromInputValue(start),
-        end: fromInputValue(end),
-        recurrence,
-        recurrenceDays: recurrence === 'custom' ? recurrenceDays : [],
-        recurrenceUntil:
-          recurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
-        occStatus: initial.occStatus || {},
-      }),
-    [initial, isAula, start, end, recurrence, recurrenceDays, recurrenceUntil]
-  )
+  // count live as the relevant fields change. When connected to other
+  // classes, their (already saved) absences are pooled into the total too.
+  const derivedFaltas = useMemo(() => {
+    const own = computeFaltas({
+      ...initial,
+      isAula,
+      start: fromInputValue(start),
+      end: fromInputValue(end),
+      recurrence,
+      recurrenceDays: recurrence === 'custom' ? recurrenceDays : [],
+      recurrenceUntil:
+        recurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
+      occStatus: initial.occStatus || {},
+    })
+    const linkedTotal = linkedIds.reduce((sum, id) => {
+      const linked = (events || []).find((e) => e.id === id)
+      return sum + (linked ? computeFaltas(linked) : 0)
+    }, 0)
+    return own + linkedTotal
+  }, [initial, isAula, start, end, recurrence, recurrenceDays, recurrenceUntil, linkedIds, events])
   const limitReached =
     isAula && faltasMax !== '' && Number(faltasMax) > 0 && derivedFaltas >= Number(faltasMax)
 
@@ -72,6 +83,7 @@ export default function EventModal({
   // the past occurrences the user explicitly marks otherwise.
   const toggleAula = () => {
     if (!isAula) setStatus('confirmed')
+    else setLinkedIds([])
     setIsAula((v) => !v)
   }
 
@@ -107,6 +119,7 @@ export default function EventModal({
         recurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
       isAula,
       faltasMax: isAula ? (faltasMax === '' ? null : Number(faltasMax)) : null,
+      linkedIds: isAula ? linkedIds : [],
       occStatus: initial.occStatus || {},
     })
   }
@@ -259,11 +272,21 @@ export default function EventModal({
                   Faltas (automático):{' '}
                   <span className="font-semibold text-text">{derivedFaltas}</span>
                   {faltasMax !== '' && ` de ${faltasMax}`}
+                  {linkedIds.length > 0 && ' · somadas com as aulas conectadas'}
                 </p>
                 <p className="text-[11px] leading-relaxed text-text-muted">
                   Conta as aulas passadas sem status “Confirmado”. Marque a presença pelo
                   status de cada aula.
                 </p>
+
+                <div className="border-t border-border pt-3">
+                  <LinkedClassesField
+                    candidates={linkCandidates}
+                    selected={linkedIds}
+                    onToggle={toggleLink}
+                  />
+                </div>
+
                 {limitReached && (
                   <div className="flex items-center gap-2 rounded-md bg-danger/10 px-2 py-1.5 text-[11px] font-medium text-danger">
                     <OctagonAlert size={14} className="shrink-0" />

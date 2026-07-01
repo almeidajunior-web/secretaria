@@ -111,6 +111,35 @@ export function computeFaltas(event, now = new Date()) {
   return count
 }
 
+// Resolves the full set of events transitively linked to `eventId` (including
+// itself) via `linkedIds`. Used to pool absences across separate class events
+// that belong to the same discipline (e.g. Wed + Fri sessions).
+export function getLinkedGroup(events, eventId) {
+  const byId = new Map(events.map((e) => [e.id, e]))
+  const seen = new Set()
+  const queue = [eventId]
+  while (queue.length) {
+    const id = queue.shift()
+    if (seen.has(id)) continue
+    seen.add(id)
+    const e = byId.get(id)
+    if (!e) continue
+    ;(e.linkedIds || []).forEach((linkedId) => {
+      if (!seen.has(linkedId)) queue.push(linkedId)
+    })
+  }
+  return [...seen].map((id) => byId.get(id)).filter(Boolean)
+}
+
+// Total absences for a class, summed across every event linked to it (or just
+// its own count when not connected to any other class).
+export function computeFaltasGroup(events, event, now = new Date()) {
+  if (!event.isAula) return 0
+  if (!event.linkedIds || event.linkedIds.length === 0) return computeFaltas(event, now)
+  const group = getLinkedGroup(events, event.id)
+  return group.reduce((sum, e) => sum + computeFaltas(e, now), 0)
+}
+
 // Stable key for an occurrence date (yyyy-MM-dd).
 export function formatKey(day) {
   const y = day.getFullYear()

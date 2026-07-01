@@ -14,6 +14,11 @@ function id() {
 }
 
 export function buildSeedEvents() {
+  // EM504B meets twice a week (different days) but is one discipline, so the
+  // two class events are linked to pool their absence count.
+  const mecanicaId = id()
+  const labId = id()
+
   return [
     {
       id: id(),
@@ -28,9 +33,11 @@ export function buildSeedEvents() {
       isAula: false,
       faltasMax: null,
       occStatus: {},
+      exdates: [],
+      linkedIds: [],
     },
     {
-      id: id(),
+      id: mecanicaId,
       title: 'EM504B — Mecânica',
       start: at(0, 10, 0),
       end: at(0, 12, 0),
@@ -42,6 +49,8 @@ export function buildSeedEvents() {
       isAula: true,
       faltasMax: 15,
       occStatus: {},
+      exdates: [],
+      linkedIds: [labId],
     },
     {
       id: id(),
@@ -56,6 +65,8 @@ export function buildSeedEvents() {
       isAula: false,
       faltasMax: null,
       occStatus: {},
+      exdates: [],
+      linkedIds: [],
     },
     {
       id: id(),
@@ -70,9 +81,11 @@ export function buildSeedEvents() {
       isAula: false,
       faltasMax: null,
       occStatus: {},
+      exdates: [],
+      linkedIds: [],
     },
     {
-      id: id(),
+      id: labId,
       title: 'EM504B — Lab',
       start: at(2, 8, 0),
       end: at(2, 10, 0),
@@ -84,6 +97,8 @@ export function buildSeedEvents() {
       isAula: true,
       faltasMax: 15,
       occStatus: {},
+      exdates: [],
+      linkedIds: [mecanicaId],
     },
     {
       id: id(),
@@ -98,6 +113,8 @@ export function buildSeedEvents() {
       isAula: false,
       faltasMax: null,
       occStatus: {},
+      exdates: [],
+      linkedIds: [],
     },
     {
       id: id(),
@@ -112,6 +129,8 @@ export function buildSeedEvents() {
       isAula: false,
       faltasMax: null,
       occStatus: {},
+      exdates: [],
+      linkedIds: [],
     },
   ]
 }
