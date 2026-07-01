@@ -9,7 +9,7 @@ const REFUSED_GRAY = '#9CA3AF'
 // the time, and extra details appear as the box grows. Past occurrences are
 // dimmed; classes show a cap above the title and an alarm when the absence
 // limit is reached.
-export default function EventCard({ occ, height, isPast, faltas = 0, onClick }) {
+export default function EventCard({ occ, height, isPast, faltas = 0 }) {
   const { style, textColor } = statusVisual(occ.status, occ.color)
   const opacity = isPast ? 0.5 : occ.status === 'refused' ? 0.7 : 1
 
@@ -23,9 +23,7 @@ export default function EventCard({ occ, height, isPast, faltas = 0, onClick }) 
   const timeRange = `${fmt(occ.start, 'HH:mm')}–${fmt(occ.end, 'HH:mm')}`
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <div
       style={{ ...style, opacity }}
       className={`flex h-full w-full flex-col overflow-hidden rounded-md px-1.5 text-left leading-tight ${
         compact ? 'py-0.5' : 'py-1'
@@ -71,7 +69,7 @@ export default function EventCard({ occ, height, isPast, faltas = 0, onClick }) 
           {faltas}/{occ.faltasMax}
         </span>
       )}
-    </button>
+    </div>
   )
 }
 

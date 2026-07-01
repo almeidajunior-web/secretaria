@@ -15,6 +15,10 @@ export function occursOn(event, day) {
   const dayStart = startOfDay(day)
   const seriesStart = startOfDay(event.start)
 
+  // Occurrences explicitly removed from the series ("somente este" na exclusão
+  // ou ao destacar uma ocorrência).
+  if (event.exdates && event.exdates.includes(formatKey(day))) return false
+
   if (event.recurrence === 'none') {
     return isSameDay(event.start, day)
   }

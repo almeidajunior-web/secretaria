@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getDay } from 'date-fns'
 import { CircleCheck, Wallet } from 'lucide-react'
 import {
@@ -22,8 +22,9 @@ import {
 import EventCard from './EventCard'
 
 // Seven-day grid: sticky header with per-day quick links, time gutter, and one
-// column per day with positioned events.
-export default function WeekView({ currentDate, events, onSlotClick, onEventClick }) {
+// column per day with positioned events. Supports drag-to-create and drag-to-
+// move.
+export default function WeekView({ currentDate, events, onCreateRange, onEventClick, onMove }) {
   const days = getWeekDays(currentDate)
   const now = useNow()
   const faltasByEvent = useFaltas(events, now)
@@ -48,8 +49,9 @@ export default function WeekView({ currentDate, events, onSlotClick, onEventClic
               events={events}
               now={now}
               faltasByEvent={faltasByEvent}
-              onSlotClick={onSlotClick}
+              onCreateRange={onCreateRange}
               onEventClick={onEventClick}
+              onMove={onMove}
             />
           ))}
         </div>
@@ -164,52 +166,151 @@ export function GridLines() {
   return <div className="pointer-events-none absolute inset-0">{lines}</div>
 }
 
-export function DayColumn({ day, events, now, faltasByEvent = {}, onSlotClick, onEventClick }) {
+// Snaps a client Y coordinate (relative to `el`) to minutes-of-day (15 min).
+function yToMinutes(el, clientY) {
+  const rect = el.getBoundingClientRect()
+  let m = HOUR_START * 60 + ((clientY - rect.top) / HOUR_HEIGHT) * 60
+  m = Math.round(m / 15) * 15
+  return Math.max(HOUR_START * 60, Math.min(m, HOUR_END * 60))
+}
+
+export function DayColumn({
+  day,
+  events,
+  now,
+  faltasByEvent = {},
+  onCreateRange,
+  onEventClick,
+  onMove,
+}) {
+  const colRef = useRef(null)
+  const [createDrag, setCreateDrag] = useState(null) // { startMin, endMin }
+  const [moveDrag, setMoveDrag] = useState(null) // { key, dx, dy, moved }
+
   const laid = layoutColumns(occurrencesForDay(events, day))
   const today = isSameDay(day, now)
   const nowMin = minutesOfDay(now)
   const showNow = today && nowMin >= HOUR_START * 60 && nowMin <= HOUR_END * 60
 
-  const handleEmptyClick = (e) => {
+  // Drag on empty space -> create an event spanning the dragged range.
+  const handleColumnMouseDown = (e) => {
+    if (e.button !== 0) return
+    const startMin = yToMinutes(colRef.current, e.clientY)
+    let endMin = startMin
+    const onMoveEv = (ev) => {
+      endMin = yToMinutes(colRef.current, ev.clientY)
+      setCreateDrag({ startMin, endMin })
+    }
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMoveEv)
+      window.removeEventListener('mouseup', onUp)
+      setCreateDrag(null)
+      const a = Math.min(startMin, endMin)
+      const b = Math.max(startMin, endMin)
+      const startDate = dayAtHour(day, a / 60)
+      const endDate =
+        b - a >= 15 ? dayAtHour(day, b / 60) : new Date(startDate.getTime() + 30 * 60000)
+      onCreateRange(startDate, endDate)
+    }
+    window.addEventListener('mousemove', onMoveEv)
+    window.addEventListener('mouseup', onUp)
+  }
+
+  // Drag on an event -> move it (day + time). A negligible move is a click.
+  const handleEventMouseDown = (e, occ) => {
+    e.stopPropagation()
+    if (e.button !== 0) return
+    const originX = e.clientX
+    const originY = e.clientY
     const rect = e.currentTarget.getBoundingClientRect()
-    const y = e.clientY - rect.top
-    let minutes = HOUR_START * 60 + (y / HOUR_HEIGHT) * 60
-    minutes = Math.round(minutes / 30) * 30
-    minutes = Math.max(HOUR_START * 60, Math.min(minutes, HOUR_END * 60 - 30))
-    onSlotClick(dayAtHour(day, minutes / 60))
+    const key = `${occ.eventId}_${occ.occKey}`
+    let dx = 0
+    let dy = 0
+    let moved = false
+
+    const onMoveEv = (ev) => {
+      dx = ev.clientX - originX
+      dy = ev.clientY - originY
+      if (!moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) moved = true
+      if (moved) setMoveDrag({ key, dx, dy })
+    }
+    const onUp = (ev) => {
+      window.removeEventListener('mousemove', onMoveEv)
+      window.removeEventListener('mouseup', onUp)
+      setMoveDrag(null)
+      if (!moved) {
+        onEventClick(occ, rect)
+        return
+      }
+      const deltaMin = Math.round(((ev.clientY - originY) / HOUR_HEIGHT) * 60 / 15) * 15
+      const targetEl = document.elementFromPoint(ev.clientX, ev.clientY)
+      const dayEl = targetEl && targetEl.closest('[data-day]')
+      const targetDay = dayEl ? new Date(dayEl.dataset.day) : day
+      const startMin = occ.start.getHours() * 60 + occ.start.getMinutes() + deltaMin
+      const clamped = Math.max(0, Math.min(startMin, 24 * 60 - 5))
+      const ns = new Date(targetDay)
+      ns.setHours(0, 0, 0, 0)
+      ns.setMinutes(clamped)
+      const ne = new Date(ns.getTime() + (occ.end.getTime() - occ.start.getTime()))
+      onMove(occ, ns, ne)
+    }
+    window.addEventListener('mousemove', onMoveEv)
+    window.addEventListener('mouseup', onUp)
   }
 
   return (
-    <div className="relative flex-1 border-l border-border" onClick={handleEmptyClick}>
+    <div
+      ref={colRef}
+      data-day={day.toISOString()}
+      className="relative flex-1 select-none border-l border-border"
+      onMouseDown={handleColumnMouseDown}
+    >
+      {createDrag && <SelectionBox drag={createDrag} />}
+
       {laid.map((o) => {
         const { top, height } = eventRect(o.start, o.end)
+        const key = `${o.eventId}_${o.occKey}`
+        const isMoving = moveDrag && moveDrag.key === key
         return (
           <div
-            key={`${o.eventId}_${o.occKey}`}
-            className="absolute"
+            key={key}
+            className="absolute cursor-grab"
             style={{
               top,
               height,
               left: `${(o._col / o._cols) * 100}%`,
               width: `calc(${100 / o._cols}% - 3px)`,
               marginLeft: '1px',
+              transform: isMoving ? `translate(${moveDrag.dx}px, ${moveDrag.dy}px)` : undefined,
+              zIndex: isMoving ? 40 : undefined,
+              pointerEvents: isMoving ? 'none' : undefined,
             }}
+            onMouseDown={(e) => handleEventMouseDown(e, o)}
           >
             <EventCard
               occ={o}
               height={height}
               isPast={o.end < now}
               faltas={faltasByEvent[o.eventId] || 0}
-              onClick={(e) => {
-                e.stopPropagation()
-                onEventClick(o, e.currentTarget.getBoundingClientRect())
-              }}
             />
           </div>
         )
       })}
       {showNow && <NowLine top={minutesToTop(nowMin)} />}
     </div>
+  )
+}
+
+function SelectionBox({ drag }) {
+  const a = Math.min(drag.startMin, drag.endMin)
+  const b = Math.max(drag.startMin, drag.endMin)
+  const top = minutesToTop(a)
+  const height = Math.max((b - a) * (HOUR_HEIGHT / 60), 2)
+  return (
+    <div
+      className="pointer-events-none absolute left-0 right-0 rounded border border-primary bg-primary/20"
+      style={{ top, height }}
+    />
   )
 }
 

@@ -18,10 +18,11 @@ import MonthView from './MonthView'
 import YearView from './YearView'
 import EventPopover from './EventPopover'
 import EventModal from './EventModal'
+import RecurrenceScopeDialog from './RecurrenceScopeDialog'
 
-function blankEvent(start) {
+function blankEvent(start, end) {
   const s = start || roundToHalfHour(new Date())
-  const e = new Date(s.getTime() + 30 * 60000)
+  const e = end || new Date(s.getTime() + 30 * 60000)
   return {
     title: '',
     start: s,
@@ -36,6 +37,7 @@ function blankEvent(start) {
     isAula: false,
     faltasMax: null,
     occStatus: {},
+    exdates: [],
   }
 }
 
@@ -47,14 +49,18 @@ export default function Agenda({
   addEvent,
   updateEvent,
   deleteEvent,
+  moveOccurrence,
+  deleteOccurrence,
+  editOccurrence,
   setOccurrenceStatus,
   allTags,
   onCreateTag,
   onDeleteTag,
 }) {
   const [view, setView] = useState('week')
-  const [modal, setModal] = useState(null) // { event }
+  const [modal, setModal] = useState(null) // { event, occ? }
   const [popover, setPopover] = useState(null) // { occ, rect }
+  const [scopeAction, setScopeAction] = useState(null) // { kind, occ, ... }
 
   const title = buildTitle(view, currentDate)
 
@@ -62,26 +68,59 @@ export default function Agenda({
   const handleNext = () => onChangeDate(stepDate(view, currentDate, 1))
   const handleToday = () => onChangeDate(new Date())
 
-  const openCreate = (start) => {
+  const openCreate = (start, end) => {
     setPopover(null)
-    setModal({ event: blankEvent(start) })
+    setModal({ event: blankEvent(start, end) })
   }
 
   const openEdit = (occ) => {
     setPopover(null)
     const original = events.find((e) => e.id === occ.eventId)
-    if (original) setModal({ event: original })
+    // Edit the specific instance's date/time while keeping the series identity.
+    if (original) setModal({ event: { ...original, start: occ.start, end: occ.end }, occ })
   }
 
   const handleSave = (data) => {
-    if (data.id) updateEvent(data)
-    else addEvent(data)
+    const occ = modal?.occ
     setModal(null)
+    if (!data.id) {
+      addEvent(data)
+      return
+    }
+    const event = events.find((e) => e.id === data.id)
+    if (event && event.recurrence !== 'none' && occ) {
+      setScopeAction({ kind: 'edit', occ, data })
+    } else {
+      updateEvent(data)
+    }
+  }
+
+  const handleMove = (occ, newStart, newEnd) => {
+    const event = events.find((e) => e.id === occ.eventId)
+    if (event && event.recurrence !== 'none') {
+      setScopeAction({ kind: 'move', occ, newStart, newEnd })
+    } else {
+      moveOccurrence(occ, newStart, newEnd, 'all')
+    }
   }
 
   const handleDelete = (occ) => {
-    deleteEvent(occ.eventId)
     setPopover(null)
+    const event = events.find((e) => e.id === occ.eventId)
+    if (event && event.recurrence !== 'none') {
+      setScopeAction({ kind: 'delete', occ })
+    } else {
+      deleteEvent(occ.eventId)
+    }
+  }
+
+  const applyScope = (scope) => {
+    const a = scopeAction
+    setScopeAction(null)
+    if (!a) return
+    if (a.kind === 'move') moveOccurrence(a.occ, a.newStart, a.newEnd, scope)
+    else if (a.kind === 'delete') deleteOccurrence(a.occ, scope)
+    else if (a.kind === 'edit') editOccurrence(a.occ, a.data, scope)
   }
 
   const selectDay = (day) => {
@@ -92,7 +131,9 @@ export default function Agenda({
   const viewProps = {
     currentDate,
     events,
+    onCreateRange: openCreate,
     onEventClick: (occ, rect) => setPopover({ occ, rect }),
+    onMove: handleMove,
   }
 
   return (
@@ -108,9 +149,11 @@ export default function Agenda({
       />
 
       <div className="flex-1 overflow-hidden">
-        {view === 'week' && <WeekView {...viewProps} onSlotClick={openCreate} />}
-        {view === 'day' && <DayView {...viewProps} onSlotClick={openCreate} />}
-        {view === 'month' && <MonthView {...viewProps} onSelectDay={selectDay} />}
+        {view === 'week' && <WeekView {...viewProps} />}
+        {view === 'day' && <DayView {...viewProps} />}
+        {view === 'month' && (
+          <MonthView currentDate={currentDate} events={events} onSelectDay={selectDay} />
+        )}
         {view === 'year' && <YearView currentDate={currentDate} onSelectDay={selectDay} />}
       </div>
 
@@ -134,6 +177,14 @@ export default function Agenda({
           onDeleteTag={onDeleteTag}
           onSave={handleSave}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {scopeAction && (
+        <RecurrenceScopeDialog
+          kind={scopeAction.kind}
+          onChoose={applyScope}
+          onCancel={() => setScopeAction(null)}
         />
       )}
     </div>
