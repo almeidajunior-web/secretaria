@@ -55,6 +55,12 @@ export const HOUR_START = 6
 export const HOUR_END = 23
 export const HOUR_HEIGHT = 48 // px per hour slot
 
+export const CLASSIFICATIONS = [
+  { value: 'event', label: 'Evento' },
+  { value: 'aula', label: 'Aula' },
+  { value: 'prova', label: 'Prova' },
+]
+
 export const STATUSES = [
   { value: 'unconfirmed', label: 'Não confirmado' },
   { value: 'confirmed', label: 'Confirmado' },

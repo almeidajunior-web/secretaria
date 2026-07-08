@@ -19,11 +19,13 @@ import YearView from './YearView'
 import EventPopover from './EventPopover'
 import EventModal from './EventModal'
 import RecurrenceScopeDialog from './RecurrenceScopeDialog'
+import ProvasList from './ProvasList'
 
 function blankEvent(start, end) {
   const s = start || roundToHalfHour(new Date())
   const e = end || new Date(s.getTime() + 30 * 60000)
   return {
+    kind: 'event',
     title: '',
     start: s,
     end: e,
@@ -62,6 +64,7 @@ export default function Agenda({
   const [modal, setModal] = useState(null) // { event, occ? }
   const [popover, setPopover] = useState(null) // { occ, rect }
   const [scopeAction, setScopeAction] = useState(null) // { kind, occ, ... }
+  const [provasOpen, setProvasOpen] = useState(false)
 
   const title = buildTitle(view, currentDate)
 
@@ -147,6 +150,7 @@ export default function Agenda({
         onNext={handleNext}
         onToday={handleToday}
         onNew={() => openCreate()}
+        onOpenProvas={() => setProvasOpen(true)}
       />
 
       <div className="flex-1 overflow-hidden">
@@ -187,6 +191,17 @@ export default function Agenda({
           kind={scopeAction.kind}
           onChoose={applyScope}
           onCancel={() => setScopeAction(null)}
+        />
+      )}
+
+      {provasOpen && (
+        <ProvasList
+          events={events}
+          onSelectDay={(d) => {
+            selectDay(d)
+            setProvasOpen(false)
+          }}
+          onClose={() => setProvasOpen(false)}
         />
       )}
     </div>

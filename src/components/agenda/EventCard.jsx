@@ -1,4 +1,4 @@
-import { AlertTriangle, GraduationCap, OctagonAlert } from 'lucide-react'
+import { AlertTriangle, GraduationCap, FileText, OctagonAlert } from 'lucide-react'
 import { fmt } from '../../lib/date'
 import { withAlpha } from '../../constants'
 
@@ -15,6 +15,7 @@ export default function EventCard({ occ, height, isPast, faltas = 0 }) {
 
   const compact = height < 38
   const limitReached = occ.isAula && occ.faltasMax && faltas >= occ.faltasMax
+  const KindIcon = occ.kind === 'prova' ? FileText : GraduationCap
   const showCapRow = !compact && occ.isAula && height >= 44
   const showTime = !compact && height >= 40
   const showTags = !compact && height >= 66 && occ.tags?.length > 0
@@ -31,14 +32,14 @@ export default function EventCard({ occ, height, isPast, faltas = 0 }) {
     >
       {showCapRow && (
         <span className="flex items-center gap-1 opacity-80">
-          <GraduationCap size={11} />
+          <KindIcon size={11} />
           {limitReached && <OctagonAlert size={11} />}
         </span>
       )}
 
       {compact ? (
         <span className="flex min-w-0 items-center gap-1">
-          {occ.isAula && <GraduationCap size={10} className="shrink-0 opacity-80" />}
+          {occ.isAula && <KindIcon size={10} className="shrink-0 opacity-80" />}
           {limitReached && <OctagonAlert size={10} className="shrink-0" />}
           <span className="truncate text-[11px] font-medium">{occ.title}</span>
           <span className="shrink-0 text-[10px] opacity-80">{timeRange}</span>

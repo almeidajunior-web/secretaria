@@ -1,7 +1,7 @@
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react'
 import { VIEWS } from '../../constants'
 
-// Period navigation, view switcher, and the new-event button.
+// Period navigation, view switcher, exams shortcut, and the new-event button.
 export default function AgendaToolbar({
   view,
   onChangeView,
@@ -10,6 +10,7 @@ export default function AgendaToolbar({
   onNext,
   onToday,
   onNew,
+  onOpenProvas,
 }) {
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-border bg-surface px-4 py-2.5">
@@ -66,10 +67,18 @@ export default function AgendaToolbar({
 
         <button
           type="button"
-          onClick={onNew}
-          className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover"
+          onClick={onOpenProvas}
+          className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-accent-soft hover:text-primary"
         >
-          <Plus size={15} />
+          <GraduationCap size={15} />
+          Provas
+        </button>
+
+        <button
+          type="button"
+          onClick={onNew}
+          className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover"
+        >
           Novo evento
         </button>
       </div>

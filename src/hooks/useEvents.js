@@ -58,7 +58,9 @@ function unlinkEverywhere(events, eventId) {
 export function useEvents() {
   const [events, setEvents] = useState(() => {
     const stored = loadEvents()
-    if (stored && stored.length) return stored
+    // Seed only the first time ever. An intentionally emptied calendar
+    // (stored === []) must stay empty instead of re-seeding the examples.
+    if (stored !== null) return stored
     return buildSeedEvents()
   })
 
@@ -164,10 +166,13 @@ export function useEvents() {
           e.id === event.id ? { ...e, exdates: [...(e.exdates || []), occ.occKey] } : e
         )
       }
-      // 'following'
-      return prev.map((e) =>
-        e.id === event.id ? { ...e, recurrenceUntil: dayBefore(occ.start) } : e
-      )
+      // 'following': if nothing would remain before this occurrence, remove the
+      // whole series instead of leaving a phantom event with no occurrences.
+      const until = dayBefore(occ.start)
+      if (until < event.start) {
+        return unlinkEverywhere(prev.filter((e) => e.id !== event.id), event.id)
+      }
+      return prev.map((e) => (e.id === event.id ? { ...e, recurrenceUntil: until } : e))
     })
   }, [])
 

@@ -25,6 +25,7 @@ function reviveEvent(raw) {
     start: new Date(raw.start),
     end: new Date(raw.end),
     tags: raw.tags || [],
+    kind: raw.kind || (raw.isAula ? 'aula' : 'event'),
     occStatus: raw.occStatus || {},
     exdates: raw.exdates || [],
     linkedIds: raw.linkedIds || [],

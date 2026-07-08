@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getDay } from 'date-fns'
-import { GraduationCap, OctagonAlert } from 'lucide-react'
+import { OctagonAlert } from 'lucide-react'
 import {
   toInputValue,
   fromInputValue,
@@ -8,7 +8,7 @@ import {
   fromDateInput,
 } from '../../lib/date'
 import { computeFaltas } from '../../lib/recurrence'
-import { EVENT_COLORS, STATUSES } from '../../constants'
+import { EVENT_COLORS, STATUSES, CLASSIFICATIONS } from '../../constants'
 import TagSelector from './TagSelector'
 import RecurrenceField from './RecurrenceField'
 import LinkedClassesField from './LinkedClassesField'
@@ -24,6 +24,7 @@ export default function EventModal({
   onSave,
   onClose,
 }) {
+  const [kind, setKind] = useState(initial.kind || (initial.isAula ? 'aula' : 'event'))
   const [title, setTitle] = useState(initial.title || '')
   const [start, setStart] = useState(toInputValue(initial.start))
   const [end, setEnd] = useState(toInputValue(initial.end))
@@ -36,29 +37,35 @@ export default function EventModal({
     initial.recurrenceUntil ? toDateInput(initial.recurrenceUntil) : ''
   )
   const [status, setStatus] = useState(initial.status || 'unconfirmed')
-  const [isAula, setIsAula] = useState(!!initial.isAula)
   const [faltasMax, setFaltasMax] = useState(
     initial.faltasMax == null ? '' : String(initial.faltasMax)
   )
   const [linkedIds, setLinkedIds] = useState(initial.linkedIds || [])
 
-  const linkCandidates = (events || []).filter((e) => e.isAula && e.id !== initial.id)
+  const isClass = kind === 'aula' || kind === 'prova'
+  const isProva = kind === 'prova'
+  const effRecurrence = isProva ? 'none' : recurrence
+
+  // Only classes can be linked; also keep any already-linked item visible so it
+  // can be toggled off, even a connected exam.
+  const linkCandidates = (events || []).filter(
+    (e) => e.id !== initial.id && (e.kind === 'aula' || (e.isAula && linkedIds.includes(e.id)))
+  )
   const toggleLink = (id) =>
     setLinkedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
-  // Absences are derived from the per-occurrence status, so we preview the
-  // count live as the relevant fields change. When connected to other
-  // classes, their (already saved) absences are pooled into the total too.
+  // Absences are derived from the per-occurrence status; preview live and pool
+  // any connected classes' (already saved) absences into the total.
   const derivedFaltas = useMemo(() => {
     const own = computeFaltas({
       ...initial,
-      isAula,
+      isAula: isClass,
       start: fromInputValue(start),
       end: fromInputValue(end),
-      recurrence,
-      recurrenceDays: recurrence === 'custom' ? recurrenceDays : [],
+      recurrence: effRecurrence,
+      recurrenceDays: effRecurrence === 'custom' ? recurrenceDays : [],
       recurrenceUntil:
-        recurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
+        effRecurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
       occStatus: initial.occStatus || {},
     })
     const linkedTotal = linkedIds.reduce((sum, id) => {
@@ -66,9 +73,12 @@ export default function EventModal({
       return sum + (linked ? computeFaltas(linked) : 0)
     }, 0)
     return own + linkedTotal
-  }, [initial, isAula, start, end, recurrence, recurrenceDays, recurrenceUntil, linkedIds, events])
+  }, [initial, isClass, effRecurrence, start, end, recurrenceDays, recurrenceUntil, linkedIds, events])
   const limitReached =
-    isAula && faltasMax !== '' && Number(faltasMax) > 0 && derivedFaltas >= Number(faltasMax)
+    kind === 'aula' &&
+    faltasMax !== '' &&
+    Number(faltasMax) > 0 &&
+    derivedFaltas >= Number(faltasMax)
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -79,12 +89,13 @@ export default function EventModal({
   const toggleTag = (tag) =>
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
 
-  // Classes default to "Confirmado" (presence as default); absences are only
-  // the past occurrences the user explicitly marks otherwise.
-  const toggleAula = () => {
-    if (!isAula) setStatus('confirmed')
-    else setLinkedIds([])
-    setIsAula((v) => !v)
+  // Classes/exams default to "Confirmado" (presence as default). Exams are
+  // one-off, so recurrence is dropped when switching to Prova.
+  const changeKind = (k) => {
+    if (k !== 'event' && kind === 'event') setStatus('confirmed')
+    if (k === 'event') setLinkedIds([])
+    if (k === 'prova') setRecurrence('none')
+    setKind(k)
   }
 
   const deleteTag = (tag) => {
@@ -94,7 +105,6 @@ export default function EventModal({
 
   const handleRecurrenceChange = (value) => {
     setRecurrence(value)
-    // When switching to custom, seed the weekday from the event's start day.
     if (value === 'custom' && recurrenceDays.length === 0) {
       setRecurrenceDays([getDay(fromInputValue(start))])
     }
@@ -106,6 +116,7 @@ export default function EventModal({
     if (!canSave) return
     onSave({
       ...(initial.id ? { id: initial.id } : {}),
+      kind,
       title: title.trim(),
       start: fromInputValue(start),
       end: fromInputValue(end),
@@ -113,13 +124,13 @@ export default function EventModal({
       color,
       tags,
       status,
-      recurrence,
-      recurrenceDays: recurrence === 'custom' ? recurrenceDays : [],
+      recurrence: effRecurrence,
+      recurrenceDays: effRecurrence === 'custom' ? recurrenceDays : [],
       recurrenceUntil:
-        recurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
-      isAula,
-      faltasMax: isAula ? (faltasMax === '' ? null : Number(faltasMax)) : null,
-      linkedIds: isAula ? linkedIds : [],
+        effRecurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
+      isAula: isClass,
+      faltasMax: kind === 'aula' ? (faltasMax === '' ? null : Number(faltasMax)) : null,
+      linkedIds: isClass ? linkedIds : [],
       occStatus: initial.occStatus || {},
     })
   }
@@ -138,6 +149,29 @@ export default function EventModal({
         </h2>
 
         <div className="flex flex-col gap-4">
+          <Field label="Classificação">
+            <div className="grid grid-cols-3 gap-2">
+              {CLASSIFICATIONS.map((c) => {
+                const selected = c.value === kind
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => changeKind(c.value)}
+                    className={[
+                      'rounded-md border px-3 py-1.5 text-xs font-medium',
+                      selected
+                        ? 'border-primary bg-primary text-white'
+                        : 'border-border text-text-secondary hover:bg-accent-soft/50',
+                    ].join(' ')}
+                  >
+                    {c.label}
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
           <Field label="Título">
             <input
               autoFocus
@@ -201,14 +235,16 @@ export default function EventModal({
             />
           </Field>
 
-          <RecurrenceField
-            value={recurrence}
-            onChange={handleRecurrenceChange}
-            days={recurrenceDays}
-            onChangeDays={setRecurrenceDays}
-            until={recurrenceUntil}
-            onChangeUntil={setRecurrenceUntil}
-          />
+          {!isProva && (
+            <RecurrenceField
+              value={recurrence}
+              onChange={handleRecurrenceChange}
+              days={recurrenceDays}
+              onChangeDays={setRecurrenceDays}
+              until={recurrenceUntil}
+              onChangeUntil={setRecurrenceUntil}
+            />
+          )}
 
           <Field label="Local">
             <input
@@ -242,60 +278,53 @@ export default function EventModal({
             </div>
           </Field>
 
-          <div>
-            <button
-              type="button"
-              onClick={toggleAula}
-              className={[
-                'flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium',
-                isAula
-                  ? 'border-primary bg-accent-soft text-primary'
-                  : 'border-border text-text-secondary hover:bg-accent-soft/50',
-              ].join(' ')}
-            >
-              <GraduationCap size={15} />
-              Aula
-            </button>
-
-            {isAula && (
-              <div className="mt-3 flex flex-col gap-3 rounded-lg border border-border bg-app-bg p-3">
-                <Field label="Limite de faltas">
-                  <input
-                    type="number"
-                    min="0"
-                    value={faltasMax}
-                    onChange={(e) => setFaltasMax(e.target.value)}
-                    className={inputClass}
-                  />
-                </Field>
-                <p className="text-[11px] text-text-secondary">
-                  Faltas (automático):{' '}
-                  <span className="font-semibold text-text">{derivedFaltas}</span>
-                  {faltasMax !== '' && ` de ${faltasMax}`}
-                  {linkedIds.length > 0 && ' · somadas com as aulas conectadas'}
-                </p>
+          {isClass && (
+            <div className="flex flex-col gap-3 rounded-lg border border-border bg-app-bg p-3">
+              {kind === 'aula' ? (
+                <>
+                  <Field label="Limite de faltas">
+                    <input
+                      type="number"
+                      min="0"
+                      value={faltasMax}
+                      onChange={(e) => setFaltasMax(e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <p className="text-[11px] text-text-secondary">
+                    Faltas (automático):{' '}
+                    <span className="font-semibold text-text">{derivedFaltas}</span>
+                    {faltasMax !== '' && ` de ${faltasMax}`}
+                    {linkedIds.length > 0 && ' · somadas com as aulas conectadas'}
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-text-muted">
+                    Conta as aulas passadas sem status “Confirmado”. Marque a presença pelo
+                    status de cada aula.
+                  </p>
+                </>
+              ) : (
                 <p className="text-[11px] leading-relaxed text-text-muted">
-                  Conta as aulas passadas sem status “Confirmado”. Marque a presença pelo
-                  status de cada aula.
+                  A prova é pontual (sem recorrência) e conta para a presença da disciplina.
+                  Conecte-a à aula correspondente para somar na frequência.
                 </p>
+              )}
 
-                <div className="border-t border-border pt-3">
-                  <LinkedClassesField
-                    candidates={linkCandidates}
-                    selected={linkedIds}
-                    onToggle={toggleLink}
-                  />
-                </div>
-
-                {limitReached && (
-                  <div className="flex items-center gap-2 rounded-md bg-danger/10 px-2 py-1.5 text-[11px] font-medium text-danger">
-                    <OctagonAlert size={14} className="shrink-0" />
-                    Limite de faltas atingido
-                  </div>
-                )}
+              <div className={kind === 'aula' ? 'border-t border-border pt-3' : ''}>
+                <LinkedClassesField
+                  candidates={linkCandidates}
+                  selected={linkedIds}
+                  onToggle={toggleLink}
+                />
               </div>
-            )}
-          </div>
+
+              {limitReached && (
+                <div className="flex items-center gap-2 rounded-md bg-danger/10 px-2 py-1.5 text-[11px] font-medium text-danger">
+                  <OctagonAlert size={14} className="shrink-0" />
+                  Limite de faltas atingido
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mt-5 flex justify-end gap-2">

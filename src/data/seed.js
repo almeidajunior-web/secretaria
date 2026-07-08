@@ -15,9 +15,10 @@ function id() {
 
 export function buildSeedEvents() {
   // EM504B meets twice a week (different days) but is one discipline, so the
-  // two class events are linked to pool their absence count.
+  // two class events (and its exam) are linked to pool their absence count.
   const mecanicaId = id()
   const labId = id()
+  const provaId = id()
 
   return [
     {
@@ -28,6 +29,7 @@ export function buildSeedEvents() {
       local: 'Google Meet',
       color: '#2563EB',
       tags: ['Trabalho'],
+      kind: 'event',
       status: 'confirmed',
       recurrence: 'none',
       isAula: false,
@@ -44,13 +46,14 @@ export function buildSeedEvents() {
       local: '',
       color: '#7C3AED',
       tags: ['Faculdade'],
+      kind: 'aula',
       status: 'confirmed',
       recurrence: 'weekly',
       isAula: true,
       faltasMax: 15,
       occStatus: {},
       exdates: [],
-      linkedIds: [labId],
+      linkedIds: [labId, provaId],
     },
     {
       id: id(),
@@ -60,6 +63,7 @@ export function buildSeedEvents() {
       local: '',
       color: '#D97706',
       tags: ['Pessoal'],
+      kind: 'event',
       status: 'provisional',
       recurrence: 'none',
       isAula: false,
@@ -76,6 +80,7 @@ export function buildSeedEvents() {
       local: 'Teams',
       color: '#2563EB',
       tags: ['Trabalho'],
+      kind: 'event',
       status: 'unconfirmed',
       recurrence: 'none',
       isAula: false,
@@ -92,6 +97,7 @@ export function buildSeedEvents() {
       local: '',
       color: '#7C3AED',
       tags: ['Faculdade'],
+      kind: 'aula',
       status: 'confirmed',
       recurrence: 'weekly',
       isAula: true,
@@ -108,6 +114,7 @@ export function buildSeedEvents() {
       local: 'UBS Central',
       color: '#DC2626',
       tags: ['Saúde'],
+      kind: 'event',
       status: 'confirmed',
       recurrence: 'none',
       isAula: false,
@@ -117,6 +124,23 @@ export function buildSeedEvents() {
       linkedIds: [],
     },
     {
+      id: provaId,
+      title: 'Prova P1 — EM504B',
+      start: at(10, 14, 0),
+      end: at(10, 16, 0),
+      local: 'Sala PL-12',
+      color: '#7C3AED',
+      tags: ['Faculdade'],
+      kind: 'prova',
+      status: 'confirmed',
+      recurrence: 'none',
+      isAula: true,
+      faltasMax: null,
+      occStatus: {},
+      exdates: [],
+      linkedIds: [mecanicaId],
+    },
+    {
       id: id(),
       title: 'Evento recusado',
       start: at(-1, 11, 0),
@@ -124,6 +148,7 @@ export function buildSeedEvents() {
       local: '',
       color: '#DB2777',
       tags: ['Pessoal'],
+      kind: 'event',
       status: 'refused',
       recurrence: 'none',
       isAula: false,
