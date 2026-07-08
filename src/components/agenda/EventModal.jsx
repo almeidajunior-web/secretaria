@@ -7,7 +7,7 @@ import {
   toDateInput,
   fromDateInput,
 } from '../../lib/date'
-import { computeFaltas } from '../../lib/recurrence'
+import { computeFaltas, hasUpcomingOccurrence } from '../../lib/recurrence'
 import { EVENT_COLORS, STATUSES, CLASSIFICATIONS } from '../../constants'
 import TagSelector from './TagSelector'
 import RecurrenceField from './RecurrenceField'
@@ -46,10 +46,14 @@ export default function EventModal({
   const isProva = kind === 'prova'
   const effRecurrence = isProva ? 'none' : recurrence
 
-  // Only classes can be linked; also keep any already-linked item visible so it
-  // can be toggled off, even a connected exam.
+  // Offer only current/upcoming classes for connection (a finished or past
+  // one-off class shouldn't clutter the picker). Already-linked items stay
+  // visible so they can be toggled off, even if past.
   const linkCandidates = (events || []).filter(
-    (e) => e.id !== initial.id && (e.kind === 'aula' || (e.isAula && linkedIds.includes(e.id)))
+    (e) =>
+      e.id !== initial.id &&
+      ((e.kind === 'aula' && hasUpcomingOccurrence(e)) ||
+        (e.isAula && linkedIds.includes(e.id)))
   )
   const toggleLink = (id) =>
     setLinkedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))

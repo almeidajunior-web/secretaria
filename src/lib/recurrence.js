@@ -111,6 +111,15 @@ export function computeFaltas(event, now = new Date()) {
   return count
 }
 
+// True when the event still has an occurrence today or later (used to keep
+// finished / past one-off classes out of the connection picker).
+export function hasUpcomingOccurrence(event, now = new Date()) {
+  const today = startOfDay(now)
+  if (event.recurrence === 'none') return event.end >= now
+  if (event.recurrenceUntil && startOfDay(event.recurrenceUntil) < today) return false
+  return true
+}
+
 // Resolves the full set of events transitively linked to `eventId` (including
 // itself) via `linkedIds`. Used to pool absences across separate class events
 // that belong to the same discipline (e.g. Wed + Fri sessions).
