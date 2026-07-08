@@ -1,7 +1,7 @@
-import { ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react'
+import { ChevronLeft, ChevronRight, List, GraduationCap, FileText } from 'lucide-react'
 import { VIEWS } from '../../constants'
 
-// Period navigation, view switcher, exams shortcut, and the new-event button.
+// Period navigation, view switcher, list shortcuts, and the new-event button.
 export default function AgendaToolbar({
   view,
   onChangeView,
@@ -10,7 +10,7 @@ export default function AgendaToolbar({
   onNext,
   onToday,
   onNew,
-  onOpenProvas,
+  onOpenList,
 }) {
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-border bg-surface px-4 py-2.5">
@@ -65,14 +65,11 @@ export default function AgendaToolbar({
           })}
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenProvas}
-          className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-accent-soft hover:text-primary"
-        >
-          <GraduationCap size={15} />
-          Provas
-        </button>
+        <div className="flex items-center gap-1.5">
+          <ListButton icon={List} label="Eventos" onClick={() => onOpenList('event')} />
+          <ListButton icon={GraduationCap} label="Aulas" onClick={() => onOpenList('aula')} />
+          <ListButton icon={FileText} label="Provas" onClick={() => onOpenList('prova')} />
+        </div>
 
         <button
           type="button"
@@ -83,5 +80,18 @@ export default function AgendaToolbar({
         </button>
       </div>
     </div>
+  )
+}
+
+function ListButton({ icon: Icon, label, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:bg-accent-soft hover:text-primary"
+    >
+      <Icon size={15} />
+      {label}
+    </button>
   )
 }

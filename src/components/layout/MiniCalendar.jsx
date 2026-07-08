@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { addMonths, subMonths, isSameMonth, isToday } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getMonthGridDays, fmt, capitalize, isSameDay } from '../../lib/date'
+import { WEEKDAYS_LETTERS_ORDERED } from '../../constants'
 
 // Compact month picker in the sidebar. Browsing months is local; picking a day
 // updates the agenda's active date.
@@ -36,7 +37,7 @@ export default function MiniCalendar({ currentDate, onSelectDate }) {
       </div>
 
       <div className="grid grid-cols-7 gap-y-1 text-center text-[10px] text-text-muted">
-        {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
+        {WEEKDAYS_LETTERS_ORDERED.map((d, i) => (
           <span key={i} className="font-medium">
             {d}
           </span>

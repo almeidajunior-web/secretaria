@@ -20,6 +20,7 @@ import EventPopover from './EventPopover'
 import EventModal from './EventModal'
 import RecurrenceScopeDialog from './RecurrenceScopeDialog'
 import ProvasList from './ProvasList'
+import EventListModal from './EventListModal'
 
 function blankEvent(start, end) {
   const s = start || roundToHalfHour(new Date())
@@ -64,7 +65,7 @@ export default function Agenda({
   const [modal, setModal] = useState(null) // { event, occ? }
   const [popover, setPopover] = useState(null) // { occ, rect }
   const [scopeAction, setScopeAction] = useState(null) // { kind, occ, ... }
-  const [provasOpen, setProvasOpen] = useState(false)
+  const [openList, setOpenList] = useState(null) // 'event' | 'aula' | 'prova'
 
   const title = buildTitle(view, currentDate)
 
@@ -82,6 +83,13 @@ export default function Agenda({
     const original = events.find((e) => e.id === occ.eventId)
     // Edit the specific instance's date/time while keeping the series identity.
     if (original) setModal({ event: { ...original, start: occ.start, end: occ.end }, occ })
+  }
+
+  // Edit a base event straight from a list (whole series, no scope prompt).
+  const openEditEvent = (event) => {
+    setOpenList(null)
+    setPopover(null)
+    setModal({ event })
   }
 
   const handleSave = (data) => {
@@ -150,7 +158,7 @@ export default function Agenda({
         onNext={handleNext}
         onToday={handleToday}
         onNew={() => openCreate()}
-        onOpenProvas={() => setProvasOpen(true)}
+        onOpenList={setOpenList}
       />
 
       <div className="flex-1 overflow-hidden">
@@ -194,14 +202,22 @@ export default function Agenda({
         />
       )}
 
-      {provasOpen && (
+      {openList === 'prova' && (
         <ProvasList
           events={events}
-          onSelectDay={(d) => {
-            selectDay(d)
-            setProvasOpen(false)
-          }}
-          onClose={() => setProvasOpen(false)}
+          onEdit={openEditEvent}
+          onDelete={(e) => deleteEvent(e.id)}
+          onClose={() => setOpenList(null)}
+        />
+      )}
+
+      {(openList === 'event' || openList === 'aula') && (
+        <EventListModal
+          mode={openList}
+          events={events}
+          onEdit={openEditEvent}
+          onDelete={(e) => deleteEvent(e.id)}
+          onClose={() => setOpenList(null)}
         />
       )}
     </div>

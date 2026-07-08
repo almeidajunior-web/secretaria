@@ -1,6 +1,6 @@
 import { isSameMonth, isToday, setMonth } from 'date-fns'
 import { getMonthGridDays } from '../../lib/date'
-import { MONTHS } from '../../constants'
+import { MONTHS, WEEKDAYS_LETTERS_ORDERED } from '../../constants'
 
 // Twelve mini-months (4×3). Numbers only — no events. Today is highlighted and
 // clicking any day drills into its day view.
@@ -27,7 +27,7 @@ function MiniMonth({ monthDate, label, onSelectDay }) {
     <div className="rounded-lg border border-border p-3">
       <p className="mb-2 text-xs font-semibold text-text">{label}</p>
       <div className="grid grid-cols-7 text-center text-[9px] text-text-muted">
-        {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
+        {WEEKDAYS_LETTERS_ORDERED.map((d, i) => (
           <span key={i}>{d}</span>
         ))}
       </div>

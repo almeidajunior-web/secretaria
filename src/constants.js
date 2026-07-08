@@ -17,8 +17,13 @@ export const EVENT_COLORS = [
 // Short weekday labels, week starting on Sunday (date-fns getDay() order).
 export const WEEKDAYS_SHORT = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
 
-// Single-letter weekday labels for compact pickers.
+// Single-letter weekday labels for compact pickers (Sunday-first, indexed by
+// date-fns getDay()).
 export const WEEKDAYS_LETTERS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+
+// Monday-first orderings for headers rendered in week order.
+export const WEEKDAYS_SHORT_ORDERED = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM']
+export const WEEKDAYS_LETTERS_ORDERED = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
 
 export const MONTHS = [
   'Janeiro',

@@ -9,19 +9,35 @@ import {
   addDays,
   format,
   isSameDay,
+  getDay,
   getHours,
   getMinutes,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { HOUR_START, HOUR_END, HOUR_HEIGHT } from '../constants'
 
-// Week starts on Sunday to match the WEEKDAYS_SHORT labels.
+// Week runs Monday → Sunday.
 export function weekStart(date) {
-  return startOfWeek(date, { weekStartsOn: 0 })
+  return startOfWeek(date, { weekStartsOn: 1 })
 }
 
 export function weekEnd(date) {
-  return endOfWeek(date, { weekStartsOn: 0 })
+  return endOfWeek(date, { weekStartsOn: 1 })
+}
+
+// Monday-first index (Mon = 0 … Sun = 6) for weekday ordering/sorting.
+export function weekdayOrder(date) {
+  return (getDay(date) + 6) % 7
+}
+
+// Human-readable duration between two dates, e.g. "2h", "1h30", "45min".
+export function durationLabel(start, end) {
+  const mins = Math.max(0, Math.round((end - start) / 60000))
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  if (h && m) return `${h}h${String(m).padStart(2, '0')}`
+  if (h) return `${h}h`
+  return `${m}min`
 }
 
 // The 7 days of the week containing `date`.

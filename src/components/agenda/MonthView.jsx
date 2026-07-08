@@ -1,7 +1,7 @@
 import { isSameMonth, isToday } from 'date-fns'
 import { getMonthGridDays, fmt } from '../../lib/date'
 import { occurrencesForDay } from '../../lib/recurrence'
-import { WEEKDAYS_SHORT, withAlpha } from '../../constants'
+import { WEEKDAYS_SHORT_ORDERED, withAlpha } from '../../constants'
 
 // Month grid. Each day shows up to two event pills plus an overflow indicator;
 // clicking a day drills into its day view.
@@ -12,7 +12,7 @@ export default function MonthView({ currentDate, events, onSelectDay }) {
   return (
     <div className="flex h-full flex-col bg-surface">
       <div className="grid grid-cols-7 border-b border-border">
-        {WEEKDAYS_SHORT.map((d) => (
+        {WEEKDAYS_SHORT_ORDERED.map((d) => (
           <div
             key={d}
             className="py-2 text-center text-[10px] font-medium uppercase text-text-muted"
