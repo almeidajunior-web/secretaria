@@ -19,6 +19,7 @@ export function buildSeedEvents() {
   const mecanicaId = id()
   const labId = id()
   const provaId = id()
+  const prova0Id = id()
 
   return [
     {
@@ -53,7 +54,7 @@ export function buildSeedEvents() {
       faltasMax: 15,
       occStatus: {},
       exdates: [],
-      linkedIds: [labId, provaId],
+      linkedIds: [labId, provaId, prova0Id],
     },
     {
       id: id(),
@@ -128,6 +129,23 @@ export function buildSeedEvents() {
       title: 'Prova P1 — EM504B',
       start: at(10, 14, 0),
       end: at(10, 16, 0),
+      local: 'Sala PL-12',
+      color: '#7C3AED',
+      tags: ['Faculdade'],
+      kind: 'prova',
+      status: 'confirmed',
+      recurrence: 'none',
+      isAula: true,
+      faltasMax: null,
+      occStatus: {},
+      exdates: [],
+      linkedIds: [mecanicaId],
+    },
+    {
+      id: prova0Id,
+      title: 'Prova diagnóstica — EM504B',
+      start: at(-12, 14, 0),
+      end: at(-12, 16, 0),
       local: 'Sala PL-12',
       color: '#7C3AED',
       tags: ['Faculdade'],
