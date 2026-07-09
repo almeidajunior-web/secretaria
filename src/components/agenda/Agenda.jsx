@@ -8,6 +8,7 @@ import {
   subMonths,
   addYears,
   subYears,
+  isSameDay,
 } from 'date-fns'
 import { fmt, capitalize, roundToHalfHour } from '../../lib/date'
 import { EVENT_COLORS } from '../../constants'
@@ -22,6 +23,8 @@ import EventModal from './EventModal'
 import RecurrenceScopeDialog from './RecurrenceScopeDialog'
 import ProvasList from './ProvasList'
 import EventListModal from './EventListModal'
+import ConfirmDialog from '../common/ConfirmDialog'
+import UndoToast from '../common/UndoToast'
 
 function blankEvent(start, end) {
   const s = start || roundToHalfHour(new Date())
@@ -67,6 +70,22 @@ export default function Agenda({
   const [popover, setPopover] = useState(null) // { occ, rect }
   const [scopeAction, setScopeAction] = useState(null) // { kind, occ, ... }
   const [openList, setOpenList] = useState(null) // 'event' | 'aula' | 'prova'
+  const [pendingDelete, setPendingDelete] = useState(null) // { occ, event }
+  const [undo, setUndo] = useState(null) // { message, onUndo }
+
+  // Shows a brief "Desfazer" toast after a delete. `restoreWith` is 'add'
+  // (the event object was fully removed — recreate it) or 'update' (the
+  // event still exists but got mutated — revert the mutated fields).
+  const showUndo = (message, snapshot, restoreWith) => {
+    setUndo({
+      message,
+      onUndo: () => {
+        if (restoreWith === 'add') addEvent(snapshot)
+        else updateEvent(snapshot)
+        setUndo(null)
+      },
+    })
+  }
 
   const title = buildTitle(view, currentDate)
 
@@ -85,8 +104,12 @@ export default function Agenda({
   const openEdit = (occ) => {
     setPopover(null)
     const original = events.find((e) => e.id === occ.eventId)
-    // Edit the specific instance's date/time while keeping the series identity.
-    if (original) setModal({ event: { ...original, start: occ.start, end: occ.end }, occ })
+    // Edit the specific instance's date/time/status while keeping the series
+    // identity — occ.status is the effective per-occurrence status, which may
+    // differ from the series' base status.
+    if (original) {
+      setModal({ event: { ...original, start: occ.start, end: occ.end, status: occ.status }, occ })
+    }
   }
 
   // Edit a base event straight from a list (whole series, no scope prompt).
@@ -96,18 +119,47 @@ export default function Agenda({
     setModal({ event })
   }
 
+  // Opens a standalone, one-off copy of the clicked occurrence in the modal —
+  // nothing is saved until the user clicks Salvar.
+  const handleDuplicate = (occ) => {
+    setPopover(null)
+    setModal({
+      event: {
+        title: `${occ.title} (cópia)`,
+        start: occ.start,
+        end: occ.end,
+        local: occ.local,
+        color: occ.color,
+        tags: occ.tags || [],
+        status: 'unconfirmed',
+        kind: occ.kind,
+        recurrence: 'none',
+        recurrenceDays: [],
+        recurrenceUntil: null,
+        isAula: occ.isAula,
+        faltasMax: occ.faltasMax,
+        occStatus: {},
+        exdates: [],
+        linkedIds: [],
+      },
+    })
+  }
+
   const handleSave = (data) => {
     const occ = modal?.occ
-    setModal(null)
     if (!data.id) {
       addEvent(data)
+      setModal(null)
       return
     }
     const event = events.find((e) => e.id === data.id)
     if (event && event.recurrence !== 'none' && occ) {
+      // Keep the modal open underneath the scope dialog — if the user cancels
+      // the scope choice, the form reappears exactly as they left it.
       setScopeAction({ kind: 'edit', occ, data })
     } else {
       updateEvent(data)
+      setModal(null)
     }
   }
 
@@ -123,20 +175,45 @@ export default function Agenda({
   const handleDelete = (occ) => {
     setPopover(null)
     const event = events.find((e) => e.id === occ.eventId)
-    if (event && event.recurrence !== 'none') {
+    if (!event) return
+    if (event.recurrence !== 'none') {
       setScopeAction({ kind: 'delete', occ })
     } else {
-      deleteEvent(occ.eventId)
+      setPendingDelete({ occ, event })
     }
+  }
+
+  const confirmDelete = () => {
+    if (!pendingDelete) return
+    const { occ, event } = pendingDelete
+    setPendingDelete(null)
+    deleteEvent(occ.eventId)
+    showUndo('Evento excluído.', event, 'add')
   }
 
   const applyScope = (scope) => {
     const a = scopeAction
     setScopeAction(null)
+    setModal(null)
     if (!a) return
     if (a.kind === 'move') moveOccurrence(a.occ, a.newStart, a.newEnd, scope)
-    else if (a.kind === 'delete') deleteOccurrence(a.occ, scope)
     else if (a.kind === 'edit') editOccurrence(a.occ, a.data, scope)
+    else if (a.kind === 'delete') {
+      const event = events.find((e) => e.id === a.occ.eventId)
+      // 'all', or 'following' from the series' very first occurrence, removes
+      // the event entirely — undo must recreate it, not update in place.
+      const removesEntirely =
+        scope === 'all' || (scope === 'following' && isSameDay(a.occ.start, event?.start))
+      deleteOccurrence(a.occ, scope)
+      if (event) showUndo('Evento excluído.', event, removesEntirely ? 'add' : 'update')
+    }
+  }
+
+  // Used by the Provas/Eventos/Aulas lists, which delete a whole event
+  // directly (no recurring-scope choice involved there).
+  const deleteFromList = (event) => {
+    deleteEvent(event.id)
+    showUndo('Evento excluído.', event, 'add')
   }
 
   const selectDay = (day) => {
@@ -181,6 +258,7 @@ export default function Agenda({
           rect={popover.rect}
           onClose={() => setPopover(null)}
           onEdit={openEdit}
+          onDuplicate={handleDuplicate}
           onDelete={handleDelete}
           onSetStatus={setOccurrenceStatus}
         />
@@ -206,11 +284,21 @@ export default function Agenda({
         />
       )}
 
+      {pendingDelete && (
+        <ConfirmDialog
+          title={`Excluir "${pendingDelete.event.title}"?`}
+          message="O evento será removido da agenda."
+          confirmLabel="Excluir"
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
       {openList === 'prova' && (
         <ProvasList
           events={events}
           onEdit={openEditEvent}
-          onDelete={(e) => deleteEvent(e.id)}
+          onDelete={deleteFromList}
           onClose={() => setOpenList(null)}
         />
       )}
@@ -220,9 +308,13 @@ export default function Agenda({
           mode={openList}
           events={events}
           onEdit={openEditEvent}
-          onDelete={(e) => deleteEvent(e.id)}
+          onDelete={deleteFromList}
           onClose={() => setOpenList(null)}
         />
+      )}
+
+      {undo && (
+        <UndoToast message={undo.message} onUndo={undo.onUndo} onDismiss={() => setUndo(null)} />
       )}
     </div>
   )

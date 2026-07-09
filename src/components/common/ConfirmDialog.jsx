@@ -25,7 +25,10 @@ export default function ConfirmDialog({
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
-      onClick={onCancel}
+      onClick={(e) => {
+        e.stopPropagation()
+        onCancel()
+      }}
     >
       <div
         className="w-[360px] rounded-xl border border-border bg-surface p-5"

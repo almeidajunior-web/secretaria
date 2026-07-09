@@ -7,6 +7,7 @@ import {
   OctagonAlert,
   Link2,
   Pencil,
+  Copy,
   Trash2,
 } from 'lucide-react'
 import { fmt } from '../../lib/date'
@@ -23,6 +24,7 @@ export default function EventPopover({
   rect,
   onClose,
   onEdit,
+  onDuplicate,
   onDelete,
   onSetStatus,
 }) {
@@ -122,7 +124,7 @@ export default function EventPopover({
         </div>
       </div>
 
-      <div className="mt-3 flex gap-2 border-t border-border pt-3">
+      <div className="mt-3 flex gap-1.5 border-t border-border pt-3">
         <button
           type="button"
           onClick={() => onEdit(occ)}
@@ -130,6 +132,14 @@ export default function EventPopover({
         >
           <Pencil size={13} />
           Editar
+        </button>
+        <button
+          type="button"
+          aria-label="Duplicar"
+          onClick={() => onDuplicate(occ)}
+          className="flex items-center justify-center rounded-md border border-border px-2.5 py-1.5 text-text-secondary hover:bg-accent-soft hover:text-primary"
+        >
+          <Copy size={14} />
         </button>
         <button
           type="button"

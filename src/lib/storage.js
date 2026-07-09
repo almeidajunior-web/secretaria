@@ -48,13 +48,21 @@ function serializeEvent(event) {
 
 export function loadEvents() {
   ensureSchema()
+  const raw = localStorage.getItem(KEYS.events)
+  if (!raw) return null
   try {
-    const raw = localStorage.getItem(KEYS.events)
-    if (!raw) return null
     const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return null
+    if (!Array.isArray(parsed)) throw new Error('not an array')
     return parsed.map(reviveEvent)
   } catch {
+    // Preserve the corrupted payload instead of letting the next saveEvents()
+    // silently overwrite it with seed data — gives a chance at manual
+    // recovery via devtools.
+    try {
+      localStorage.setItem(`${KEYS.events}:corrupted-backup`, raw)
+    } catch {
+      // best-effort; ignore a secondary storage failure
+    }
     return null
   }
 }

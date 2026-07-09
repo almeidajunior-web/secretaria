@@ -186,6 +186,7 @@ export function DayColumn({
   const colRef = useRef(null)
   const [createDrag, setCreateDrag] = useState(null) // { startMin, endMin }
   const [moveDrag, setMoveDrag] = useState(null) // { key, dx, dy, moved }
+  const [resizeDrag, setResizeDrag] = useState(null) // { key, previewHeight }
 
   const laid = layoutColumns(occurrencesForDay(events, day))
   const today = isSameDay(day, now)
@@ -258,6 +259,34 @@ export function DayColumn({
     window.addEventListener('mouseup', onUp)
   }
 
+  // Drag the bottom edge -> change duration (keeps start fixed).
+  const handleResizeMouseDown = (e, occ) => {
+    e.stopPropagation()
+    if (e.button !== 0) return
+    const key = `${occ.eventId}_${occ.occKey}`
+    const startMin = occ.start.getHours() * 60 + occ.start.getMinutes()
+    const originalEndMin = occ.end.getHours() * 60 + occ.end.getMinutes()
+    let endMin = originalEndMin
+
+    const onMoveEv = (ev) => {
+      const m = yToMinutes(colRef.current, ev.clientY)
+      endMin = Math.max(m, startMin + 15)
+      setResizeDrag({ key, previewHeight: Math.max((endMin - startMin) * (HOUR_HEIGHT / 60), 18) })
+    }
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMoveEv)
+      window.removeEventListener('mouseup', onUp)
+      setResizeDrag(null)
+      if (endMin === originalEndMin) return
+      const newEnd = new Date(occ.start)
+      newEnd.setHours(0, 0, 0, 0)
+      newEnd.setMinutes(endMin)
+      onMove(occ, occ.start, newEnd)
+    }
+    window.addEventListener('mousemove', onMoveEv)
+    window.addEventListener('mouseup', onUp)
+  }
+
   return (
     <div
       ref={colRef}
@@ -271,28 +300,37 @@ export function DayColumn({
         const { top, height } = eventRect(o.start, o.end)
         const key = `${o.eventId}_${o.occKey}`
         const isMoving = moveDrag && moveDrag.key === key
+        const isResizing = resizeDrag && resizeDrag.key === key
+        const effectiveHeight = isResizing ? resizeDrag.previewHeight : height
         return (
           <div
             key={key}
             className="absolute cursor-grab"
             style={{
               top,
-              height,
+              height: effectiveHeight,
               left: `${(o._col / o._cols) * 100}%`,
               width: `calc(${100 / o._cols}% - 3px)`,
               marginLeft: '1px',
               transform: isMoving ? `translate(${moveDrag.dx}px, ${moveDrag.dy}px)` : undefined,
-              zIndex: isMoving ? 40 : undefined,
+              zIndex: isMoving || isResizing ? 40 : undefined,
               pointerEvents: isMoving ? 'none' : undefined,
             }}
             onMouseDown={(e) => handleEventMouseDown(e, o)}
           >
             <EventCard
               occ={o}
-              height={height}
+              height={effectiveHeight}
               isPast={o.end < now}
               faltas={faltasByEvent[o.eventId] || 0}
             />
+            {height >= 38 && (
+              <div
+                title="Arrastar para redimensionar"
+                onMouseDown={(e) => handleResizeMouseDown(e, o)}
+                className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize"
+              />
+            )}
           </div>
         )
       })}

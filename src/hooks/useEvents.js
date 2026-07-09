@@ -1,6 +1,8 @@
+import { isSameDay } from 'date-fns'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { loadEvents, saveEvents } from '../lib/storage'
 import { buildSeedEvents } from '../data/seed'
+import { formatKey } from '../lib/recurrence'
 
 let nextId = 1
 function genId() {
@@ -53,6 +55,16 @@ function unlinkEverywhere(events, eventId) {
   )
 }
 
+// exdates/occStatus are keyed by 'yyyy-MM-dd' strings, which sort correctly as
+// plain strings — used to split a series' history at the point a "this and
+// following" edit/move splits it in two.
+const keysFrom = (arr, key) => (arr || []).filter((k) => k >= key)
+const keysBefore = (arr, key) => (arr || []).filter((k) => k < key)
+const entriesFrom = (obj, key) =>
+  Object.fromEntries(Object.entries(obj || {}).filter(([k]) => k >= key))
+const entriesBefore = (obj, key) =>
+  Object.fromEntries(Object.entries(obj || {}).filter(([k]) => k < key))
+
 // CRUD over the event collection with automatic persistence. Seeds example
 // data only when the store is empty.
 export function useEvents() {
@@ -103,15 +115,23 @@ export function useEvents() {
     setEvents((prev) => {
       const event = prev.find((e) => e.id === occ.eventId)
       if (!event) return prev
-      const delta = newStart.getTime() - occ.start.getTime()
+      // Shift start and end independently (not by a single shared delta) so a
+      // resize — start unchanged, only end moves — isn't silently ignored
+      // just because it coincides with a duration-preserving move.
+      const deltaStart = newStart.getTime() - occ.start.getTime()
+      const deltaEnd = newEnd.getTime() - occ.end.getTime()
+      // "This and following" from the series' very first occurrence covers
+      // every occurrence there is — apply in place, same as scope 'all',
+      // instead of splitting off a new series and leaving the old one empty.
+      const coversWholeSeries = scope === 'following' && isSameDay(occ.start, event.start)
 
-      if (event.recurrence === 'none' || scope === 'all') {
+      if (event.recurrence === 'none' || scope === 'all' || coversWholeSeries) {
         return prev.map((e) =>
           e.id === event.id
             ? {
                 ...e,
-                start: new Date(e.start.getTime() + delta),
-                end: new Date(e.end.getTime() + delta),
+                start: new Date(e.start.getTime() + deltaStart),
+                end: new Date(e.end.getTime() + deltaEnd),
                 recurrenceDays: shiftedDays(e, occ.start, newStart),
               }
             : e
@@ -130,13 +150,16 @@ export function useEvents() {
           start: newStart,
           end: newEnd,
         }
-        return prev
+        const withDetached = prev
           .map((e) =>
             e.id === event.id ? { ...e, exdates: [...(e.exdates || []), occ.occKey] } : e
           )
           .concat(detached)
+        return reconcileLinks(withDetached, detached.id, detached.linkedIds)
       }
       // 'following': close the current series and start a new one from here.
+      const until = dayBefore(occ.start)
+      const splitKey = formatKey(occ.start)
       const newSeries = {
         ...event,
         id: genId(),
@@ -144,12 +167,22 @@ export function useEvents() {
         end: newEnd,
         recurrenceDays: shiftedDays(event, occ.start, newStart),
         recurrenceUntil: event.recurrenceUntil || null,
-        exdates: [],
-        occStatus: {},
+        exdates: keysFrom(event.exdates, splitKey),
+        occStatus: entriesFrom(event.occStatus, splitKey),
       }
-      return prev
-        .map((e) => (e.id === event.id ? { ...e, recurrenceUntil: dayBefore(occ.start) } : e))
+      const withNewSeries = prev
+        .map((e) =>
+          e.id === event.id
+            ? {
+                ...e,
+                recurrenceUntil: until,
+                exdates: keysBefore(e.exdates, splitKey),
+                occStatus: entriesBefore(e.occStatus, splitKey),
+              }
+            : e
+        )
         .concat(newSeries)
+      return reconcileLinks(withNewSeries, newSeries.id, newSeries.linkedIds)
     })
   }, [])
 
@@ -181,17 +214,24 @@ export function useEvents() {
     setEvents((prev) => {
       const event = prev.find((e) => e.id === occ.eventId)
       if (!event) return prev
-      const delta = data.start.getTime() - occ.start.getTime()
+      // Shift start and end independently — see moveOccurrence for why a
+      // single shared delta silently drops end-only changes (resize).
+      const deltaStart = data.start.getTime() - occ.start.getTime()
+      const deltaEnd = data.end.getTime() - occ.end.getTime()
+      // "This and following" from the series' very first occurrence covers
+      // every occurrence there is — apply in place, same as scope 'all',
+      // instead of splitting off a new series and leaving the old one empty.
+      const coversWholeSeries = scope === 'following' && isSameDay(occ.start, event.start)
 
-      if (event.recurrence === 'none' || scope === 'all') {
+      if (event.recurrence === 'none' || scope === 'all' || coversWholeSeries) {
         return prev.map((e) =>
           e.id === event.id
             ? {
                 ...e,
                 ...data,
                 id: e.id,
-                start: new Date(e.start.getTime() + delta),
-                end: new Date(e.end.getTime() + delta),
+                start: new Date(e.start.getTime() + deltaStart),
+                end: new Date(e.end.getTime() + deltaEnd),
                 exdates: e.exdates || [],
                 occStatus: e.occStatus || {},
               }
@@ -209,24 +249,37 @@ export function useEvents() {
           exdates: [],
           occStatus: {},
         }
-        return prev
+        const withDetached = prev
           .map((e) =>
             e.id === event.id ? { ...e, exdates: [...(e.exdates || []), occ.occKey] } : e
           )
           .concat(detached)
+        return reconcileLinks(withDetached, detached.id, detached.linkedIds)
       }
       // 'following'
+      const until = dayBefore(occ.start)
+      const splitKey = formatKey(occ.start)
       const newSeries = {
         ...event,
         ...data,
         id: genId(),
-        exdates: [],
-        occStatus: {},
+        exdates: keysFrom(event.exdates, splitKey),
+        occStatus: entriesFrom(event.occStatus, splitKey),
         recurrenceUntil: event.recurrenceUntil || null,
       }
-      return prev
-        .map((e) => (e.id === event.id ? { ...e, recurrenceUntil: dayBefore(occ.start) } : e))
+      const withNewSeries = prev
+        .map((e) =>
+          e.id === event.id
+            ? {
+                ...e,
+                recurrenceUntil: until,
+                exdates: keysBefore(e.exdates, splitKey),
+                occStatus: entriesBefore(e.occStatus, splitKey),
+              }
+            : e
+        )
         .concat(newSeries)
+      return reconcileLinks(withNewSeries, newSeries.id, newSeries.linkedIds)
     })
   }, [])
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getDay } from 'date-fns'
 import { OctagonAlert } from 'lucide-react'
 import {
@@ -12,6 +12,7 @@ import { EVENT_COLORS, STATUSES, CLASSIFICATIONS } from '../../constants'
 import TagSelector from './TagSelector'
 import RecurrenceField from './RecurrenceField'
 import LinkedClassesField from './LinkedClassesField'
+import ConfirmDialog from '../common/ConfirmDialog'
 
 // Create/edit form. `initial` is a full event object (blank for new events,
 // populated for edits). Title is required.
@@ -41,19 +42,48 @@ export default function EventModal({
     initial.faltasMax == null ? '' : String(initial.faltasMax)
   )
   const [linkedIds, setLinkedIds] = useState(initial.linkedIds || [])
+  const [dirty, setDirty] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const mounted = useRef(false)
+
+  // Any field change after mount marks the form dirty, so closing without
+  // saving can warn instead of silently discarding work.
+  useEffect(() => {
+    if (mounted.current) setDirty(true)
+    else mounted.current = true
+  }, [
+    kind,
+    title,
+    start,
+    end,
+    local,
+    color,
+    tags,
+    recurrence,
+    recurrenceDays,
+    recurrenceUntil,
+    status,
+    faltasMax,
+    linkedIds,
+  ])
+
+  const requestClose = () => {
+    if (dirty) setConfirmDiscard(true)
+    else onClose()
+  }
 
   const isClass = kind === 'aula' || kind === 'prova'
   const isProva = kind === 'prova'
   const effRecurrence = isProva ? 'none' : recurrence
 
-  // Offer only current/upcoming classes for connection (a finished or past
-  // one-off class shouldn't clutter the picker). Already-linked items stay
-  // visible so they can be toggled off, even if past.
+  // Offer classes AND exams for connection (an exam counting toward its
+  // discipline's attendance is intentional). Finished one-off items are
+  // hidden unless already linked, so they stay visible to be unlinked.
   const linkCandidates = (events || []).filter(
     (e) =>
       e.id !== initial.id &&
-      ((e.kind === 'aula' && hasUpcomingOccurrence(e)) ||
-        (e.isAula && linkedIds.includes(e.id)))
+      (e.kind === 'aula' || e.kind === 'prova') &&
+      (hasUpcomingOccurrence(e) || linkedIds.includes(e.id))
   )
   const toggleLink = (id) =>
     setLinkedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
@@ -85,10 +115,13 @@ export default function EventModal({
     derivedFaltas >= Number(faltasMax)
 
   useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose()
+    const onKey = (e) => {
+      if (e.key !== 'Escape' || confirmDiscard) return // ConfirmDialog owns Escape while open
+      requestClose()
+    }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [dirty, confirmDiscard])
 
   const toggleTag = (tag) =>
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
@@ -142,7 +175,7 @@ export default function EventModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
+      onClick={requestClose}
     >
       <div
         className="thin-scroll max-h-[90vh] w-[440px] overflow-auto rounded-xl border border-border bg-surface p-5"
@@ -334,7 +367,7 @@ export default function EventModal({
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             className="rounded-md border border-border px-4 py-2 text-xs font-medium text-text-secondary hover:bg-accent-soft/50"
           >
             Cancelar
@@ -349,6 +382,16 @@ export default function EventModal({
           </button>
         </div>
       </div>
+
+      {confirmDiscard && (
+        <ConfirmDialog
+          title="Descartar alterações não salvas?"
+          message="As alterações feitas neste formulário serão perdidas."
+          confirmLabel="Descartar"
+          onConfirm={onClose}
+          onCancel={() => setConfirmDiscard(false)}
+        />
+      )}
     </div>
   )
 }
