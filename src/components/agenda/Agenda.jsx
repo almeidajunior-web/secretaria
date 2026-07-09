@@ -11,6 +11,7 @@ import {
 } from 'date-fns'
 import { fmt, capitalize, roundToHalfHour } from '../../lib/date'
 import { EVENT_COLORS } from '../../constants'
+import { useSwipeNavigation } from '../../hooks/useSwipeNavigation'
 import AgendaToolbar from './AgendaToolbar'
 import WeekView from './WeekView'
 import DayView from './DayView'
@@ -72,6 +73,9 @@ export default function Agenda({
   const handlePrev = () => onChangeDate(stepDate(view, currentDate, -1))
   const handleNext = () => onChangeDate(stepDate(view, currentDate, 1))
   const handleToday = () => onChangeDate(new Date())
+  // Two-finger trackpad swipe steps the period by whatever "one step" means
+  // for the current view — same unit the ◀ ▶ buttons use.
+  const onSwipeWheel = useSwipeNavigation(handlePrev, handleNext)
 
   const openCreate = (start, end) => {
     setPopover(null)
@@ -161,7 +165,7 @@ export default function Agenda({
         onOpenList={setOpenList}
       />
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden overscroll-x-contain" onWheel={onSwipeWheel}>
         {view === 'week' && <WeekView {...viewProps} />}
         {view === 'day' && <DayView {...viewProps} />}
         {view === 'month' && (
