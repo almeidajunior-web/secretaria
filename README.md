@@ -1,8 +1,8 @@
 # Secretar.ia
 
-Plataforma pessoal modular. Esta etapa entrega o **módulo Agenda**, com a
-arquitetura já preparada para receber os módulos futuros (Tarefas, Finanças,
-Planejamento).
+Plataforma pessoal modular. Esta etapa entrega os módulos **Agenda** e
+**Planejamento**, com a arquitetura já preparada para receber os módulos
+futuros (Tarefas, Finanças).
 
 ## Stack
 
@@ -41,6 +41,16 @@ npm run preview
 - Mini-calendário na barra lateral e navegação entre módulos
 - Tema claro/noturno persistente
 
+## Funcionalidades do módulo Planejamento
+
+- Grade semanal fixa (Segunda–Domingo × 6h–23h) representando a rotina padrão
+  do usuário, sem vínculo com datas do calendário
+- Pintura de células por "pincel": selecione uma categoria e clique ou
+  arraste sobre as células para colori-las; opção de borracha para limpar
+- Categorias totalmente editáveis (nome e cor), com 9 categorias padrão
+  pré-cadastradas
+- Excluir uma categoria em uso limpa automaticamente as células associadas
+
 ## Publicar online
 
 O projeto é uma SPA estática (sem backend) e já está pronto para deploy. O
@@ -75,11 +85,12 @@ extra é necessária.
 ```
 src/
   lib/        # storage (persistência), date e recurrence (helpers)
-  hooks/      # useTheme, useEvents
+  hooks/      # useTheme, useEvents, usePlanning
   components/
     layout/   # Sidebar, Topbar, MiniCalendar
     agenda/   # Agenda e suas visões, card, popover e modal
-  data/       # eventos de exemplo (seed)
+    planning/ # Planejamento: grade, paleta de categorias e gerenciador
+  data/       # eventos de exemplo (seed) e categorias padrão do Planejamento
   constants.js
 ```
 

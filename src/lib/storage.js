@@ -6,6 +6,7 @@ const KEYS = {
   events: 'secretaria:events',
   tags: 'secretaria:tags',
   theme: 'secretaria:theme',
+  planning: 'secretaria:planning',
   schemaVersion: 'secretaria:schemaVersion',
 }
 
@@ -86,6 +87,25 @@ export function loadTags() {
 
 export function saveTags(tags) {
   localStorage.setItem(KEYS.tags, JSON.stringify(tags))
+}
+
+export function loadPlanning() {
+  try {
+    const raw = localStorage.getItem(KEYS.planning)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    return {
+      categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+      grid: parsed.grid && typeof parsed.grid === 'object' ? parsed.grid : {},
+    }
+  } catch {
+    return null
+  }
+}
+
+export function savePlanning(planning) {
+  localStorage.setItem(KEYS.planning, JSON.stringify(planning))
 }
 
 export function loadTheme() {

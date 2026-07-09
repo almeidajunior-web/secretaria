@@ -3,19 +3,22 @@ import { Construction } from 'lucide-react'
 import { useTheme } from './hooks/useTheme'
 import { useEvents } from './hooks/useEvents'
 import { useTags } from './hooks/useTags'
+import { usePlanning } from './hooks/usePlanning'
 import Topbar from './components/layout/Topbar'
 import Sidebar from './components/layout/Sidebar'
 import Agenda from './components/agenda/Agenda'
+import Planejamento from './components/planning/Planejamento'
 
 // Application shell: top bar + sidebar + active module area. Module routing is
-// kept in local state so future modules (Tarefas, Finanças, Planejamento) can be
-// dropped in without restructuring.
+// kept in local state so future modules (Tarefas, Finanças) can be dropped in
+// without restructuring.
 export default function App() {
   const { theme, toggleTheme } = useTheme()
   const eventsApi = useEvents()
   // Seed the tag list from tags already present on the events (first run only).
   const seedTags = [...new Set(eventsApi.events.flatMap((e) => e.tags || []))]
   const tagsApi = useTags(seedTags)
+  const planningApi = usePlanning()
   const [activeModule, setActiveModule] = useState('agenda')
   const [currentDate, setCurrentDate] = useState(() => new Date())
 
@@ -45,6 +48,8 @@ export default function App() {
               onCreateTag={tagsApi.addTag}
               onDeleteTag={handleDeleteTag}
             />
+          ) : activeModule === 'planning' ? (
+            <Planejamento {...planningApi} />
           ) : (
             <ModulePlaceholder module={activeModule} />
           )}
@@ -57,7 +62,6 @@ export default function App() {
 const MODULE_NAMES = {
   todos: 'Tarefas',
   finance: 'Finanças',
-  planning: 'Planejamento',
 }
 
 function ModulePlaceholder({ module }) {
