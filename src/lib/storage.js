@@ -95,9 +95,22 @@ export function loadPlanning() {
     if (!raw) return null
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return null
+    // Grid cell values used to be bare category-id strings; migrate them to
+    // { categoryId } objects so existing painted routines survive the switch
+    // to per-window descriptions.
+    const rawGrid = parsed.grid && typeof parsed.grid === 'object' ? parsed.grid : {}
+    const grid = Object.fromEntries(
+      Object.entries(rawGrid).map(([key, value]) => [
+        key,
+        typeof value === 'string' ? { categoryId: value } : value,
+      ])
+    )
     return {
       categories: Array.isArray(parsed.categories) ? parsed.categories : [],
-      grid: parsed.grid && typeof parsed.grid === 'object' ? parsed.grid : {},
+      grid,
+      splits: parsed.splits && typeof parsed.splits === 'object' ? parsed.splits : {},
+      hourStart: typeof parsed.hourStart === 'number' ? parsed.hourStart : undefined,
+      hourEnd: typeof parsed.hourEnd === 'number' ? parsed.hourEnd : undefined,
     }
   } catch {
     return null

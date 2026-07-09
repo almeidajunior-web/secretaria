@@ -3,6 +3,12 @@
 // no way to guess someone's actual routine.
 // Colors are drawn from EVENT_COLORS (src/constants.js) so every default
 // category also shows as "selected" in the manager's color swatch picker.
+// Own hour-range defaults, deliberately not shared with constants.js'
+// HOUR_START/HOUR_END (Agenda's grid) — Planejamento's range is independently
+// user-configurable.
+export const DEFAULT_HOUR_START = 6
+export const DEFAULT_HOUR_END = 23
+
 export const PLANNING_SEED_CATEGORIES = [
   { id: 'rotina', label: 'Rotina', color: '#7C3AED' },
   { id: 'trabalho', label: 'Trabalho', color: '#2563EB' },

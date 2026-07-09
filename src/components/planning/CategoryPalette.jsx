@@ -1,11 +1,14 @@
 import { Eraser, Settings } from 'lucide-react'
+import { reorderIds } from '../../lib/reorderList'
 
 export const ERASER = '__eraser__'
 
 // Brush selector + legend: click a category to arm it as the active brush,
-// then click/drag cells in the grid to paint them. Also exposes an eraser
-// brush and an entry point to the category manager.
-export default function CategoryPalette({ categories, activeBrush, onSelectBrush, onManageClick }) {
+// then click/drag cells in the grid to paint them. Chips are also
+// hold-and-drag reorderable (native HTML5 drag-and-drop — a plain click
+// without movement still just arms the brush). Also exposes an eraser brush
+// and an entry point to the settings modal.
+export default function CategoryPalette({ categories, activeBrush, onSelectBrush, onReorder, onManageClick }) {
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
       {categories.map((cat) => {
@@ -14,9 +17,19 @@ export default function CategoryPalette({ categories, activeBrush, onSelectBrush
           <button
             key={cat.id}
             type="button"
+            draggable
+            onDragStart={(e) => e.dataTransfer.setData('text/plain', cat.id)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault()
+              const draggedId = e.dataTransfer.getData('text/plain')
+              if (draggedId && draggedId !== cat.id) {
+                onReorder(reorderIds(categories.map((c) => c.id), draggedId, cat.id))
+              }
+            }}
             onClick={() => onSelectBrush(cat.id)}
             className={[
-              'inline-flex items-center gap-1.5 rounded-full border py-1 pl-1.5 pr-3 text-xs font-medium transition',
+              'inline-flex cursor-grab items-center gap-1.5 rounded-full border py-1 pl-1.5 pr-3 text-xs font-medium transition active:cursor-grabbing',
               selected
                 ? 'border-primary bg-accent-soft text-primary'
                 : 'border-border text-text-secondary hover:border-border-strong',
@@ -52,7 +65,7 @@ export default function CategoryPalette({ categories, activeBrush, onSelectBrush
       <button
         type="button"
         onClick={onManageClick}
-        aria-label="Gerenciar categorias"
+        aria-label="Configurações"
         className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-text-muted hover:bg-accent-soft/50 hover:text-primary"
       >
         <Settings size={15} />

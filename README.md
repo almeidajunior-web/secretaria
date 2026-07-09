@@ -43,13 +43,18 @@ npm run preview
 
 ## Funcionalidades do módulo Planejamento
 
-- Grade semanal fixa (Segunda–Domingo × 6h–23h) representando a rotina padrão
-  do usuário, sem vínculo com datas do calendário
+- Grade semanal fixa (Segunda–Domingo, faixa de horário configurável)
+  representando a rotina padrão do usuário, sem vínculo com datas do
+  calendário
 - Pintura de células por "pincel": selecione uma categoria e clique ou
   arraste sobre as células para colori-las; opção de borracha para limpar
-- Categorias totalmente editáveis (nome e cor), com 9 categorias padrão
-  pré-cadastradas
+- Categorias totalmente editáveis (nome, cor e ordem — arraste para
+  reordenar), com 9 categorias padrão pré-cadastradas
 - Excluir uma categoria em uso limpa automaticamente as células associadas
+- Clique com o botão direito numa célula preenchida para dividi-la em dois
+  blocos de 30 min (ou uni-los de volta) e para adicionar uma descrição em
+  texto livre a essa janela
+- Faixa de horário da grade (início/fim) configurável nas Configurações
 
 ## Publicar online
 
