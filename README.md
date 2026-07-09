@@ -1,7 +1,7 @@
 # Secretar.ia
 
 Plataforma pessoal modular. Esta etapa entrega o **módulo Agenda**, com a
-arquitetura já preparada para receber os módulos futuros (To Dos, Finanças,
+arquitetura já preparada para receber os módulos futuros (Tarefas, Finanças,
 Planejamento).
 
 ## Stack

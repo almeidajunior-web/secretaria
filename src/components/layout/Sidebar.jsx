@@ -3,9 +3,9 @@ import MiniCalendar from './MiniCalendar'
 
 const MODULES = [
   { id: 'agenda', label: 'Agenda', icon: CalendarDays },
-  { id: 'todos', label: 'To Dos', icon: CircleCheck },
-  { id: 'finance', label: 'Finanças', icon: Wallet },
   { id: 'planning', label: 'Planejamento', icon: LayoutDashboard },
+  { id: 'todos', label: 'Tarefas', icon: CircleCheck },
+  { id: 'finance', label: 'Finanças', icon: Wallet },
 ]
 
 // 220px left rail: mini calendar on top, module navigation below.

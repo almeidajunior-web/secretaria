@@ -99,8 +99,8 @@ function DayHeader({ day, now }) {
       <div className="flex gap-1">
         <QuickLink
           icon={CircleCheck}
-          label="To Dos"
-          onClick={() => alert(`Navegar para To Dos — ${fmt(day, 'dd/MM')}`)}
+          label="Tarefas"
+          onClick={() => alert(`Navegar para Tarefas — ${fmt(day, 'dd/MM')}`)}
         />
         <QuickLink
           icon={Wallet}

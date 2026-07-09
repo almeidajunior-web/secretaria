@@ -8,7 +8,7 @@ import Sidebar from './components/layout/Sidebar'
 import Agenda from './components/agenda/Agenda'
 
 // Application shell: top bar + sidebar + active module area. Module routing is
-// kept in local state so future modules (To Dos, Finanças, Planejamento) can be
+// kept in local state so future modules (Tarefas, Finanças, Planejamento) can be
 // dropped in without restructuring.
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -55,7 +55,7 @@ export default function App() {
 }
 
 const MODULE_NAMES = {
-  todos: 'To Dos',
+  todos: 'Tarefas',
   finance: 'Finanças',
   planning: 'Planejamento',
 }

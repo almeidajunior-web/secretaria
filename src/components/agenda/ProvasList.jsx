@@ -1,14 +1,13 @@
 import { Fragment, useState } from 'react'
 import { differenceInCalendarDays } from 'date-fns'
-import { ArrowUp, ArrowDown, Layers, Eye, EyeOff, Trash2 } from 'lucide-react'
+import { Layers, Eye, EyeOff, Trash2 } from 'lucide-react'
 import { fmt } from '../../lib/date'
-import ListModal, { Segmented, ToggleChip } from './ListModal'
+import ListModal, { ToggleChip } from './ListModal'
 import ConfirmDialog from '../common/ConfirmDialog'
 
-// List of exams (Provas) with sorting, discipline grouping, show/hide finished,
-// and click-to-edit. Finished exams are struck through.
+// List of exams (Provas), always soonest-first, with discipline grouping,
+// show/hide finished, and click-to-edit. Finished exams are struck through.
 export default function ProvasList({ events, onEdit, onDelete, onClose }) {
-  const [sortDir, setSortDir] = useState('asc')
   const [groupBy, setGroupBy] = useState(false)
   const [showFinished, setShowFinished] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)
@@ -25,8 +24,8 @@ export default function ProvasList({ events, onEdit, onDelete, onClose }) {
   }
 
   const all = events.filter((e) => e.kind === 'prova')
-  const visible = (showFinished ? all : all.filter((p) => !isFinished(p))).sort((a, b) =>
-    sortDir === 'asc' ? a.start - b.start : b.start - a.start
+  const visible = (showFinished ? all : all.filter((p) => !isFinished(p))).sort(
+    (a, b) => a.start - b.start
   )
 
   const groups = []
@@ -56,14 +55,6 @@ export default function ProvasList({ events, onEdit, onDelete, onClose }) {
 
   const controls = (
     <>
-      <Segmented
-        value={sortDir}
-        onChange={setSortDir}
-        options={[
-          { value: 'asc', label: 'Mais próximas', icon: ArrowUp },
-          { value: 'desc', label: 'Mais distantes', icon: ArrowDown },
-        ]}
-      />
       <ToggleChip active={groupBy} icon={Layers} onClick={() => setGroupBy((v) => !v)}>
         Agrupar por disciplina
       </ToggleChip>
