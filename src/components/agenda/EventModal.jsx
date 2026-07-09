@@ -147,7 +147,11 @@ export default function EventModal({
     }
   }
 
-  const canSave = title.trim().length > 0
+  // Guards against saving an inverted range (e.g. picking the wrong day for
+  // "Fim") — nothing else in the data model catches this, and it silently
+  // produces nonsensical negative/zero durations downstream.
+  const datesValid = fromInputValue(end) > fromInputValue(start)
+  const canSave = title.trim().length > 0 && datesValid
 
   const handleSave = () => {
     if (!canSave) return
@@ -238,6 +242,9 @@ export default function EventModal({
               />
             </Field>
           </div>
+          {!datesValid && (
+            <p className="-mt-3 text-[11px] text-danger">O fim deve ser depois do início.</p>
+          )}
 
           <Field label="Cor">
             <div className="flex flex-wrap gap-2">
