@@ -1,7 +1,8 @@
 import { getDay } from 'date-fns'
 import { isSameDay, GRID_HEIGHT } from '../../lib/date'
 import { WEEKDAYS_SHORT } from '../../constants'
-import { useNow, useFaltas, HourGutter, GridLines, DayColumn } from './WeekView'
+import { useNow } from '../../hooks/useNow'
+import { useFaltas, HourGutter, GridLines, DayColumn } from './WeekView'
 
 // Single-day grid. Reuses the week grid's column, gutter and now-line so the
 // two views stay visually identical.

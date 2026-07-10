@@ -87,6 +87,7 @@ export default function Planejamento({
       {settingsOpen && (
         <PlanningSettingsModal
           categories={categories}
+          grid={grid}
           onAdd={addCategory}
           onUpdate={updateCategory}
           onDelete={deleteCategory}

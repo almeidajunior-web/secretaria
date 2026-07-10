@@ -1,8 +1,20 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react'
 import { StickyNote } from 'lucide-react'
 import { HOUR_HEIGHT, WEEKDAYS_SHORT_ORDERED } from '../../constants'
+import { weekdayOrder } from '../../lib/date'
 import { cellKey } from '../../lib/planningGrid'
+import { useNow } from '../../hooks/useNow'
 import { ERASER } from './CategoryPalette'
+
+// Returns the vertical position (0-100%) for the "now" line within the given
+// window, or null if `now` doesn't fall inside it (wrong day/hour/half).
+function nowLineTop(nowRef, day, hour, half) {
+  if (!nowRef || nowRef.day !== day || nowRef.hour !== hour) return null
+  if (half == null) return (nowRef.minute / 60) * 100
+  const inHalf = half === 0 ? nowRef.minute < 30 : nowRef.minute >= 30
+  if (!inHalf) return null
+  return ((nowRef.minute % 30) / 30) * 100
+}
 
 // Fixed weekly routine grid (Monday–Sunday x hourStart–hourEnd, independently
 // configurable from Agenda's own hour range). Cells are painted with the
@@ -22,6 +34,13 @@ export default function PlanningGrid({
   onOpenWindowMenu,
   onOpenDescription,
 }) {
+  const now = useNow()
+  const nowRef = useMemo(() => {
+    const hour = now.getHours()
+    if (hour < hourStart || hour > hourEnd) return null
+    return { day: weekdayOrder(now), hour, minute: now.getMinutes() }
+  }, [now, hourStart, hourEnd])
+
   const isPaintingRef = useRef(false)
   // Set on mousedown when the eraser lands on a described window; any
   // mouseenter (i.e. the gesture turned into a drag) invalidates it so the
@@ -125,6 +144,7 @@ export default function PlanningGrid({
                     onMouseEnter={handleMouseEnter}
                     onOpenWindowMenu={onOpenWindowMenu}
                     onOpenDescription={onOpenDescription}
+                    nowTop={nowLineTop(nowRef, day, h, undefined)}
                   />
                 )
               }
@@ -147,6 +167,7 @@ export default function PlanningGrid({
                     onMouseEnter={handleMouseEnter}
                     onOpenWindowMenu={onOpenWindowMenu}
                     onOpenDescription={onOpenDescription}
+                    nowTop={nowLineTop(nowRef, day, h, 0)}
                     skipRightBorder
                   />
                   <Window
@@ -161,6 +182,7 @@ export default function PlanningGrid({
                     onMouseEnter={handleMouseEnter}
                     onOpenWindowMenu={onOpenWindowMenu}
                     onOpenDescription={onOpenDescription}
+                    nowTop={nowLineTop(nowRef, day, h, 30)}
                     skipRightBorder
                   />
                 </div>
@@ -185,6 +207,7 @@ function Window({
   onMouseEnter,
   onOpenWindowMenu,
   onOpenDescription,
+  nowTop,
   skipRightBorder,
 }) {
   const cat = entry?.categoryId ? categoryById[entry.categoryId] : null
@@ -210,6 +233,19 @@ function Window({
       ].join(' ')}
       style={{ height, backgroundColor: cat?.color }}
     >
+      {nowTop != null && (
+        <div
+          className="pointer-events-none absolute left-0 right-0 z-20"
+          style={{ top: `${nowTop}%` }}
+        >
+          <div className="h-[2px] w-full bg-white" style={{ boxShadow: '0 0 0 1px rgba(0,0,0,0.55)' }} />
+          <div
+            className="absolute -left-0.5 -top-[3px] h-2 w-2 rounded-full bg-white"
+            style={{ boxShadow: '0 0 0 1px rgba(0,0,0,0.55)' }}
+          />
+        </div>
+      )}
+
       {entry?.description && (
         <>
           <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden w-max max-w-[220px] -translate-x-1/2 whitespace-pre-wrap rounded-md bg-black/85 px-2 py-1 text-[11px] leading-snug text-white group-hover:block">

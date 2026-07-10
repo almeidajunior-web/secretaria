@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Plus, X, Trash2, Check, GripVertical } from 'lucide-react'
 import { EVENT_COLORS } from '../../constants'
 import { reorderIds } from '../../lib/reorderList'
+import { categoryHours } from '../../lib/planningGrid'
 import ConfirmDialog from '../common/ConfirmDialog'
 
 const inputClass =
@@ -9,11 +10,19 @@ const inputClass =
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h)
 
+// Formats a decimal hour count as "12h" or "12h30" — the grid only ever
+// produces whole or half hours, so no generic minute math is needed.
+function formatHours(h) {
+  const whole = Math.floor(h)
+  return h % 1 !== 0 ? `${whole}h30` : `${whole}h`
+}
+
 // Planejamento settings: hour range, reorderable categories (add/edit/color/
 // delete). Hour-range and category-delete edits that would discard existing
 // grid data are confirmed first.
 export default function PlanningSettingsModal({
   categories,
+  grid,
   onAdd,
   onUpdate,
   onDelete,
@@ -28,6 +37,10 @@ export default function PlanningSettingsModal({
   const [pendingRange, setPendingRange] = useState(null)
   const [creating, setCreating] = useState(false)
   const [newLabel, setNewLabel] = useState('')
+
+  const hours = categoryHours(grid)
+  const totalPainted = Object.values(hours).reduce((sum, h) => sum + h, 0)
+  const totalAvailable = (hourEnd - hourStart + 1) * 7
 
   const confirmCreate = () => {
     const l = newLabel.trim()
@@ -95,11 +108,17 @@ export default function PlanningSettingsModal({
           </div>
         </div>
 
+        <p className="mb-2 text-[11px] text-text-secondary">
+          Resumo da semana: <span className="font-medium text-text">{formatHours(totalPainted)}</span>{' '}
+          pintadas de {formatHours(totalAvailable)} disponíveis
+        </p>
+
         <div className="flex flex-col gap-3">
           {categories.map((cat) => (
             <CategoryRow
               key={cat.id}
               category={cat}
+              hours={hours[cat.id] || 0}
               onUpdate={(patch) => onUpdate(cat.id, patch)}
               onDeleteClick={() => setPendingDelete(cat)}
               onDropCategory={(draggedId) =>
@@ -180,7 +199,7 @@ export default function PlanningSettingsModal({
   )
 }
 
-function CategoryRow({ category, onUpdate, onDeleteClick, onDropCategory }) {
+function CategoryRow({ category, hours, onUpdate, onDeleteClick, onDropCategory }) {
   const [label, setLabel] = useState(category.label)
 
   const commitLabel = () => {
@@ -215,6 +234,11 @@ function CategoryRow({ category, onUpdate, onDeleteClick, onDropCategory }) {
           onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
           className={inputClass}
         />
+        {hours > 0 && (
+          <span className="shrink-0 text-[11px] font-medium text-text-muted">
+            {formatHours(hours)}
+          </span>
+        )}
         <button
           type="button"
           onClick={onDeleteClick}

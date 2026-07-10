@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { getDay } from 'date-fns'
 import { CircleCheck, Wallet } from 'lucide-react'
 import {
@@ -19,6 +19,7 @@ import {
   HOUR_END,
   HOUR_HEIGHT,
 } from '../../constants'
+import { useNow } from '../../hooks/useNow'
 import EventCard from './EventCard'
 
 // Seven-day grid: sticky header with per-day quick links, time gutter, and one
@@ -58,15 +59,6 @@ export default function WeekView({ currentDate, events, onCreateRange, onEventCl
       </div>
     </div>
   )
-}
-
-export function useNow() {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 60000)
-    return () => clearInterval(t)
-  }, [])
-  return now
 }
 
 // Derived absence count per class event (recomputed when events or time change).
