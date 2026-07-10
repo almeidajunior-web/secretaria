@@ -202,7 +202,7 @@ function Window({
         onOpenWindowMenu({ day, hour, half, rect: e.currentTarget.getBoundingClientRect() })
       }}
       className={[
-        'relative border-b',
+        'group relative border-b',
         skipRightBorder ? '' : 'border-r',
         'border-border',
         activeBrush != null ? 'cursor-pointer' : 'cursor-default',
@@ -211,18 +211,23 @@ function Window({
       style={{ height, backgroundColor: cat?.color }}
     >
       {entry?.description && (
-        <button
-          type="button"
-          aria-label="Ver descrição"
-          onMouseDown={(e) => {
-            e.stopPropagation()
-            onOpenDescription({ day, hour, half })
-          }}
-          onContextMenu={(e) => e.stopPropagation()}
-          className="absolute bottom-0.5 right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-black/45 text-white"
-        >
-          <StickyNote size={9} />
-        </button>
+        <>
+          <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden w-max max-w-[220px] -translate-x-1/2 whitespace-pre-wrap rounded-md bg-black/85 px-2 py-1 text-[11px] leading-snug text-white group-hover:block">
+            {entry.description}
+          </div>
+          <button
+            type="button"
+            aria-label="Ver descrição"
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              onOpenDescription({ day, hour, half })
+            }}
+            onContextMenu={(e) => e.stopPropagation()}
+            className="absolute bottom-0.5 right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/45 text-white"
+          >
+            <StickyNote size={12} />
+          </button>
+        </>
       )}
     </div>
   )

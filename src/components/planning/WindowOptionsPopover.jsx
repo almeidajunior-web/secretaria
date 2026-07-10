@@ -52,7 +52,7 @@ export default function WindowOptionsPopover({
         </MenuButton>
       ) : (
         <MenuButton icon={SplitSquareHorizontal} onClick={onSplit}>
-          Dividir em blocos de 30 min
+          Dividir bloco
         </MenuButton>
       )}
       <MenuButton icon={FileText} onClick={onDescription}>
