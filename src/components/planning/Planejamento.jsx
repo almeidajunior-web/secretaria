@@ -63,6 +63,7 @@ export default function Planejamento({
 
       <CategoryPalette
         categories={categories}
+        grid={grid}
         activeBrush={activeBrush}
         onSelectBrush={setActiveBrush}
         onReorder={reorderCategories}
@@ -87,7 +88,6 @@ export default function Planejamento({
       {settingsOpen && (
         <PlanningSettingsModal
           categories={categories}
-          grid={grid}
           onAdd={addCategory}
           onUpdate={updateCategory}
           onDelete={deleteCategory}

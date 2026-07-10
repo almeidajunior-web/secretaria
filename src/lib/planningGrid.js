@@ -23,3 +23,10 @@ export function categoryHours(grid) {
   }
   return hours
 }
+
+// Formats a decimal hour count as "12h" or "12h30" — the grid only ever
+// produces whole or half hours, so no generic minute math is needed.
+export function formatHours(h) {
+  const whole = Math.floor(h)
+  return h % 1 !== 0 ? `${whole}h30` : `${whole}h`
+}

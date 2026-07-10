@@ -1,5 +1,6 @@
 import { Eraser, Settings } from 'lucide-react'
 import { reorderIds } from '../../lib/reorderList'
+import { categoryHours, formatHours } from '../../lib/planningGrid'
 
 export const ERASER = '__eraser__'
 
@@ -7,12 +8,16 @@ export const ERASER = '__eraser__'
 // then click/drag cells in the grid to paint them. Chips are also
 // hold-and-drag reorderable (native HTML5 drag-and-drop — a plain click
 // without movement still just arms the brush). Also exposes an eraser brush
-// and an entry point to the settings modal.
-export default function CategoryPalette({ categories, activeBrush, onSelectBrush, onReorder, onManageClick }) {
+// and an entry point to the settings modal. Each chip shows its current
+// weekly total ("Categoria • 12h") once it has any time painted.
+export default function CategoryPalette({ categories, grid, activeBrush, onSelectBrush, onReorder, onManageClick }) {
+  const hours = categoryHours(grid)
+
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
       {categories.map((cat) => {
         const selected = activeBrush === cat.id
+        const catHours = hours[cat.id] || 0
         return (
           <button
             key={cat.id}
@@ -44,6 +49,7 @@ export default function CategoryPalette({ categories, activeBrush, onSelectBrush
               }}
             />
             {cat.label}
+            {catHours > 0 && <span className="opacity-70">{' • '}{formatHours(catHours)}</span>}
           </button>
         )
       })}
