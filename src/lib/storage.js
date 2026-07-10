@@ -7,6 +7,9 @@ const KEYS = {
   tags: 'secretaria:tags',
   theme: 'secretaria:theme',
   planning: 'secretaria:planning',
+  tasks: 'secretaria:tasks',
+  taskPriorities: 'secretaria:taskPriorities',
+  taskTags: 'secretaria:taskTags',
   schemaVersion: 'secretaria:schemaVersion',
 }
 
@@ -119,6 +122,53 @@ export function loadPlanning() {
 
 export function savePlanning(planning) {
   localStorage.setItem(KEYS.planning, JSON.stringify(planning))
+}
+
+// Tasks have no Date objects — dueDate/dueTime/recurrenceUntil are plain
+// 'yyyy-MM-dd'/'HH:mm' strings, so no revive/serialize step is needed.
+export function loadTasks() {
+  try {
+    const raw = localStorage.getItem(KEYS.tasks)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveTasks(tasks) {
+  localStorage.setItem(KEYS.tasks, JSON.stringify(tasks))
+}
+
+export function loadTaskPriorities() {
+  try {
+    const raw = localStorage.getItem(KEYS.taskPriorities)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveTaskPriorities(priorities) {
+  localStorage.setItem(KEYS.taskPriorities, JSON.stringify(priorities))
+}
+
+export function loadTaskTags() {
+  try {
+    const raw = localStorage.getItem(KEYS.taskTags)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveTaskTags(tags) {
+  localStorage.setItem(KEYS.taskTags, JSON.stringify(tags))
 }
 
 export function loadTheme() {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getDay } from 'date-fns'
 import { OctagonAlert } from 'lucide-react'
 import {
@@ -9,8 +9,8 @@ import {
 } from '../../lib/date'
 import { computeFaltas, hasUpcomingOccurrence } from '../../lib/recurrence'
 import { EVENT_COLORS, STATUSES, CLASSIFICATIONS } from '../../constants'
-import TagSelector from './TagSelector'
-import RecurrenceField from './RecurrenceField'
+import TagSelector from '../common/TagSelector'
+import RecurrenceField from '../common/RecurrenceField'
 import LinkedClassesField from './LinkedClassesField'
 import ConfirmDialog from '../common/ConfirmDialog'
 
@@ -42,30 +42,26 @@ export default function EventModal({
     initial.faltasMax == null ? '' : String(initial.faltasMax)
   )
   const [linkedIds, setLinkedIds] = useState(initial.linkedIds || [])
-  const [dirty, setDirty] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
-  const mounted = useRef(false)
 
-  // Any field change after mount marks the form dirty, so closing without
-  // saving can warn instead of silently discarding work.
-  useEffect(() => {
-    if (mounted.current) setDirty(true)
-    else mounted.current = true
-  }, [
-    kind,
-    title,
-    start,
-    end,
-    local,
-    color,
-    tags,
-    recurrence,
-    recurrenceDays,
-    recurrenceUntil,
-    status,
-    faltasMax,
-    linkedIds,
-  ])
+  // Compared directly against `initial` on every render (not an effect-based
+  // "did something change since mount" flag) — that pattern breaks under
+  // StrictMode's dev-only double effect invocation, which flips it to dirty
+  // immediately even with zero edits.
+  const dirty =
+    kind !== (initial.kind || (initial.isAula ? 'aula' : 'event')) ||
+    title !== (initial.title || '') ||
+    start !== toInputValue(initial.start) ||
+    end !== toInputValue(initial.end) ||
+    local !== (initial.local || '') ||
+    color !== (initial.color || EVENT_COLORS[0]) ||
+    JSON.stringify(tags) !== JSON.stringify(initial.tags || []) ||
+    recurrence !== (initial.recurrence || 'none') ||
+    JSON.stringify(recurrenceDays) !== JSON.stringify(initial.recurrenceDays || []) ||
+    recurrenceUntil !== (initial.recurrenceUntil ? toDateInput(initial.recurrenceUntil) : '') ||
+    status !== (initial.status || 'unconfirmed') ||
+    faltasMax !== (initial.faltasMax == null ? '' : String(initial.faltasMax)) ||
+    JSON.stringify(linkedIds) !== JSON.stringify(initial.linkedIds || [])
 
   const requestClose = () => {
     if (dirty) setConfirmDiscard(true)

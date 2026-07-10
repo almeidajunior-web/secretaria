@@ -1,8 +1,8 @@
 # Secretar.ia
 
-Plataforma pessoal modular. Esta etapa entrega os módulos **Agenda** e
-**Planejamento**, com a arquitetura já preparada para receber os módulos
-futuros (Tarefas, Finanças).
+Plataforma pessoal modular. Esta etapa entrega os módulos **Agenda**,
+**Planejamento** e **Tarefas**, com a arquitetura já preparada para receber o
+módulo futuro de Finanças.
 
 ## Stack
 
@@ -56,6 +56,24 @@ npm run preview
   texto livre a essa janela
 - Faixa de horário da grade (início/fim) configurável nas Configurações
 
+## Funcionalidades do módulo Tarefas
+
+- Duas visualizações — **Lista** e **Kanban** (colunas fixas: Pendente, Em
+  Progresso, Finalizada, Congelada) — com os mesmos filtros e ordenação
+  compartilhados entre as duas
+- Ordenação hierárquica: clique em "Prazo", "Prioridade" ou "Status" na
+  barra de ferramentas para empilhar critérios (1º clique define o
+  principal, 2º clique em outro campo adiciona um critério secundário)
+- Prioridades totalmente customizáveis (nome, cor e ordem — arraste para
+  reordenar) e tags próprias do módulo, independentes da Agenda
+- Recorrência no mesmo padrão da Agenda, mas orientada a data (sem
+  horário/duração obrigatórios) — completar uma tarefa recorrente avança o
+  prazo para o próximo ciclo em vez de criar uma tarefa nova; se o prazo
+  vencer sem conclusão, a tarefa avança sozinha para a próxima ocorrência
+- Kanban com arraste de cards entre colunas para mudar o status
+- Criação via modal ("Nova tarefa") ou direto na lista, numa linha rápida
+  sem abrir pop-up — título, prazo e prioridade opcionais ali mesmo
+
 ## Publicar online
 
 O projeto é uma SPA estática (sem backend) e já está pronto para deploy. O
@@ -90,12 +108,15 @@ extra é necessária.
 ```
 src/
   lib/        # storage (persistência), date e recurrence (helpers)
-  hooks/      # useTheme, useEvents, usePlanning
+  hooks/      # useTheme, useEvents, usePlanning, useTasks e afins
   components/
     layout/   # Sidebar, Topbar, MiniCalendar
+    common/   # componentes compartilhados entre módulos (TagSelector,
+              # RecurrenceField, ConfirmDialog)
     agenda/   # Agenda e suas visões, card, popover e modal
     planning/ # Planejamento: grade, paleta de categorias e gerenciador
-  data/       # eventos de exemplo (seed) e categorias padrão do Planejamento
+    tasks/    # Tarefas: lista, kanban, modal e gerenciador de prioridades
+  data/       # dados de exemplo (seed) de cada módulo
   constants.js
 ```
 

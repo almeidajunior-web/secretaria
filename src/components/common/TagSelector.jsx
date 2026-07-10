@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus, X, Check } from 'lucide-react'
-import ConfirmDialog from '../common/ConfirmDialog'
+import ConfirmDialog from './ConfirmDialog'
 
 // Tag picker with inline creation and deletion. Tags are user-defined: click a
 // tag to (de)select it for the event, the "x" deletes it everywhere, and "+"
