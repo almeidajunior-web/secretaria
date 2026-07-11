@@ -1,8 +1,8 @@
 # Secretar.ia
 
 Plataforma pessoal modular. Esta etapa entrega os módulos **Agenda**,
-**Planejamento**, **Tarefas** e **Compras**, com a barra lateral já preparada
-para os módulos futuros de **Vencimentos** e **Finanças** (hoje "Em
+**Planejamento**, **Tarefas**, **Compras** e **Vencimentos**, com a barra
+lateral já preparada para o módulo futuro de **Finanças** (hoje "Em
 construção").
 
 ## Stack
@@ -52,7 +52,8 @@ npm run preview
 - Recorrência: diária, semanal, quinzenal, mensal, anual e dias úteis
 - Cada dia da visão semanal tem atalhos "Tarefas" e "Venc." (ícone de boleto,
   para diferenciar do lançamento de gastos/receitas do futuro módulo
-  Finanças) — "Tarefas" abre o módulo Tarefas já filtrado para aquele dia
+  Finanças) — cada um abre o módulo correspondente (Tarefas/Vencimentos) já
+  filtrado para aquele dia
 - Mini-calendário na barra lateral e navegação entre módulos
 - Tema claro/noturno persistente
 
@@ -94,6 +95,35 @@ npm run preview
   confirmação — lista pensada para ser rápida e de baixo atrito
 - Item marcado como comprado é removido automaticamente no dia seguinte
   (silenciosamente, sem aviso), mantendo a lista sempre enxuta
+
+## Funcionalidades do módulo Vencimentos
+
+- Centraliza contas a pagar (consumo, assinaturas, aluguel, mensalidades)
+  com valor e data de vencimento — lista sempre agrupada por vencimento
+  (Atrasadas, Hoje, Amanhã, Próximos 7 dias, Mais tarde), já que aqui a data
+  é o centro da organização, diferente do agrupamento opcional de Compras
+- Resumo com totais no topo (pendente no mês, pago no mês, atrasado) —
+  refletem o valor real independente do filtro "ocultar pagas"
+- Recorrência própria e mais simples que a da Agenda/Tarefas (Mensal,
+  Bimestral, Trimestral, Semestral, Anual, baseada no dia do vencimento);
+  ao marcar uma conta recorrente como paga, ela **não** avança no próprio
+  registro como em Tarefas — em vez disso, fica marcada como paga (histórico
+  permanente, útil para consultar quanto foi pago em cada mês) e uma nova
+  conta pendente nasce automaticamente para o próximo ciclo, já com o valor
+  anterior como sugestão editável (útil para contas de valor variável, como
+  água e luz)
+- Uma conta atrasada e não paga nunca avança sozinha — diferente de
+  Tarefas, aqui isso esconderia uma conta ainda pendente
+- Classificação editável (nome, cor e ordem) e filtro/ordenação por
+  Classificação, Valor ou Vencimento
+- Ícone de círculo à esquerda de cada conta marca paga/pendente, com o
+  mesmo efeito de risco usado em Tarefas/Compras
+- Criação via linha rápida no rodapé da lista ou pelo botão "Nova conta" no
+  topbar (modal, mesmo padrão do "Novo item"/"Nova tarefa")
+- Modo de seleção em massa: atribua Classificação, marque como paga/
+  pendente ou exclua várias contas de uma vez; exclusão sempre imediata,
+  sem confirmação
+- Badge na barra lateral com o total de contas atrasadas + vencendo hoje
 
 ## Funcionalidades do módulo Tarefas
 
@@ -167,17 +197,20 @@ extra é necessária.
 src/
   lib/        # storage (persistência), date e recurrence (helpers)
   hooks/      # useTheme, useEvents, usePlanning, useTasks, useShoppingItems,
-              # useModulesConfig...
+              # useBills, useModulesConfig...
   components/
     layout/   # Sidebar, Topbar, MiniCalendar, ModulesSettingsModal
     common/   # componentes compartilhados entre módulos (TagSelector,
-              # RecurrenceField, ConfirmDialog, EditableListSection)
+              # RecurrenceField, ConfirmDialog, EditableListSection,
+              # DescriptionPopover)
     agenda/   # Agenda e suas visões, card, popover e modal
     planning/ # Planejamento: grade, paleta de categorias e gerenciador
     tasks/    # Tarefas: lista, kanban, modal e configurações
               # (prioridades, tags e status)
     shopping/ # Compras: lista, toolbar e configurações
               # (classificações e prioridades)
+    dues/     # Vencimentos: lista, toolbar, modal e configurações
+              # (classificações)
   data/       # dados de exemplo (seed) de cada módulo, modules.js (registro
               # central de módulos)
   constants.js

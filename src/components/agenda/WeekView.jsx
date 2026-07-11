@@ -108,7 +108,11 @@ function DayHeader({ day, now, onOpenTasksForDay, onOpenDues }) {
           label="Tarefas"
           onClick={() => onOpenTasksForDay(fmt(day, 'yyyy-MM-dd'))}
         />
-        <QuickLink icon={Receipt} label="Venc." onClick={onOpenDues} />
+        <QuickLink
+          icon={Receipt}
+          label="Venc."
+          onClick={() => onOpenDues(fmt(day, 'yyyy-MM-dd'))}
+        />
       </div>
     </div>
   )

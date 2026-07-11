@@ -15,6 +15,8 @@ const KEYS = {
   shoppingItems: 'secretaria:shoppingItems',
   shoppingCategories: 'secretaria:shoppingCategories',
   shoppingPriorities: 'secretaria:shoppingPriorities',
+  bills: 'secretaria:bills',
+  billCategories: 'secretaria:billCategories',
   schemaVersion: 'secretaria:schemaVersion',
 }
 
@@ -271,6 +273,38 @@ export function loadShoppingPriorities() {
 
 export function saveShoppingPriorities(priorities) {
   localStorage.setItem(KEYS.shoppingPriorities, JSON.stringify(priorities))
+}
+
+// Bills have no Date objects — dueDate/paidDate are plain 'yyyy-MM-dd'
+// strings, same convention as Tarefas' dueDate.
+export function loadBills() {
+  try {
+    const raw = localStorage.getItem(KEYS.bills)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveBills(bills) {
+  localStorage.setItem(KEYS.bills, JSON.stringify(bills))
+}
+
+export function loadBillCategories() {
+  try {
+    const raw = localStorage.getItem(KEYS.billCategories)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveBillCategories(categories) {
+  localStorage.setItem(KEYS.billCategories, JSON.stringify(categories))
 }
 
 export function loadTheme() {
