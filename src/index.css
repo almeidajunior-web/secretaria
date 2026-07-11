@@ -71,3 +71,14 @@ body {
 .thin-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Hide the native up/down stepper on number inputs (Vencimentos' Valor,
+   Agenda's faltas máximas) — never useful for currency or small counts. */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
