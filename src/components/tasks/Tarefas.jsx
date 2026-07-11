@@ -26,12 +26,13 @@ function filterTasks(tasks, filters, { applyHideFinished, doneStatusIds }) {
   return tasks.filter((t) => {
     if (filters.priorityIds.length && !filters.priorityIds.includes(t.priorityId)) return false
     if (filters.tags.length && !filters.tags.some((tagId) => t.tagIds?.includes(tagId))) return false
+    if (filters.dueDate && t.dueDate !== filters.dueDate) return false
     if (applyHideFinished && filters.hideFinished && doneStatusIds.has(t.status)) return false
     return true
   })
 }
 
-const DEFAULT_FILTERS = { priorityIds: [], tags: [], hideFinished: true }
+const DEFAULT_FILTERS = { priorityIds: [], tags: [], hideFinished: true, dueDate: null }
 
 // Tarefas module: list + kanban views over one task collection, sharing the
 // same filter/hierarchical-sort state. Fully independent from Agenda and
@@ -58,13 +59,22 @@ export default function Tarefas({
   setStatusDone,
   onDeleteStatus,
   reorderStatuses,
+  initialDateFilter,
 }) {
   const [view, setView] = useState('list')
   const [sortChain, setSortChain] = useState([{ field: 'dueDate', direction: 'asc' }])
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  // Seeded once at mount — Tarefas remounts fresh every time App.jsx switches
+  // the active module to 'todos' (it isn't rendered otherwise), so this is
+  // enough to pick up a date passed in from Agenda's per-day "Tarefas" link.
+  const [filters, setFilters] = useState(() =>
+    initialDateFilter ? { ...DEFAULT_FILTERS, dueDate: initialDateFilter } : DEFAULT_FILTERS
+  )
   const [modalTask, setModalTask] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)
+  const [pendingBulkDelete, setPendingBulkDelete] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
 
   const doneStatusIds = useMemo(
     () => new Set(statuses.filter((s) => s.isDone).map((s) => s.id)),
@@ -92,6 +102,22 @@ export default function Tarefas({
     })
   }
 
+  const setDateFilter = (dueDate) => setFilters((prev) => ({ ...prev, dueDate: dueDate || null }))
+
+  const toggleSelectMode = () => {
+    setSelectMode((v) => !v)
+    setSelectedIds(new Set())
+  }
+
+  const toggleSelectTask = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   const priorityRank = useMemo(() => rankMap(priorities), [priorities])
   const statusRank = useMemo(() => rankMap(statuses), [statuses])
   const comparator = useMemo(
@@ -104,6 +130,35 @@ export default function Tarefas({
     [tasks, filters, view, doneStatusIds]
   )
   const sortedTasks = useMemo(() => [...visibleTasks].sort(comparator), [visibleTasks, comparator])
+
+  const selectAllVisible = () => setSelectedIds(new Set(sortedTasks.map((t) => t.id)))
+  const clearSelection = () => setSelectedIds(new Set())
+
+  // Bulk actions reuse the same single-task mutators as the rest of the
+  // module (status change keeps the recurrence-rollover behavior; tags are
+  // additive — "assign a tag" never removes one a task already has).
+  const bulkSetDueDate = (dueDate) => {
+    selectedIds.forEach((id) => updateTask({ id, dueDate: dueDate || null }))
+  }
+  const bulkSetPriority = (priorityId) => {
+    selectedIds.forEach((id) => updateTask({ id, priorityId: priorityId || null }))
+  }
+  const bulkSetStatus = (statusId) => {
+    selectedIds.forEach((id) => setTaskStatus(id, statusId))
+  }
+  const bulkAddTag = (tagId) => {
+    selectedIds.forEach((id) => {
+      const t = tasks.find((x) => x.id === id)
+      if (t && !(t.tagIds || []).includes(tagId)) {
+        updateTask({ id, tagIds: [...(t.tagIds || []), tagId] })
+      }
+    })
+  }
+  const bulkDelete = () => {
+    selectedIds.forEach((id) => deleteTask(id))
+    setPendingBulkDelete(false)
+    toggleSelectMode()
+  }
 
   const openCreate = () => setModalTask(blankTask(statuses))
   const openEdit = (task) => setModalTask(task)
@@ -127,12 +182,25 @@ export default function Tarefas({
         onToggleSort={toggleSort}
         filters={filters}
         onToggleFilter={toggleFilter}
+        onSetDateFilter={setDateFilter}
         onToggleHideFinished={() => setFilters((f) => ({ ...f, hideFinished: !f.hideFinished }))}
         onClearFilters={() => setFilters(DEFAULT_FILTERS)}
         priorities={priorities}
         tags={tags}
+        statuses={statuses}
         onNew={openCreate}
         onManageClick={() => setSettingsOpen(true)}
+        selectMode={selectMode}
+        onToggleSelectMode={toggleSelectMode}
+        selectedCount={selectedIds.size}
+        onSelectAll={selectAllVisible}
+        onClearSelection={clearSelection}
+        onBulkSetDueDate={bulkSetDueDate}
+        onBulkSetPriority={bulkSetPriority}
+        onBulkSetStatus={bulkSetStatus}
+        onBulkAddTag={bulkAddTag}
+        onCreateTag={onCreateTag}
+        onBulkDeleteClick={() => setPendingBulkDelete(true)}
       />
 
       <TaskSummaryBar tasks={visibleTasks} statuses={statuses} doneStatusIds={doneStatusIds} />
@@ -151,6 +219,9 @@ export default function Tarefas({
             onUpdateTask={updateTask}
             onCreateTag={onCreateTag}
             onQuickAdd={handleQuickAdd}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelectTask}
           />
         ) : (
           <TaskKanbanView
@@ -217,6 +288,16 @@ export default function Tarefas({
             setPendingDelete(null)
           }}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {pendingBulkDelete && (
+        <ConfirmDialog
+          title={`Excluir ${selectedIds.size} tarefa${selectedIds.size > 1 ? 's' : ''}?`}
+          message="Esta ação não pode ser desfeita."
+          confirmLabel="Excluir"
+          onConfirm={bulkDelete}
+          onCancel={() => setPendingBulkDelete(false)}
         />
       )}
     </div>

@@ -64,6 +64,8 @@ export default function Agenda({
   allTags,
   onCreateTag,
   onDeleteTag,
+  onNavigateToTasks,
+  onNavigateToDues,
 }) {
   const [view, setView] = useState('week')
   const [modal, setModal] = useState(null) // { event, occ? }
@@ -243,7 +245,13 @@ export default function Agenda({
       />
 
       <div className="flex-1 overflow-hidden overscroll-x-contain" onWheel={onSwipeWheel}>
-        {view === 'week' && <WeekView {...viewProps} />}
+        {view === 'week' && (
+          <WeekView
+            {...viewProps}
+            onOpenTasksForDay={onNavigateToTasks}
+            onOpenDues={onNavigateToDues}
+          />
+        )}
         {view === 'day' && <DayView {...viewProps} />}
         {view === 'month' && (
           <MonthView currentDate={currentDate} events={events} onSelectDay={selectDay} />

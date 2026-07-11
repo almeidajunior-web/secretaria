@@ -9,11 +9,16 @@ import { useTasks } from './hooks/useTasks'
 import { useTaskPriorities } from './hooks/useTaskPriorities'
 import { useTaskTags } from './hooks/useTaskTags'
 import { useTaskStatuses } from './hooks/useTaskStatuses'
+import { useModulesConfig } from './hooks/useModulesConfig'
+import { MODULE_DEFS } from './data/modules'
 import Topbar from './components/layout/Topbar'
 import Sidebar from './components/layout/Sidebar'
+import ModulesSettingsModal from './components/layout/ModulesSettingsModal'
 import Agenda from './components/agenda/Agenda'
 import Planejamento from './components/planning/Planejamento'
 import Tarefas from './components/tasks/Tarefas'
+
+const MODULE_NAMES = Object.fromEntries(MODULE_DEFS.map((m) => [m.id, m.label]))
 
 // Application shell: top bar + sidebar + active module area. Module routing is
 // kept in local state so future modules (Finanças) can be dropped in without
@@ -29,8 +34,24 @@ export default function App() {
   const tasksApi = useTasks(taskStatusesApi.statuses)
   const taskPrioritiesApi = useTaskPriorities()
   const taskTagsApi = useTaskTags()
+  const modulesConfigApi = useModulesConfig()
   const [activeModule, setActiveModule] = useState('agenda')
   const [currentDate, setCurrentDate] = useState(() => new Date())
+  const [modulesSettingsOpen, setModulesSettingsOpen] = useState(false)
+  // Set only by the Agenda's per-day "Tarefas" quick link — seeds Tarefas'
+  // date filter the moment it mounts. Manual sidebar navigation always
+  // clears it first, so a stale date never leaks into a later visit.
+  const [taskDateFilter, setTaskDateFilter] = useState(null)
+
+  const handleSelectModule = (id) => {
+    setActiveModule(id)
+    setTaskDateFilter(null)
+  }
+
+  const handleOpenTasksForDate = (dateStr) => {
+    setTaskDateFilter(dateStr)
+    setActiveModule('todos')
+  }
 
   // Deleting a tag removes it from the managed list and from every event.
   const handleDeleteTag = (tag) => {
@@ -70,10 +91,13 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           activeModule={activeModule}
-          onSelectModule={setActiveModule}
+          onSelectModule={handleSelectModule}
           currentDate={currentDate}
           onSelectDate={setCurrentDate}
           badges={{ todos: overdueOrTodayCount }}
+          moduleOrder={modulesConfigApi.order}
+          hiddenModules={modulesConfigApi.hidden}
+          onOpenSettings={() => setModulesSettingsOpen(true)}
         />
         <main className="flex-1 overflow-hidden">
           {activeModule === 'agenda' ? (
@@ -84,6 +108,8 @@ export default function App() {
               allTags={tagsApi.tags}
               onCreateTag={tagsApi.addTag}
               onDeleteTag={handleDeleteTag}
+              onNavigateToTasks={handleOpenTasksForDate}
+              onNavigateToDues={() => handleSelectModule('vencimentos')}
             />
           ) : activeModule === 'planning' ? (
             <Planejamento {...planningApi} />
@@ -110,18 +136,25 @@ export default function App() {
               setStatusDone={taskStatusesApi.setStatusDone}
               onDeleteStatus={handleDeleteTaskStatus}
               reorderStatuses={taskStatusesApi.reorderStatuses}
+              initialDateFilter={taskDateFilter}
             />
           ) : (
             <ModulePlaceholder module={activeModule} />
           )}
         </main>
       </div>
+
+      {modulesSettingsOpen && (
+        <ModulesSettingsModal
+          order={modulesConfigApi.order}
+          hidden={modulesConfigApi.hidden}
+          onReorder={modulesConfigApi.reorderModules}
+          onToggleVisibility={modulesConfigApi.toggleModuleVisibility}
+          onClose={() => setModulesSettingsOpen(false)}
+        />
+      )}
     </div>
   )
-}
-
-const MODULE_NAMES = {
-  finance: 'Finanças',
 }
 
 function ModulePlaceholder({ module }) {

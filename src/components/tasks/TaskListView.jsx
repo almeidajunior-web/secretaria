@@ -21,6 +21,9 @@ export default function TaskListView({
   onUpdateTask,
   onCreateTag,
   onQuickAdd,
+  selectMode,
+  selectedIds,
+  onToggleSelect,
 }) {
   const priorityById = Object.fromEntries(priorities.map((p) => [p.id, p]))
   const groups = groupTasksByDueDate(tasks)
@@ -52,6 +55,9 @@ export default function TaskListView({
                   onSetStatus={(status) => onSetStatus(task.id, status)}
                   onUpdateTask={onUpdateTask}
                   onCreateTag={onCreateTag}
+                  selectMode={selectMode}
+                  selected={selectedIds?.has(task.id)}
+                  onToggleSelect={() => onToggleSelect(task.id)}
                 />
               ))}
             </div>
@@ -76,6 +82,9 @@ function TaskRow({
   onSetStatus,
   onUpdateTask,
   onCreateTag,
+  selectMode,
+  selected,
+  onToggleSelect,
 }) {
   const overdue = isOverdue(task, doneStatusIds)
   const finished = doneStatusIds.has(task.status)
@@ -98,6 +107,16 @@ function TaskRow({
       onClick={onEdit}
       className="flex cursor-pointer items-center gap-2 border-b border-border px-4 py-2 hover:bg-accent-soft/30"
     >
+      {selectMode && (
+        <input
+          type="checkbox"
+          checked={!!selected}
+          onClick={(e) => e.stopPropagation()}
+          onChange={onToggleSelect}
+          className="h-3.5 w-3.5 shrink-0"
+        />
+      )}
+
       <select
         value={task.status}
         onClick={(e) => e.stopPropagation()}

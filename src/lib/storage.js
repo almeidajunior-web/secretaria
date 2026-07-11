@@ -11,6 +11,7 @@ const KEYS = {
   taskPriorities: 'secretaria:taskPriorities',
   taskTags: 'secretaria:taskTags',
   taskStatuses: 'secretaria:taskStatuses',
+  modulesConfig: 'secretaria:modulesConfig',
   schemaVersion: 'secretaria:schemaVersion',
 }
 
@@ -191,6 +192,25 @@ export function loadTaskStatuses() {
 
 export function saveTaskStatuses(statuses) {
   localStorage.setItem(KEYS.taskStatuses, JSON.stringify(statuses))
+}
+
+export function loadModulesConfig() {
+  try {
+    const raw = localStorage.getItem(KEYS.modulesConfig)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    return {
+      order: Array.isArray(parsed.order) ? parsed.order : [],
+      hidden: Array.isArray(parsed.hidden) ? parsed.hidden : [],
+    }
+  } catch {
+    return null
+  }
+}
+
+export function saveModulesConfig(config) {
+  localStorage.setItem(KEYS.modulesConfig, JSON.stringify(config))
 }
 
 export function loadTheme() {

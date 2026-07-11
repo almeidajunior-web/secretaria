@@ -1,17 +1,27 @@
-import { CalendarDays, CircleCheck, Wallet, LayoutDashboard } from 'lucide-react'
+import { Settings } from 'lucide-react'
+import { MODULE_DEFS } from '../../data/modules'
 import MiniCalendar from './MiniCalendar'
-
-const MODULES = [
-  { id: 'agenda', label: 'Agenda', icon: CalendarDays },
-  { id: 'planning', label: 'Planejamento', icon: LayoutDashboard },
-  { id: 'todos', label: 'Tarefas', icon: CircleCheck },
-  { id: 'finance', label: 'Finanças', icon: Wallet },
-]
 
 // 220px left rail: mini calendar on top, module navigation below. `badges`
 // is an optional { [moduleId]: count } map — e.g. Tarefas' overdue+today
-// count — rendered as a small pill next to the module label.
-export default function Sidebar({ activeModule, onSelectModule, currentDate, onSelectDate, badges = {} }) {
+// count — rendered as a subtle outlined counter next to the module label.
+// `moduleOrder`/`hiddenModules` (from useModulesConfig) control which
+// modules show up and in what order; a fixed "Configurações" entry below
+// the list opens the modal that edits both.
+export default function Sidebar({
+  activeModule,
+  onSelectModule,
+  currentDate,
+  onSelectDate,
+  badges = {},
+  moduleOrder,
+  hiddenModules,
+  onOpenSettings,
+}) {
+  const modules = moduleOrder
+    .map((id) => MODULE_DEFS.find((m) => m.id === id))
+    .filter((m) => m && !hiddenModules.includes(m.id))
+
   return (
     <aside className="flex w-[220px] shrink-0 flex-col border-r border-border bg-sidebar p-3">
       <MiniCalendar currentDate={currentDate} onSelectDate={onSelectDate} />
@@ -23,7 +33,7 @@ export default function Sidebar({ activeModule, onSelectModule, currentDate, onS
       </p>
 
       <nav className="flex flex-col gap-0.5">
-        {MODULES.map(({ id, label, icon: Icon }) => {
+        {modules.map(({ id, label, icon: Icon }) => {
           const active = id === activeModule
           const badge = badges[id]
           return (
@@ -41,7 +51,7 @@ export default function Sidebar({ activeModule, onSelectModule, currentDate, onS
               <Icon size={16} className={active ? 'text-primary' : 'text-text-muted'} />
               {label}
               {badge > 0 && (
-                <span className="ml-auto flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+                <span className="ml-auto flex h-[18px] min-w-[18px] items-center justify-center rounded border border-border-strong px-1 text-[13px] font-medium leading-none text-text-secondary">
                   {badge}
                 </span>
               )}
@@ -49,6 +59,19 @@ export default function Sidebar({ activeModule, onSelectModule, currentDate, onS
           )
         })}
       </nav>
+
+      <div className="mt-auto pt-2">
+        <div className="border-t border-border pt-2">
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-text-secondary transition-colors hover:bg-accent-soft/60 hover:text-text"
+          >
+            <Settings size={16} className="text-text-muted" />
+            Configurações
+          </button>
+        </div>
+      </div>
     </aside>
   )
 }

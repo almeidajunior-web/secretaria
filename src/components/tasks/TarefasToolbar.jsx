@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowUp, ArrowDown, Filter, Settings, Eye, EyeOff } from 'lucide-react'
+import { ArrowUp, ArrowDown, Filter, Settings, Eye, EyeOff, ListChecks, Trash2, X } from 'lucide-react'
+import TagPickerPopover from './TagPickerPopover'
 
 const SORT_FIELDS = [
   { field: 'dueDate', label: 'Prazo' },
@@ -9,7 +10,8 @@ const SORT_FIELDS = [
 
 // View toggle, hierarchical sort chips, filter popover and the "Nova Tarefa"
 // entry point (opens the full modal — see Tarefas.jsx's inline quick-add row
-// in the list for the no-modal creation path).
+// in the list for the no-modal creation path). While `selectMode` is active
+// (list view only) the sort/filter controls give way to a bulk-actions bar.
 export default function TarefasToolbar({
   view,
   onChangeView,
@@ -17,15 +19,49 @@ export default function TarefasToolbar({
   onToggleSort,
   filters,
   onToggleFilter,
+  onSetDateFilter,
   onToggleHideFinished,
   onClearFilters,
   priorities,
   tags,
+  statuses,
   onNew,
   onManageClick,
+  selectMode,
+  onToggleSelectMode,
+  selectedCount,
+  onSelectAll,
+  onClearSelection,
+  onBulkSetDueDate,
+  onBulkSetPriority,
+  onBulkSetStatus,
+  onBulkAddTag,
+  onCreateTag,
+  onBulkDeleteClick,
 }) {
   const [filterOpen, setFilterOpen] = useState(false)
-  const activeFilterCount = filters.priorityIds.length + filters.tags.length
+  const activeFilterCount =
+    filters.priorityIds.length + filters.tags.length + (filters.dueDate ? 1 : 0)
+
+  if (selectMode) {
+    return (
+      <BulkActionsBar
+        selectedCount={selectedCount}
+        onSelectAll={onSelectAll}
+        onClearSelection={onClearSelection}
+        priorities={priorities}
+        statuses={statuses}
+        tags={tags}
+        onBulkSetDueDate={onBulkSetDueDate}
+        onBulkSetPriority={onBulkSetPriority}
+        onBulkSetStatus={onBulkSetStatus}
+        onBulkAddTag={onBulkAddTag}
+        onCreateTag={onCreateTag}
+        onBulkDeleteClick={onBulkDeleteClick}
+        onCancel={onToggleSelectMode}
+      />
+    )
+  }
 
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-surface px-4 py-2.5">
@@ -98,6 +134,7 @@ export default function TarefasToolbar({
         onOpenChange={setFilterOpen}
         filters={filters}
         onToggleFilter={onToggleFilter}
+        onSetDateFilter={onSetDateFilter}
         onClearFilters={onClearFilters}
         priorities={priorities}
         tags={tags}
@@ -113,6 +150,16 @@ export default function TarefasToolbar({
         >
           <Settings size={15} />
         </button>
+        {view === 'list' && (
+          <button
+            type="button"
+            onClick={onToggleSelectMode}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:border-border-strong"
+          >
+            <ListChecks size={13} />
+            Selecionar
+          </button>
+        )}
         <button
           type="button"
           onClick={onNew}
@@ -125,11 +172,127 @@ export default function TarefasToolbar({
   )
 }
 
+// Replaces the sort/filter controls while bulk-selecting: pick a value in
+// any field to apply it to every selected task immediately (same
+// apply-on-change pattern as the list row's inline editors).
+function BulkActionsBar({
+  selectedCount,
+  onSelectAll,
+  onClearSelection,
+  priorities,
+  statuses,
+  tags,
+  onBulkSetDueDate,
+  onBulkSetPriority,
+  onBulkSetStatus,
+  onBulkAddTag,
+  onCreateTag,
+  onBulkDeleteClick,
+  onCancel,
+}) {
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-accent-soft/40 px-4 py-2.5">
+      <span className="text-xs font-semibold text-text">
+        {selectedCount} selecionada{selectedCount !== 1 ? 's' : ''}
+      </span>
+      <button
+        type="button"
+        onClick={onSelectAll}
+        className="text-[11px] font-medium text-primary hover:underline"
+      >
+        Selecionar todas
+      </button>
+      <button
+        type="button"
+        onClick={onClearSelection}
+        className="text-[11px] font-medium text-text-secondary hover:underline"
+      >
+        Limpar seleção
+      </button>
+
+      <div className="mx-1 h-5 w-px bg-border" />
+
+      <input
+        type="date"
+        onChange={(e) => e.target.value && onBulkSetDueDate(e.target.value)}
+        disabled={selectedCount === 0}
+        className="w-32 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary disabled:opacity-50"
+      />
+
+      <select
+        defaultValue=""
+        onChange={(e) => {
+          if (e.target.value) onBulkSetPriority(e.target.value)
+          e.target.value = ''
+        }}
+        disabled={selectedCount === 0}
+        className="w-32 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary disabled:opacity-50"
+      >
+        <option value="" disabled>
+          Prioridade
+        </option>
+        {priorities.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.label}
+          </option>
+        ))}
+      </select>
+
+      <select
+        defaultValue=""
+        onChange={(e) => {
+          if (e.target.value) onBulkSetStatus(e.target.value)
+          e.target.value = ''
+        }}
+        disabled={selectedCount === 0}
+        className="w-32 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary disabled:opacity-50"
+      >
+        <option value="" disabled>
+          Status
+        </option>
+        {statuses.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.label}
+          </option>
+        ))}
+      </select>
+
+      <TagPickerPopover
+        tags={tags}
+        selectedIds={[]}
+        onToggle={onBulkAddTag}
+        onCreate={onCreateTag}
+        triggerClassName="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border-strong bg-surface px-2 py-1 text-[11px] font-medium text-text-secondary hover:border-primary hover:text-primary"
+      />
+
+      <button
+        type="button"
+        onClick={onBulkDeleteClick}
+        disabled={selectedCount === 0}
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted hover:bg-danger/15 hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label="Excluir selecionadas"
+      >
+        <Trash2 size={14} />
+      </button>
+
+      <button
+        type="button"
+        onClick={onCancel}
+        className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:border-border-strong"
+      >
+        <X size={13} />
+        Cancelar
+      </button>
+    </div>
+  )
+}
+
 function FilterPopover({
   open,
   onOpenChange,
   filters,
   onToggleFilter,
+  onSetDateFilter,
   onClearFilters,
   priorities,
   tags,
@@ -165,6 +328,27 @@ function FilterPopover({
 
       {open && (
         <div className="absolute left-0 top-full z-50 mt-1.5 w-64 rounded-xl border border-border bg-surface p-3 shadow-lg">
+          <FilterSection label="Data">
+            <div className="flex w-full items-center gap-1.5">
+              <input
+                type="date"
+                value={filters.dueDate || ''}
+                onChange={(e) => onSetDateFilter(e.target.value || null)}
+                className="w-full rounded-md border border-border-strong bg-surface px-2 py-1 text-[11px] text-text outline-none focus:border-primary"
+              />
+              {filters.dueDate && (
+                <button
+                  type="button"
+                  onClick={() => onSetDateFilter(null)}
+                  aria-label="Limpar filtro de data"
+                  className="shrink-0 text-text-muted hover:text-text"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </FilterSection>
+
           <FilterSection label="Prioridade">
             {priorities.map((p) => (
               <FilterChip

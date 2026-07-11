@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { getDay } from 'date-fns'
-import { CircleCheck, Wallet } from 'lucide-react'
+import { CircleCheck, Receipt } from 'lucide-react'
 import {
   getWeekDays,
   eventRect,
@@ -25,7 +25,15 @@ import EventCard from './EventCard'
 // Seven-day grid: sticky header with per-day quick links, time gutter, and one
 // column per day with positioned events. Supports drag-to-create and drag-to-
 // move.
-export default function WeekView({ currentDate, events, onCreateRange, onEventClick, onMove }) {
+export default function WeekView({
+  currentDate,
+  events,
+  onCreateRange,
+  onEventClick,
+  onMove,
+  onOpenTasksForDay,
+  onOpenDues,
+}) {
   const days = getWeekDays(currentDate)
   const now = useNow()
   const faltasByEvent = useFaltas(events, now)
@@ -35,7 +43,13 @@ export default function WeekView({ currentDate, events, onCreateRange, onEventCl
       <div className="sticky top-0 z-20 flex border-b border-border bg-surface">
         <div className="w-[52px] shrink-0" />
         {days.map((day) => (
-          <DayHeader key={day.toISOString()} day={day} now={now} />
+          <DayHeader
+            key={day.toISOString()}
+            day={day}
+            now={now}
+            onOpenTasksForDay={onOpenTasksForDay}
+            onOpenDues={onOpenDues}
+          />
         ))}
       </div>
 
@@ -72,7 +86,7 @@ export function useFaltas(events, now) {
   }, [events, now])
 }
 
-function DayHeader({ day, now }) {
+function DayHeader({ day, now, onOpenTasksForDay, onOpenDues }) {
   const today = isSameDay(day, now)
   return (
     <div className="flex flex-1 flex-col items-center gap-1 border-l border-border py-2">
@@ -92,13 +106,9 @@ function DayHeader({ day, now }) {
         <QuickLink
           icon={CircleCheck}
           label="Tarefas"
-          onClick={() => alert(`Navegar para Tarefas — ${fmt(day, 'dd/MM')}`)}
+          onClick={() => onOpenTasksForDay(fmt(day, 'yyyy-MM-dd'))}
         />
-        <QuickLink
-          icon={Wallet}
-          label="Venc."
-          onClick={() => alert(`Navegar para Vencimentos — ${fmt(day, 'dd/MM')}`)}
-        />
+        <QuickLink icon={Receipt} label="Venc." onClick={onOpenDues} />
       </div>
     </div>
   )
