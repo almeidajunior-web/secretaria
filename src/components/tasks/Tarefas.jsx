@@ -134,9 +134,16 @@ export default function Tarefas({
   const selectAllVisible = () => setSelectedIds(new Set(sortedTasks.map((t) => t.id)))
   const clearSelection = () => setSelectedIds(new Set())
 
-  // Bulk actions reuse the same single-task mutators as the rest of the
-  // module (status change keeps the recurrence-rollover behavior; tags are
-  // additive — "assign a tag" never removes one a task already has).
+  // Bulk actions are a blunt "stamp this value on everything selected" tool,
+  // so every field is a direct overwrite via updateTask — including status.
+  // setTaskStatus (used by the row/kanban status controls) intentionally
+  // special-cases recurring tasks: completing one advances its dueDate to
+  // the next occurrence instead of leaving it "done", so it keeps cycling
+  // (e.g. a daily task). That's the right behavior for a single deliberate
+  // "I finished today's occurrence" click, but it silently fights a bulk
+  // "mark all these as Finalizada" action — the status would visibly never
+  // stick and the due date would creep forward one day per attempt. Bulk
+  // status assignment always sets the literal chosen status instead.
   const bulkSetDueDate = (dueDate) => {
     selectedIds.forEach((id) => updateTask({ id, dueDate: dueDate || null }))
   }
@@ -144,7 +151,7 @@ export default function Tarefas({
     selectedIds.forEach((id) => updateTask({ id, priorityId: priorityId || null }))
   }
   const bulkSetStatus = (statusId) => {
-    selectedIds.forEach((id) => setTaskStatus(id, statusId))
+    selectedIds.forEach((id) => updateTask({ id, status: statusId }))
   }
   const bulkAddTag = (tagId) => {
     selectedIds.forEach((id) => {
