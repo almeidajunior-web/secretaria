@@ -13,6 +13,7 @@ import {
 import { fmt, capitalize, roundToHalfHour } from '../../lib/date'
 import { EVENT_COLORS } from '../../constants'
 import { useSwipeNavigation } from '../../hooks/useSwipeNavigation'
+import { usePersistentState } from '../../hooks/usePersistentState'
 import AgendaToolbar from './AgendaToolbar'
 import WeekView from './WeekView'
 import DayView from './DayView'
@@ -67,7 +68,9 @@ export default function Agenda({
   onNavigateToTasks,
   onNavigateToDues,
 }) {
-  const [view, setView] = useState('week')
+  // Persists across module navigation and reloads, like the other modules'
+  // view/filter preferences.
+  const [view, setView] = usePersistentState('secretaria:agendaViewMode', 'week')
   const [modal, setModal] = useState(null) // { event, occ? }
   const [popover, setPopover] = useState(null) // { occ, rect }
   const [scopeAction, setScopeAction] = useState(null) // { kind, occ, ... }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { usePersistentState } from '../../hooks/usePersistentState'
 import { buildShoppingComparator, rankMap } from '../../lib/shoppingSort'
 import { groupItemsByCategory } from '../../lib/shoppingGroups'
 import ComprasToolbar from './ComprasToolbar'
@@ -42,9 +43,14 @@ export default function Compras({
   onDeletePriority,
   reorderPriorities,
 }) {
-  const [sortChain, setSortChain] = useState([])
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
-  const [groupByCategory, setGroupByCategory] = useState(false)
+  // View/sort/filter preferences persist across module navigation (and
+  // reloads); modals and selection stay transient.
+  const [sortChain, setSortChain] = usePersistentState('secretaria:shoppingSortChain', [])
+  const [filters, setFilters] = usePersistentState('secretaria:shoppingFilters', DEFAULT_FILTERS)
+  const [groupByCategory, setGroupByCategory] = usePersistentState(
+    'secretaria:shoppingGroupByCategory',
+    false
+  )
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectMode, setSelectMode] = useState(false)

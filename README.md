@@ -40,6 +40,12 @@ npm run preview
 - Badge de contagem (ex.: tarefas atrasadas + previstas para hoje, ao lado de
   "Tarefas") em estilo discreto — um contorno fino com o número no mesmo
   tamanho/fonte do rótulo do módulo, sem preenchimento vermelho
+- Cada módulo lembra a própria visualização (visão Lista/Kanban em Tarefas,
+  Semanal/Mensal/etc. na Agenda, ordenação, filtros ativos, "ocultar
+  finalizadas/pagas/compradas", agrupamento por classificação em Compras...)
+  — ao trocar de módulo e voltar, ou recarregar a página, tudo continua
+  exatamente como foi deixado. Só estados de ação temporários (modo de
+  seleção em massa, modais abertos) reiniciam ao trocar de módulo
 
 ## Privacidade
 
@@ -217,7 +223,8 @@ extra é necessária.
 src/
   lib/        # storage (persistência), date e recurrence (helpers)
   hooks/      # useTheme, useEvents, usePlanning, useTasks, useShoppingItems,
-              # useBills, useModulesConfig...
+              # useBills, useModulesConfig, usePersistentState (preferências
+              # de visualização por módulo)...
   components/
     layout/   # Sidebar, Topbar, MiniCalendar, ModulesSettingsModal,
               # PrivacyOverlay (modo privado global)

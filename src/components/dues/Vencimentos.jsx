@@ -5,6 +5,7 @@ import { buildBillComparator } from '../../lib/billSort'
 import { groupBillsByDueDate } from '../../lib/billGroups'
 import { formatCurrency } from '../../lib/billFormat'
 import { useBillValuesHidden } from '../../hooks/useBillValuesHidden'
+import { usePersistentState } from '../../hooks/usePersistentState'
 import VencimentosToolbar from './VencimentosToolbar'
 import VencimentosListView from './VencimentosListView'
 import DuesSettingsModal from './DuesSettingsModal'
@@ -38,8 +39,13 @@ export default function Vencimentos({
   reorderCategories,
   initialDateFilter,
 }) {
-  const [sortChain, setSortChain] = useState([{ field: 'dueDate', direction: 'asc' }])
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  // View/sort/filter preferences persist across module navigation (and
+  // reloads); dueDateFilter stays transient — it's a cross-module link from
+  // Agenda's per-day quick-link, not a preference to remember.
+  const [sortChain, setSortChain] = usePersistentState('secretaria:billsSortChain', [
+    { field: 'dueDate', direction: 'asc' },
+  ])
+  const [filters, setFilters] = usePersistentState('secretaria:billsFilters', DEFAULT_FILTERS)
   const [dueDateFilter, setDueDateFilter] = useState(initialDateFilter || null)
   // Re-applies whenever the prop itself changes — not just on mount. See
   // Tarefas.jsx for why: clicking the sidebar's own "Vencimentos" entry
