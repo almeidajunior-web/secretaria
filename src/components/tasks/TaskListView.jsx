@@ -90,6 +90,14 @@ function TaskRow({
   const finished = doneStatusIds.has(task.status)
   const [title, setTitle] = useState(task.title)
 
+  // The row keeps the same key (task.id) across renders, so it never
+  // remounts on its own — resync the local buffer whenever the title
+  // changes from outside this input (e.g. saved via the full edit modal),
+  // otherwise the row keeps showing the pre-edit title indefinitely.
+  useEffect(() => {
+    setTitle(task.title)
+  }, [task.title])
+
   const commitTitle = () => {
     const t = title.trim()
     if (t && t !== task.title) onUpdateTask({ ...task, title: t })

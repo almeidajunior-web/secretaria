@@ -133,7 +133,17 @@ export function loadTasks() {
     const raw = localStorage.getItem(KEYS.tasks)
     if (!raw) return null
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : null
+    if (!Array.isArray(parsed)) return null
+    // Tasks used to carry `tags: string[]` (label text); the current schema
+    // references tag objects by id via `tagIds`. The old label->id mapping
+    // can't be recovered here (tags live in a separate storage domain), so a
+    // legacy task just drops the dead field and starts untagged, instead of
+    // silently keeping an unused `tags` array around forever.
+    return parsed.map((t) => {
+      if (t.tagIds || !t.tags) return t
+      const { tags, ...rest } = t
+      return { ...rest, tagIds: [] }
+    })
   } catch {
     return null
   }

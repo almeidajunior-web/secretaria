@@ -13,7 +13,7 @@ function genTagId() {
 export function useTaskTags() {
   const [tags, setTags] = useState(() => {
     const stored = loadTaskTags()
-    return stored?.length ? stored : TASK_SEED_TAGS
+    return stored ?? TASK_SEED_TAGS
   })
 
   useEffect(() => {

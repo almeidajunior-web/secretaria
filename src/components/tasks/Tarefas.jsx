@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { buildTaskComparator, rankMap } from '../../lib/taskSort'
 import TarefasToolbar from './TarefasToolbar'
@@ -63,12 +63,20 @@ export default function Tarefas({
 }) {
   const [view, setView] = useState('list')
   const [sortChain, setSortChain] = useState([{ field: 'dueDate', direction: 'asc' }])
-  // Seeded once at mount — Tarefas remounts fresh every time App.jsx switches
-  // the active module to 'todos' (it isn't rendered otherwise), so this is
-  // enough to pick up a date passed in from Agenda's per-day "Tarefas" link.
   const [filters, setFilters] = useState(() =>
     initialDateFilter ? { ...DEFAULT_FILTERS, dueDate: initialDateFilter } : DEFAULT_FILTERS
   )
+  // Re-applies whenever the prop itself changes — not just on mount. Tarefas
+  // usually does remount fresh when App.jsx switches the active module to
+  // 'todos' (picking up the lazy initializer above), but clicking the
+  // sidebar's own "Tarefas" entry while already viewing the module is a
+  // same-value activeModule update, so React bails out and this component
+  // never remounts. Without this effect, a date filter picked up from
+  // Agenda's per-day quick-link would keep showing even after the user asks
+  // to see everything again via the sidebar.
+  useEffect(() => {
+    setFilters((f) => ({ ...f, dueDate: initialDateFilter || null }))
+  }, [initialDateFilter])
   const [modalTask, setModalTask] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)

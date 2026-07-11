@@ -15,7 +15,7 @@ function genStatusId() {
 export function useTaskStatuses() {
   const [statuses, setStatuses] = useState(() => {
     const stored = loadTaskStatuses()
-    return stored?.length ? stored : TASK_STATUS_SEED
+    return stored ?? TASK_STATUS_SEED
   })
 
   useEffect(() => {
@@ -42,9 +42,16 @@ export function useTaskStatuses() {
     })
   }
 
-  // Refuses to delete the last remaining status.
+  // Refuses to delete the last remaining status, or the last remaining
+  // isDone status (mirrors setStatusDone's guard above — deleting it would
+  // silently break the same things unchecking it is prevented from breaking).
   const deleteStatus = (id) => {
-    setStatuses((prev) => (prev.length <= 1 ? prev : prev.filter((s) => s.id !== id)))
+    setStatuses((prev) => {
+      if (prev.length <= 1) return prev
+      const target = prev.find((s) => s.id === id)
+      if (target?.isDone && prev.filter((s) => s.isDone).length <= 1) return prev
+      return prev.filter((s) => s.id !== id)
+    })
   }
 
   const reorderStatuses = (newOrderIds) => {

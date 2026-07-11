@@ -90,6 +90,7 @@ export default function TaskSettingsModal({
           addLabel="Novo status"
           deleteWarning={(item) => `As tarefas com "${item.label}" voltam para o primeiro status.`}
           minItems={1}
+          isItemDeletable={(item) => item.id !== onlyDoneStatusId}
           renderExtra={(item) => {
             const isOnlyDone = item.id === onlyDoneStatusId
             return (
@@ -126,6 +127,7 @@ function EditableListSection({
   addLabel,
   deleteWarning,
   minItems = 0,
+  isItemDeletable,
   renderExtra,
 }) {
   const [pendingDelete, setPendingDelete] = useState(null)
@@ -152,7 +154,7 @@ function EditableListSection({
             item={item}
             onUpdate={(patch) => onUpdate(item.id, patch)}
             onDeleteClick={() => setPendingDelete(item)}
-            canDelete={items.length > minItems}
+            canDelete={items.length > minItems && (isItemDeletable ? isItemDeletable(item) : true)}
             onDrop={(draggedId) =>
               onReorder(reorderIds(items.map((x) => x.id), draggedId, item.id))
             }

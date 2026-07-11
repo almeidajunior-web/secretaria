@@ -12,7 +12,7 @@ function genPriorityId() {
 export function useTaskPriorities() {
   const [priorities, setPriorities] = useState(() => {
     const stored = loadTaskPriorities()
-    return stored?.length ? stored : TASK_SEED_PRIORITIES
+    return stored ?? TASK_SEED_PRIORITIES
   })
 
   useEffect(() => {
