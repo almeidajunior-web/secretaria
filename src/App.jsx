@@ -10,6 +10,9 @@ import { useTaskPriorities } from './hooks/useTaskPriorities'
 import { useTaskTags } from './hooks/useTaskTags'
 import { useTaskStatuses } from './hooks/useTaskStatuses'
 import { useModulesConfig } from './hooks/useModulesConfig'
+import { useShoppingItems } from './hooks/useShoppingItems'
+import { useShoppingCategories } from './hooks/useShoppingCategories'
+import { useShoppingPriorities } from './hooks/useShoppingPriorities'
 import { MODULE_DEFS } from './data/modules'
 import Topbar from './components/layout/Topbar'
 import Sidebar from './components/layout/Sidebar'
@@ -17,6 +20,7 @@ import ModulesSettingsModal from './components/layout/ModulesSettingsModal'
 import Agenda from './components/agenda/Agenda'
 import Planejamento from './components/planning/Planejamento'
 import Tarefas from './components/tasks/Tarefas'
+import Compras from './components/shopping/Compras'
 
 const MODULE_NAMES = Object.fromEntries(MODULE_DEFS.map((m) => [m.id, m.label]))
 
@@ -35,6 +39,9 @@ export default function App() {
   const taskPrioritiesApi = useTaskPriorities()
   const taskTagsApi = useTaskTags()
   const modulesConfigApi = useModulesConfig()
+  const shoppingItemsApi = useShoppingItems()
+  const shoppingCategoriesApi = useShoppingCategories()
+  const shoppingPrioritiesApi = useShoppingPriorities()
   const [activeModule, setActiveModule] = useState('agenda')
   const [currentDate, setCurrentDate] = useState(() => new Date())
   const [modulesSettingsOpen, setModulesSettingsOpen] = useState(false)
@@ -77,6 +84,18 @@ export default function App() {
     const fallback = taskStatusesApi.statuses.find((s) => s.id !== id)?.id
     taskStatusesApi.deleteStatus(id)
     if (fallback) tasksApi.reassignStatusOnAllTasks(id, fallback)
+  }
+
+  // Deleting a shopping category/priority removes it from the managed list
+  // and clears it from every item that referenced it.
+  const handleDeleteShoppingCategory = (id) => {
+    shoppingCategoriesApi.deleteCategory(id)
+    shoppingItemsApi.removeCategoryFromAllItems(id)
+  }
+
+  const handleDeleteShoppingPriority = (id) => {
+    shoppingPrioritiesApi.deletePriority(id)
+    shoppingItemsApi.removePriorityFromAllItems(id)
   }
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -137,6 +156,24 @@ export default function App() {
               onDeleteStatus={handleDeleteTaskStatus}
               reorderStatuses={taskStatusesApi.reorderStatuses}
               initialDateFilter={taskDateFilter}
+            />
+          ) : activeModule === 'compras' ? (
+            <Compras
+              items={shoppingItemsApi.items}
+              addItem={shoppingItemsApi.addItem}
+              updateItem={shoppingItemsApi.updateItem}
+              deleteItem={shoppingItemsApi.deleteItem}
+              togglePurchased={shoppingItemsApi.togglePurchased}
+              categories={shoppingCategoriesApi.categories}
+              addCategory={shoppingCategoriesApi.addCategory}
+              updateCategory={shoppingCategoriesApi.updateCategory}
+              onDeleteCategory={handleDeleteShoppingCategory}
+              reorderCategories={shoppingCategoriesApi.reorderCategories}
+              priorities={shoppingPrioritiesApi.priorities}
+              addPriority={shoppingPrioritiesApi.addPriority}
+              updatePriority={shoppingPrioritiesApi.updatePriority}
+              onDeletePriority={handleDeleteShoppingPriority}
+              reorderPriorities={shoppingPrioritiesApi.reorderPriorities}
             />
           ) : (
             <ModulePlaceholder module={activeModule} />

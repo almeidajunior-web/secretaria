@@ -1,0 +1,280 @@
+import { useEffect, useRef, useState } from 'react'
+import { Circle, CircleCheck, Plus, StickyNote, Trash2 } from 'lucide-react'
+
+// Flat or grouped (by Classificação) item list, every field editable
+// directly in the row — no modal in this module at all, everything is
+// either inline or a small popover (Descrição). A quick-add row at the
+// bottom creates new items without any extra step.
+export default function ComprasListView({
+  groups,
+  categories,
+  priorities,
+  onToggle,
+  onUpdateItem,
+  onDeleteClick,
+  selectMode,
+  selectedIds,
+  onToggleSelect,
+  onQuickAdd,
+}) {
+  const categoryById = Object.fromEntries(categories.map((c) => [c.id, c]))
+  const priorityById = Object.fromEntries(priorities.map((p) => [p.id, p]))
+  const isEmpty = groups.every((g) => g.items.length === 0)
+
+  return (
+    <div className="thin-scroll flex h-full flex-col overflow-auto">
+      {isEmpty ? (
+        <p className="px-5 py-8 text-center text-sm text-text-muted">
+          Nenhum item por aqui. Use a linha abaixo para adicionar o primeiro.
+        </p>
+      ) : (
+        <div className="flex flex-col">
+          {groups.map((group) => (
+            <div key={group.key}>
+              {group.label && (
+                <div className="sticky top-0 z-[1] bg-app-bg px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                  {group.label} <span className="font-normal normal-case">({group.items.length})</span>
+                </div>
+              )}
+              {group.items.map((item) => (
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  category={categoryById[item.categoryId]}
+                  categories={categories}
+                  priority={priorityById[item.priorityId]}
+                  priorities={priorities}
+                  onToggle={() => onToggle(item.id, !item.purchased)}
+                  onUpdateItem={onUpdateItem}
+                  onDeleteClick={() => onDeleteClick(item.id)}
+                  selectMode={selectMode}
+                  selected={selectedIds?.has(item.id)}
+                  onToggleSelect={() => onToggleSelect(item.id)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <QuickAddRow categories={categories} priorities={priorities} onQuickAdd={onQuickAdd} />
+    </div>
+  )
+}
+
+function ItemRow({
+  item,
+  category,
+  categories,
+  priority,
+  priorities,
+  onToggle,
+  onUpdateItem,
+  onDeleteClick,
+  selectMode,
+  selected,
+  onToggleSelect,
+}) {
+  const [title, setTitle] = useState(item.title)
+
+  // Resyncs if the title ever changes from outside this input.
+  useEffect(() => {
+    setTitle(item.title)
+  }, [item.title])
+
+  const commitTitle = () => {
+    const t = title.trim()
+    if (t && t !== item.title) onUpdateItem({ ...item, title: t })
+    else setTitle(item.title)
+  }
+
+  return (
+    <div className="flex items-center gap-2 border-b border-border px-4 py-2 hover:bg-accent-soft/30">
+      {selectMode && (
+        <input
+          type="checkbox"
+          checked={!!selected}
+          onChange={onToggleSelect}
+          className="h-3.5 w-3.5 shrink-0"
+        />
+      )}
+
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={item.purchased ? 'Marcar como pendente' : 'Marcar como comprado'}
+        className="flex h-6 w-6 shrink-0 items-center justify-center text-text-muted hover:text-primary"
+      >
+        {item.purchased ? (
+          <CircleCheck size={18} className="text-primary" fill="currentColor" fillOpacity={0.15} />
+        ) : (
+          <Circle size={18} />
+        )}
+      </button>
+
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onBlur={commitTitle}
+        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+        className={[
+          'min-w-0 flex-1 bg-transparent text-[13px] outline-none',
+          item.purchased ? 'text-text-muted line-through' : 'text-text',
+        ].join(' ')}
+      />
+
+      <DescriptionPopover item={item} onUpdateItem={onUpdateItem} />
+
+      <select
+        value={item.categoryId || ''}
+        onChange={(e) => onUpdateItem({ ...item, categoryId: e.target.value || null })}
+        style={{ color: category?.color }}
+        className="w-[128px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] font-medium outline-none"
+      >
+        <option value="">Sem classificação</option>
+        {categories.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.label}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={item.priorityId || ''}
+        onChange={(e) => onUpdateItem({ ...item, priorityId: e.target.value || null })}
+        style={{ color: priority?.color }}
+        className="w-[118px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] font-medium outline-none"
+      >
+        <option value="">Sem prioridade</option>
+        {priorities.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.label}
+          </option>
+        ))}
+      </select>
+
+      <button
+        type="button"
+        onClick={onDeleteClick}
+        aria-label={`Excluir ${item.title}`}
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-muted hover:bg-danger/15 hover:text-danger"
+      >
+        <Trash2 size={13} />
+      </button>
+    </div>
+  )
+}
+
+function DescriptionPopover({ item, onUpdateItem }) {
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState(item.description || '')
+  const ref = useRef(null)
+  const hasDescription = !!item.description
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  const commit = () => {
+    const v = value.trim()
+    if (v !== (item.description || '')) onUpdateItem({ ...item, description: v })
+  }
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label={hasDescription ? 'Editar descrição' : 'Adicionar descrição'}
+        className={[
+          'flex h-6 w-6 items-center justify-center rounded-full hover:bg-accent-soft/60',
+          hasDescription ? 'text-primary' : 'text-text-muted',
+        ].join(' ')}
+      >
+        <StickyNote size={14} fill={hasDescription ? 'currentColor' : 'none'} fillOpacity={0.15} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1.5 w-56 rounded-xl border border-border bg-surface p-2 shadow-lg">
+          <textarea
+            autoFocus
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={commit}
+            placeholder="Descrição breve…"
+            rows={3}
+            className="w-full resize-none rounded-md border border-border-strong bg-surface px-2 py-1.5 text-[12px] text-text outline-none focus:border-primary"
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function QuickAddRow({ categories, priorities, onQuickAdd }) {
+  const [title, setTitle] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+  const [priorityId, setPriorityId] = useState('')
+
+  const commit = () => {
+    const t = title.trim()
+    if (!t) return
+    onQuickAdd({
+      title: t,
+      categoryId: categoryId || null,
+      priorityId: priorityId || null,
+    })
+    setTitle('')
+  }
+
+  return (
+    <div className="mt-auto flex items-center gap-2 border-t border-border px-4 py-2">
+      <Plus size={14} className="shrink-0 text-text-muted" />
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && commit()}
+        placeholder="Novo item…"
+        className="flex-1 bg-transparent text-[13px] text-text outline-none placeholder:text-text-muted"
+      />
+      <select
+        value={categoryId}
+        onChange={(e) => setCategoryId(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && commit()}
+        className="w-32 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
+      >
+        <option value="">Classificação</option>
+        {categories.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.label}
+          </option>
+        ))}
+      </select>
+      <select
+        value={priorityId}
+        onChange={(e) => setPriorityId(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && commit()}
+        className="w-28 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
+      >
+        <option value="">Prioridade</option>
+        {priorities.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.label}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={commit}
+        disabled={!title.trim()}
+        className="rounded-md bg-primary px-3 py-1 text-[11px] font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Adicionar
+      </button>
+    </div>
+  )
+}

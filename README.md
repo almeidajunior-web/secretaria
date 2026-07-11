@@ -1,8 +1,8 @@
 # Secretar.ia
 
 Plataforma pessoal modular. Esta etapa entrega os módulos **Agenda**,
-**Planejamento** e **Tarefas**, com a barra lateral já preparada para os
-módulos futuros de **Compras**, **Vencimentos** e **Finanças** (hoje "Em
+**Planejamento**, **Tarefas** e **Compras**, com a barra lateral já preparada
+para os módulos futuros de **Vencimentos** e **Finanças** (hoje "Em
 construção").
 
 ## Stack
@@ -70,6 +70,27 @@ npm run preview
   blocos de 30 min (ou uni-los de volta) e para adicionar uma descrição em
   texto livre a essa janela
 - Faixa de horário da grade (início/fim) configurável nas Configurações
+- Linha do "agora" no mesmo estilo visual da Agenda
+
+## Funcionalidades do módulo Compras
+
+- Lista única (sem modal) com edição 100% em linha, no mesmo espírito do
+  módulo Tarefas: título, Classificação, Prioridade e uma Descrição breve
+  (ícone que abre um popover pequeno) editáveis direto na linha
+- Ícone de círculo à esquerda de cada item marca comprado/pendente — vazio
+  para pendente, azul preenchido para comprado, com o mesmo efeito de risco
+  usado em tarefas finalizadas
+- Classificações e Prioridades totalmente customizáveis nas Configurações
+  (nome, cor e ordem — arraste para reordenar)
+- Ordenação por Classificação (alfabética) ou Prioridade, e agrupamento
+  opcional por Classificação (seções em ordem alfabética)
+- Filtro por Classificação/Prioridade e opção de ocultar itens já comprados
+- Modo de seleção em massa ("Selecionar"): atribua Classificação, Prioridade,
+  marque como comprado/pendente ou exclua vários itens de uma vez
+- Excluir um item (individual ou em lote) é imediato, sem modal de
+  confirmação — lista pensada para ser rápida e de baixo atrito
+- Item marcado como comprado é removido automaticamente no dia seguinte
+  (silenciosamente, sem aviso), mantendo a lista sempre enxuta
 
 ## Funcionalidades do módulo Tarefas
 
@@ -142,15 +163,18 @@ extra é necessária.
 ```
 src/
   lib/        # storage (persistência), date e recurrence (helpers)
-  hooks/      # useTheme, useEvents, usePlanning, useTasks, useModulesConfig...
+  hooks/      # useTheme, useEvents, usePlanning, useTasks, useShoppingItems,
+              # useModulesConfig...
   components/
     layout/   # Sidebar, Topbar, MiniCalendar, ModulesSettingsModal
     common/   # componentes compartilhados entre módulos (TagSelector,
-              # RecurrenceField, ConfirmDialog)
+              # RecurrenceField, ConfirmDialog, EditableListSection)
     agenda/   # Agenda e suas visões, card, popover e modal
     planning/ # Planejamento: grade, paleta de categorias e gerenciador
     tasks/    # Tarefas: lista, kanban, modal e configurações
               # (prioridades, tags e status)
+    shopping/ # Compras: lista, toolbar e configurações
+              # (classificações e prioridades)
   data/       # dados de exemplo (seed) de cada módulo, modules.js (registro
               # central de módulos)
   constants.js

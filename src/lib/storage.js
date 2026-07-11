@@ -12,6 +12,9 @@ const KEYS = {
   taskTags: 'secretaria:taskTags',
   taskStatuses: 'secretaria:taskStatuses',
   modulesConfig: 'secretaria:modulesConfig',
+  shoppingItems: 'secretaria:shoppingItems',
+  shoppingCategories: 'secretaria:shoppingCategories',
+  shoppingPriorities: 'secretaria:shoppingPriorities',
   schemaVersion: 'secretaria:schemaVersion',
 }
 
@@ -221,6 +224,53 @@ export function loadModulesConfig() {
 
 export function saveModulesConfig(config) {
   localStorage.setItem(KEYS.modulesConfig, JSON.stringify(config))
+}
+
+// Shopping items have no Date objects — purchasedDate is a plain
+// 'yyyy-MM-dd' string, same convention as Tarefas' dueDate.
+export function loadShoppingItems() {
+  try {
+    const raw = localStorage.getItem(KEYS.shoppingItems)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveShoppingItems(items) {
+  localStorage.setItem(KEYS.shoppingItems, JSON.stringify(items))
+}
+
+export function loadShoppingCategories() {
+  try {
+    const raw = localStorage.getItem(KEYS.shoppingCategories)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveShoppingCategories(categories) {
+  localStorage.setItem(KEYS.shoppingCategories, JSON.stringify(categories))
+}
+
+export function loadShoppingPriorities() {
+  try {
+    const raw = localStorage.getItem(KEYS.shoppingPriorities)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveShoppingPriorities(priorities) {
+  localStorage.setItem(KEYS.shoppingPriorities, JSON.stringify(priorities))
 }
 
 export function loadTheme() {

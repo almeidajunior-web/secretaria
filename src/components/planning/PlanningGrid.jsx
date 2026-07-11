@@ -238,11 +238,9 @@ function Window({
           className="pointer-events-none absolute left-0 right-0 z-20"
           style={{ top: `${nowTop}%` }}
         >
-          <div className="h-[2px] w-full bg-white" style={{ boxShadow: '0 0 0 1px rgba(0,0,0,0.55)' }} />
-          <div
-            className="absolute -left-0.5 -top-[3px] h-2 w-2 rounded-full bg-white"
-            style={{ boxShadow: '0 0 0 1px rgba(0,0,0,0.55)' }}
-          />
+          <div className="relative border-t-2 border-primary">
+            <div className="absolute -left-1 -top-[5px] h-2 w-2 rounded-full bg-primary" />
+          </div>
         </div>
       )}
 
