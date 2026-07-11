@@ -1,10 +1,9 @@
-import { X } from 'lucide-react'
+import { TrendingDown, TrendingUp, Wallet, Landmark } from 'lucide-react'
 import EditableListSection from '../common/EditableListSection'
+import SettingsShell from '../common/SettingsShell'
 
-// Manage Finanças' four customizable lists — Categorias de despesa,
-// Categorias de receita, Formas de pagamento and Contas — same
-// add/edit-color/delete/drag-to-reorder pattern shared by every other
-// module's settings modal via EditableListSection.
+// Manage Finanças' customizable lists — expense/income categories, payment
+// methods and accounts — each on its own tab in the shared settings sidebar.
 export default function FinanceSettingsModal({
   expenseCategories,
   onAddExpenseCategory,
@@ -28,27 +27,12 @@ export default function FinanceSettingsModal({
   onReorderAccounts,
   onClose,
 }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="thin-scroll max-h-[85vh] w-[440px] overflow-auto rounded-xl border border-border bg-surface p-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-text">Configurações</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar"
-            className="text-text-muted hover:text-text"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
+  const sections = [
+    {
+      id: 'expense',
+      label: 'Categorias de despesa',
+      icon: TrendingDown,
+      render: () => (
         <EditableListSection
           title="Categorias de despesa"
           hint="arraste para reordenar"
@@ -60,7 +44,13 @@ export default function FinanceSettingsModal({
           addLabel="Nova categoria de despesa"
           deleteWarning={(item) => `Os lançamentos com "${item.label}" ficam sem categoria.`}
         />
-
+      ),
+    },
+    {
+      id: 'income',
+      label: 'Categorias de receita',
+      icon: TrendingUp,
+      render: () => (
         <EditableListSection
           title="Categorias de receita"
           hint="arraste para reordenar"
@@ -72,7 +62,13 @@ export default function FinanceSettingsModal({
           addLabel="Nova categoria de receita"
           deleteWarning={(item) => `Os lançamentos com "${item.label}" ficam sem categoria.`}
         />
-
+      ),
+    },
+    {
+      id: 'methods',
+      label: 'Formas de pagamento',
+      icon: Wallet,
+      render: () => (
         <EditableListSection
           title="Formas de pagamento"
           hint="arraste para reordenar"
@@ -84,7 +80,13 @@ export default function FinanceSettingsModal({
           addLabel="Nova forma de pagamento"
           deleteWarning={(item) => `Os lançamentos com "${item.label}" ficam sem forma de pagamento.`}
         />
-
+      ),
+    },
+    {
+      id: 'accounts',
+      label: 'Contas',
+      icon: Landmark,
+      render: () => (
         <EditableListSection
           title="Contas"
           hint="arraste para reordenar"
@@ -96,7 +98,9 @@ export default function FinanceSettingsModal({
           addLabel="Nova conta"
           deleteWarning={(item) => `Os lançamentos com "${item.label}" ficam sem conta.`}
         />
-      </div>
-    </div>
-  )
+      ),
+    },
+  ]
+
+  return <SettingsShell sections={sections} onClose={onClose} />
 }

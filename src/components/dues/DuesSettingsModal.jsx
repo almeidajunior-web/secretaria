@@ -1,8 +1,10 @@
-import { X } from 'lucide-react'
+import { Tag } from 'lucide-react'
 import EditableListSection from '../common/EditableListSection'
+import SettingsShell from '../common/SettingsShell'
 
-// Manage Vencimentos' one customizable list — Classificações — same
-// add/edit-color/delete/drag-to-reorder pattern as Tarefas/Compras.
+// Manage Vencimentos' one customizable list — Classificações — in the shared
+// settings-sidebar shell (a single-topic sidebar, kept for consistency with
+// the other modules).
 export default function DuesSettingsModal({
   categories,
   onAddCategory,
@@ -11,27 +13,12 @@ export default function DuesSettingsModal({
   onReorderCategories,
   onClose,
 }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="thin-scroll max-h-[85vh] w-[440px] overflow-auto rounded-xl border border-border bg-surface p-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-text">Configurações</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar"
-            className="text-text-muted hover:text-text"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
+  const sections = [
+    {
+      id: 'categories',
+      label: 'Classificações',
+      icon: Tag,
+      render: () => (
         <EditableListSection
           title="Classificações"
           hint="arraste para reordenar"
@@ -43,7 +30,9 @@ export default function DuesSettingsModal({
           addLabel="Nova classificação"
           deleteWarning={(item) => `As contas com "${item.label}" ficam sem classificação.`}
         />
-      </div>
-    </div>
-  )
+      ),
+    },
+  ]
+
+  return <SettingsShell sections={sections} onClose={onClose} />
 }
