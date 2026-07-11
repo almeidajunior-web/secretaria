@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUp, ArrowDown, Filter, Settings, Eye, EyeOff, ListChecks, Trash2, X } from 'lucide-react'
-import TagPickerPopover from './TagPickerPopover'
+import TagPickerPopover from '../common/TagPickerPopover'
 
 const SORT_FIELDS = [
   { field: 'dueDate', label: 'Prazo' },

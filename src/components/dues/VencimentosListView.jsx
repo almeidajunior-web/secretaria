@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Circle, CircleCheck, Plus, Trash2 } from 'lucide-react'
 import DescriptionPopover from '../common/DescriptionPopover'
+import ChipSelect from '../common/ChipSelect'
+import InlineDate from '../common/InlineDate'
 import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
 import { isBillOverdue } from '../../lib/billFormat'
+
+const RECURRENCE_CHIP_OPTIONS = RECURRENCE_OPTIONS.map((r) => ({ id: r.value, label: r.label }))
 
 // Flat, always grouped-by-due-date list, every field editable directly in
 // the row — same inline-first philosophy as Compras. A quick-add row at
@@ -19,7 +23,6 @@ export default function VencimentosListView({
   onToggleSelect,
   onQuickAdd,
 }) {
-  const categoryById = Object.fromEntries(categories.map((c) => [c.id, c]))
   const isEmpty = groups.every((g) => g.bills.length === 0)
 
   return (
@@ -39,7 +42,6 @@ export default function VencimentosListView({
                 <BillRow
                   key={bill.id}
                   bill={bill}
-                  category={categoryById[bill.categoryId]}
                   categories={categories}
                   onTogglePaid={() => onTogglePaid(bill.id, !bill.paid)}
                   onUpdateBill={onUpdateBill}
@@ -61,7 +63,6 @@ export default function VencimentosListView({
 
 function BillRow({
   bill,
-  category,
   categories,
   onTogglePaid,
   onUpdateBill,
@@ -133,41 +134,29 @@ function BillRow({
         />
       </div>
 
-      <select
-        value={bill.categoryId || ''}
-        onChange={(e) => onUpdateBill({ ...bill, categoryId: e.target.value || null })}
-        style={{ color: category?.color }}
-        className="w-[128px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] font-medium outline-none"
-      >
-        <option value="">Sem classificação</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.label}
-          </option>
-        ))}
-      </select>
-
-      <input
-        type="date"
-        value={bill.dueDate || ''}
-        onChange={(e) => onUpdateBill({ ...bill, dueDate: e.target.value || null })}
-        className={[
-          'w-[130px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] outline-none',
-          overdue ? 'font-semibold text-danger' : 'text-text-secondary',
-        ].join(' ')}
+      <ChipSelect
+        value={bill.categoryId || null}
+        options={categories}
+        onChange={(id) => onUpdateBill({ ...bill, categoryId: id })}
+        nullLabel="Sem classificação"
+        clearLabel="Sem classificação"
       />
 
-      <select
+      <InlineDate
+        value={bill.dueDate || null}
+        onChange={(v) => onUpdateBill({ ...bill, dueDate: v })}
+        overdue={overdue}
+        muted
+        placeholder="Sem vencimento"
+      />
+
+      <ChipSelect
         value={bill.recurrence || 'none'}
-        onChange={(e) => onUpdateBill({ ...bill, recurrence: e.target.value })}
-        className="w-[104px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] outline-none"
-      >
-        {RECURRENCE_OPTIONS.map((r) => (
-          <option key={r.value} value={r.value}>
-            {r.label}
-          </option>
-        ))}
-      </select>
+        options={RECURRENCE_CHIP_OPTIONS}
+        onChange={(id) => onUpdateBill({ ...bill, recurrence: id || 'none' })}
+        allowNull={false}
+        colorless
+      />
 
       <button
         type="button"
@@ -226,25 +215,17 @@ function QuickAddRow({ categories, onQuickAdd }) {
           className="w-[90px] rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
         />
       </div>
-      <select
-        value={categoryId}
-        onChange={(e) => setCategoryId(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && commit()}
-        className="w-32 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
-      >
-        <option value="">Classificação</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.label}
-          </option>
-        ))}
-      </select>
-      <input
-        type="date"
-        value={dueDate}
-        onChange={(e) => setDueDate(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && commit()}
-        className="w-32 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
+      <ChipSelect
+        value={categoryId || null}
+        options={categories}
+        onChange={(id) => setCategoryId(id || '')}
+        nullLabel="Classificação"
+        clearLabel="Sem classificação"
+      />
+      <InlineDate
+        value={dueDate || null}
+        onChange={(v) => setDueDate(v || '')}
+        placeholder="Vencimento"
       />
       <button
         type="button"

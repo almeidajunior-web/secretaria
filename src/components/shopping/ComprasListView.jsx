@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Circle, CircleCheck, Plus, Trash2 } from 'lucide-react'
 import DescriptionPopover from '../common/DescriptionPopover'
+import ChipSelect from '../common/ChipSelect'
 
 // Flat or grouped (by Classificação) item list, every field editable
 // directly in the row — no modal in this module at all, everything is
@@ -18,8 +19,6 @@ export default function ComprasListView({
   onToggleSelect,
   onQuickAdd,
 }) {
-  const categoryById = Object.fromEntries(categories.map((c) => [c.id, c]))
-  const priorityById = Object.fromEntries(priorities.map((p) => [p.id, p]))
   const isEmpty = groups.every((g) => g.items.length === 0)
 
   return (
@@ -41,9 +40,7 @@ export default function ComprasListView({
                 <ItemRow
                   key={item.id}
                   item={item}
-                  category={categoryById[item.categoryId]}
                   categories={categories}
-                  priority={priorityById[item.priorityId]}
                   priorities={priorities}
                   onToggle={() => onToggle(item.id, !item.purchased)}
                   onUpdateItem={onUpdateItem}
@@ -65,9 +62,7 @@ export default function ComprasListView({
 
 function ItemRow({
   item,
-  category,
   categories,
-  priority,
   priorities,
   onToggle,
   onUpdateItem,
@@ -126,33 +121,21 @@ function ItemRow({
 
       <DescriptionPopover item={item} onUpdateItem={onUpdateItem} />
 
-      <select
-        value={item.categoryId || ''}
-        onChange={(e) => onUpdateItem({ ...item, categoryId: e.target.value || null })}
-        style={{ color: category?.color }}
-        className="w-[128px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] font-medium outline-none"
-      >
-        <option value="">Sem classificação</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.label}
-          </option>
-        ))}
-      </select>
+      <ChipSelect
+        value={item.categoryId || null}
+        options={categories}
+        onChange={(id) => onUpdateItem({ ...item, categoryId: id })}
+        nullLabel="Sem classificação"
+        clearLabel="Sem classificação"
+      />
 
-      <select
-        value={item.priorityId || ''}
-        onChange={(e) => onUpdateItem({ ...item, priorityId: e.target.value || null })}
-        style={{ color: priority?.color }}
-        className="w-[118px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] font-medium outline-none"
-      >
-        <option value="">Sem prioridade</option>
-        {priorities.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.label}
-          </option>
-        ))}
-      </select>
+      <ChipSelect
+        value={item.priorityId || null}
+        options={priorities}
+        onChange={(id) => onUpdateItem({ ...item, priorityId: id })}
+        nullLabel="Sem prioridade"
+        clearLabel="Sem prioridade"
+      />
 
       <button
         type="button"
@@ -192,32 +175,20 @@ function QuickAddRow({ categories, priorities, onQuickAdd }) {
         placeholder="Novo item…"
         className="flex-1 bg-transparent text-[13px] text-text outline-none placeholder:text-text-muted"
       />
-      <select
-        value={categoryId}
-        onChange={(e) => setCategoryId(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && commit()}
-        className="w-32 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
-      >
-        <option value="">Classificação</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.label}
-          </option>
-        ))}
-      </select>
-      <select
-        value={priorityId}
-        onChange={(e) => setPriorityId(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && commit()}
-        className="w-28 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
-      >
-        <option value="">Prioridade</option>
-        {priorities.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.label}
-          </option>
-        ))}
-      </select>
+      <ChipSelect
+        value={categoryId || null}
+        options={categories}
+        onChange={(id) => setCategoryId(id || '')}
+        nullLabel="Classificação"
+        clearLabel="Sem classificação"
+      />
+      <ChipSelect
+        value={priorityId || null}
+        options={priorities}
+        onChange={(id) => setPriorityId(id || '')}
+        nullLabel="Prioridade"
+        clearLabel="Sem prioridade"
+      />
       <button
         type="button"
         onClick={commit}

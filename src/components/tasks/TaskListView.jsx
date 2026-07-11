@@ -3,7 +3,9 @@ import { format, addDays } from 'date-fns'
 import { Plus, Repeat, Trash2, Clock } from 'lucide-react'
 import { formatDueDate, isOverdue, parseDueDate } from '../../lib/taskFormat'
 import { groupTasksByDueDate } from '../../lib/taskGroups'
-import TagPickerPopover from './TagPickerPopover'
+import TagPickerPopover from '../common/TagPickerPopover'
+import ChipSelect from '../common/ChipSelect'
+import InlineDate from '../common/InlineDate'
 
 // Flat, sorted task list grouped into due-date sections (Atrasadas first),
 // with fields editable directly in the row (ClickUp-style — the modal only
@@ -25,7 +27,6 @@ export default function TaskListView({
   selectedIds,
   onToggleSelect,
 }) {
-  const priorityById = Object.fromEntries(priorities.map((p) => [p.id, p]))
   const groups = groupTasksByDueDate(tasks)
 
   return (
@@ -45,7 +46,6 @@ export default function TaskListView({
                 <TaskRow
                   key={task.id}
                   task={task}
-                  priority={priorityById[task.priorityId]}
                   priorities={priorities}
                   tags={tags}
                   statuses={statuses}
@@ -72,7 +72,6 @@ export default function TaskListView({
 
 function TaskRow({
   task,
-  priority,
   priorities,
   tags,
   statuses,
@@ -125,19 +124,13 @@ function TaskRow({
         />
       )}
 
-      <select
+      <ChipSelect
         value={task.status}
-        onClick={(e) => e.stopPropagation()}
-        onChange={(e) => onSetStatus(e.target.value)}
-        style={{ color: statuses.find((s) => s.id === task.status)?.color }}
-        className="w-[112px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] font-medium outline-none"
-      >
-        {statuses.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.label}
-          </option>
-        ))}
-      </select>
+        options={statuses}
+        onChange={(id) => id && onSetStatus(id)}
+        allowNull={false}
+        align="left"
+      />
 
       <input
         value={title}
@@ -161,30 +154,20 @@ function TaskRow({
         triggerClassName="flex shrink-0 flex-wrap items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-text-secondary hover:bg-accent-soft/50"
       />
 
-      <select
-        value={task.priorityId || ''}
-        onClick={(e) => e.stopPropagation()}
-        onChange={(e) => onUpdateTask({ ...task, priorityId: e.target.value || null })}
-        style={{ color: priority?.color }}
-        className="w-[118px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] font-medium outline-none"
-      >
-        <option value="">Sem prioridade</option>
-        {priorities.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.label}
-          </option>
-        ))}
-      </select>
+      <ChipSelect
+        value={task.priorityId || null}
+        options={priorities}
+        onChange={(id) => onUpdateTask({ ...task, priorityId: id })}
+        nullLabel="Sem prioridade"
+        clearLabel="Sem prioridade"
+      />
 
-      <input
-        type="date"
-        value={task.dueDate || ''}
-        onClick={(e) => e.stopPropagation()}
-        onChange={(e) => onUpdateTask({ ...task, dueDate: e.target.value || null })}
-        className={[
-          'w-[130px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] outline-none',
-          overdue ? 'font-semibold text-danger' : 'text-text-secondary',
-        ].join(' ')}
+      <InlineDate
+        value={task.dueDate || null}
+        onChange={(v) => onUpdateTask({ ...task, dueDate: v })}
+        overdue={overdue}
+        muted
+        placeholder="Sem prazo"
       />
 
       <PostponeButton task={task} onUpdateTask={onUpdateTask} />
@@ -300,26 +283,18 @@ function QuickAddRow({ priorities, tags, onCreateTag, onQuickAdd }) {
         }
         onCreate={onCreateTag}
       />
-      <input
-        type="date"
-        value={dueDate}
-        onChange={(e) => setDueDate(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && commit()}
-        className="w-32 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
+      <InlineDate
+        value={dueDate || null}
+        onChange={(v) => setDueDate(v || '')}
+        placeholder="Prazo"
       />
-      <select
-        value={priorityId}
-        onChange={(e) => setPriorityId(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && commit()}
-        className="w-28 shrink-0 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
-      >
-        <option value="">Prioridade</option>
-        {priorities.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.label}
-          </option>
-        ))}
-      </select>
+      <ChipSelect
+        value={priorityId || null}
+        options={priorities}
+        onChange={(id) => setPriorityId(id || '')}
+        nullLabel="Prioridade"
+        clearLabel="Sem prioridade"
+      />
       <button
         type="button"
         onClick={commit}

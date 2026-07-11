@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import RecurrenceField from '../common/RecurrenceField'
-import TagPickerPopover from './TagPickerPopover'
+import TagPickerPopover from '../common/TagPickerPopover'
 import ConfirmDialog from '../common/ConfirmDialog'
 
 const inputClass =
