@@ -1,9 +1,7 @@
 # Secretar.ia
 
 Plataforma pessoal modular. Esta etapa entrega os módulos **Agenda**,
-**Planejamento**, **Tarefas**, **Compras** e **Vencimentos**, com a barra
-lateral já preparada para o módulo futuro de **Finanças** (hoje "Em
-construção").
+**Planejamento**, **Tarefas**, **Compras**, **Vencimentos** e **Finanças**.
 
 ## Stack
 
@@ -158,6 +156,39 @@ npm run preview
   sem confirmação
 - Badge na barra lateral com o total de contas atrasadas + vencendo hoje
 
+## Funcionalidades do módulo Finanças
+
+- Finanças pessoais: lançamentos de receita e despesa com categoria (listas
+  **separadas** para receita e despesa — "Salário" e "Moradia" nunca se
+  misturam), forma de pagamento e conta/banco (todos editáveis nas
+  Configurações, mesmo padrão de listas dos outros módulos)
+- **Overview** sempre fixo no mês vigente, independente do período que a
+  tabela abaixo estiver navegando: três indicadores (Receitas, Despesas,
+  Saldo do mês) cada um com variação percentual vs. o mês anterior, um
+  gráfico de barras das despesas por categoria e um gráfico de linha
+  comparando receita x despesa nos últimos 6 meses — ambos em SVG artesanal,
+  sem nenhuma biblioteca de gráficos adicionada ao projeto
+- Ícone de "olho" no Overview oculta/exibe os valores (totais, gráficos),
+  igual ao padrão já usado em Vencimentos
+- Abaixo do Overview, uma tabela 100% editável em linha, navegável por
+  período (Dia, Semana, Mês, Ano, com navegação anterior/próximo/hoje),
+  ordenável e filtrável (categoria, forma de pagamento, conta, tipo)
+- Cada lançamento tem um ícone de tendência (↑ receita em verde, ↓ despesa
+  em vermelho) clicável para alternar o tipo — a categoria é limpa ao
+  trocar, já que as listas de categoria são específicas por tipo
+- Sem recorrência automática nesta primeira versão — um lançamento
+  recorrente (salário, assinatura) se resolve com o botão "Duplicar" em
+  cada linha, que cria uma cópia já na data de hoje
+- Criação via linha rápida no rodapé da tabela ou pelo botão "Novo
+  lançamento" no topbar (modal)
+- Modo de seleção em massa: atribua forma de pagamento/conta ou exclua
+  vários lançamentos de uma vez (recategorizar em massa fica de fora
+  propositalmente — uma seleção pode misturar receita e despesa, que têm
+  listas de categoria diferentes)
+- Módulo independente de Vencimentos — nenhum lançamento é criado
+  automaticamente a partir de uma conta paga lá, mantendo a mesma filosofia
+  de módulos independentes do resto do app
+
 ## Funcionalidades do módulo Tarefas
 
 - Duas visualizações — **Lista** e **Kanban** — com os mesmos filtros e
@@ -229,10 +260,11 @@ extra é necessária.
 ```
 src/
   lib/        # storage (persistência), backup (exportar/importar .json),
-              # date e recurrence (helpers)
+              # currency (formatCurrency), date e recurrence (helpers)
   hooks/      # useTheme, useEvents, usePlanning, useTasks, useShoppingItems,
-              # useBills, useModulesConfig, usePersistentState (preferências
-              # de visualização por módulo)...
+              # useBills, useFinanceEntries, useModulesConfig,
+              # usePersistentState (preferências de visualização por
+              # módulo)...
   components/
     layout/   # Sidebar, Topbar, MiniCalendar, ModulesSettingsModal,
               # PrivacyOverlay (modo privado global)
@@ -247,6 +279,8 @@ src/
               # (classificações e prioridades)
     dues/     # Vencimentos: lista, toolbar, modal e configurações
               # (classificações)
+    finance/  # Finanças: Overview (stat tiles + gráficos SVG artesanais),
+              # tabela, toolbar, modal e configurações
   data/       # dados de exemplo (seed) de cada módulo, modules.js (registro
               # central de módulos)
   constants.js

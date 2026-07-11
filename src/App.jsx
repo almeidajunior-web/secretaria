@@ -16,6 +16,11 @@ import { useShoppingCategories } from './hooks/useShoppingCategories'
 import { useShoppingPriorities } from './hooks/useShoppingPriorities'
 import { useBills } from './hooks/useBills'
 import { useBillCategories } from './hooks/useBillCategories'
+import { useFinanceEntries } from './hooks/useFinanceEntries'
+import { useFinanceExpenseCategories } from './hooks/useFinanceExpenseCategories'
+import { useFinanceIncomeCategories } from './hooks/useFinanceIncomeCategories'
+import { useFinancePaymentMethods } from './hooks/useFinancePaymentMethods'
+import { useFinanceAccounts } from './hooks/useFinanceAccounts'
 import { MODULE_DEFS } from './data/modules'
 import Topbar from './components/layout/Topbar'
 import Sidebar from './components/layout/Sidebar'
@@ -26,11 +31,12 @@ import Planejamento from './components/planning/Planejamento'
 import Tarefas from './components/tasks/Tarefas'
 import Compras from './components/shopping/Compras'
 import Vencimentos from './components/dues/Vencimentos'
+import Financas from './components/finance/Financas'
 
 const MODULE_NAMES = Object.fromEntries(MODULE_DEFS.map((m) => [m.id, m.label]))
 
 // Application shell: top bar + sidebar + active module area. Module routing is
-// kept in local state so future modules (Finanças) can be dropped in without
+// kept in local state so future modules can be dropped in without
 // restructuring.
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -50,6 +56,11 @@ export default function App() {
   const shoppingPrioritiesApi = useShoppingPriorities()
   const billsApi = useBills()
   const billCategoriesApi = useBillCategories()
+  const financeEntriesApi = useFinanceEntries()
+  const financeExpenseCategoriesApi = useFinanceExpenseCategories()
+  const financeIncomeCategoriesApi = useFinanceIncomeCategories()
+  const financePaymentMethodsApi = useFinancePaymentMethods()
+  const financeAccountsApi = useFinanceAccounts()
   const [activeModule, setActiveModule] = useState('agenda')
   const [currentDate, setCurrentDate] = useState(() => new Date())
   const [modulesSettingsOpen, setModulesSettingsOpen] = useState(false)
@@ -119,6 +130,28 @@ export default function App() {
   const handleDeleteBillCategory = (id) => {
     billCategoriesApi.deleteCategory(id)
     billsApi.removeCategoryFromAllBills(id)
+  }
+
+  // Deleting a Finanças list entry removes it from its managed list and
+  // clears it from every entry that referenced it.
+  const handleDeleteFinanceExpenseCategory = (id) => {
+    financeExpenseCategoriesApi.deleteCategory(id)
+    financeEntriesApi.removeCategoryFromAllEntries(id)
+  }
+
+  const handleDeleteFinanceIncomeCategory = (id) => {
+    financeIncomeCategoriesApi.deleteCategory(id)
+    financeEntriesApi.removeCategoryFromAllEntries(id)
+  }
+
+  const handleDeleteFinancePaymentMethod = (id) => {
+    financePaymentMethodsApi.deleteMethod(id)
+    financeEntriesApi.removePaymentMethodFromAllEntries(id)
+  }
+
+  const handleDeleteFinanceAccount = (id) => {
+    financeAccountsApi.deleteAccount(id)
+    financeEntriesApi.removeAccountFromAllEntries(id)
   }
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -219,6 +252,34 @@ export default function App() {
               onDeleteCategory={handleDeleteBillCategory}
               reorderCategories={billCategoriesApi.reorderCategories}
               initialDateFilter={billDateFilter}
+            />
+          ) : activeModule === 'finance' ? (
+            <Financas
+              entries={financeEntriesApi.entries}
+              addEntry={financeEntriesApi.addEntry}
+              updateEntry={financeEntriesApi.updateEntry}
+              deleteEntry={financeEntriesApi.deleteEntry}
+              duplicateEntry={financeEntriesApi.duplicateEntry}
+              expenseCategories={financeExpenseCategoriesApi.categories}
+              addExpenseCategory={financeExpenseCategoriesApi.addCategory}
+              updateExpenseCategory={financeExpenseCategoriesApi.updateCategory}
+              onDeleteExpenseCategory={handleDeleteFinanceExpenseCategory}
+              reorderExpenseCategories={financeExpenseCategoriesApi.reorderCategories}
+              incomeCategories={financeIncomeCategoriesApi.categories}
+              addIncomeCategory={financeIncomeCategoriesApi.addCategory}
+              updateIncomeCategory={financeIncomeCategoriesApi.updateCategory}
+              onDeleteIncomeCategory={handleDeleteFinanceIncomeCategory}
+              reorderIncomeCategories={financeIncomeCategoriesApi.reorderCategories}
+              paymentMethods={financePaymentMethodsApi.methods}
+              addPaymentMethod={financePaymentMethodsApi.addMethod}
+              updatePaymentMethod={financePaymentMethodsApi.updateMethod}
+              onDeletePaymentMethod={handleDeleteFinancePaymentMethod}
+              reorderPaymentMethods={financePaymentMethodsApi.reorderMethods}
+              accounts={financeAccountsApi.accounts}
+              addAccount={financeAccountsApi.addAccount}
+              updateAccount={financeAccountsApi.updateAccount}
+              onDeleteAccount={handleDeleteFinanceAccount}
+              reorderAccounts={financeAccountsApi.reorderAccounts}
             />
           ) : (
             <ModulePlaceholder module={activeModule} />

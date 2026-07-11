@@ -19,6 +19,12 @@ const KEYS = {
   billCategories: 'secretaria:billCategories',
   privacyMode: 'secretaria:privacyMode',
   billValuesHidden: 'secretaria:billValuesHidden',
+  financeEntries: 'secretaria:financeEntries',
+  financeExpenseCategories: 'secretaria:financeExpenseCategories',
+  financeIncomeCategories: 'secretaria:financeIncomeCategories',
+  financePaymentMethods: 'secretaria:financePaymentMethods',
+  financeAccounts: 'secretaria:financeAccounts',
+  financeValuesHidden: 'secretaria:financeValuesHidden',
   schemaVersion: 'secretaria:schemaVersion',
 }
 
@@ -334,4 +340,89 @@ export function loadBillValuesHidden() {
 
 export function saveBillValuesHidden(hidden) {
   localStorage.setItem(KEYS.billValuesHidden, String(hidden))
+}
+
+// Finance entries have no Date objects — date is a plain 'yyyy-MM-dd'
+// string, same convention as bills/tasks.
+export function loadFinanceEntries() {
+  try {
+    const raw = localStorage.getItem(KEYS.financeEntries)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveFinanceEntries(entries) {
+  localStorage.setItem(KEYS.financeEntries, JSON.stringify(entries))
+}
+
+export function loadFinanceExpenseCategories() {
+  try {
+    const raw = localStorage.getItem(KEYS.financeExpenseCategories)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveFinanceExpenseCategories(categories) {
+  localStorage.setItem(KEYS.financeExpenseCategories, JSON.stringify(categories))
+}
+
+export function loadFinanceIncomeCategories() {
+  try {
+    const raw = localStorage.getItem(KEYS.financeIncomeCategories)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveFinanceIncomeCategories(categories) {
+  localStorage.setItem(KEYS.financeIncomeCategories, JSON.stringify(categories))
+}
+
+export function loadFinancePaymentMethods() {
+  try {
+    const raw = localStorage.getItem(KEYS.financePaymentMethods)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveFinancePaymentMethods(methods) {
+  localStorage.setItem(KEYS.financePaymentMethods, JSON.stringify(methods))
+}
+
+export function loadFinanceAccounts() {
+  try {
+    const raw = localStorage.getItem(KEYS.financeAccounts)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveFinanceAccounts(accounts) {
+  localStorage.setItem(KEYS.financeAccounts, JSON.stringify(accounts))
+}
+
+export function loadFinanceValuesHidden() {
+  return localStorage.getItem(KEYS.financeValuesHidden) === 'true'
+}
+
+export function saveFinanceValuesHidden(hidden) {
+  localStorage.setItem(KEYS.financeValuesHidden, String(hidden))
 }
