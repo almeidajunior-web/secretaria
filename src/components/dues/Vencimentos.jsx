@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
+import { Eye, EyeOff } from 'lucide-react'
 import { buildBillComparator } from '../../lib/billSort'
 import { groupBillsByDueDate } from '../../lib/billGroups'
 import { formatCurrency } from '../../lib/billFormat'
+import { useBillValuesHidden } from '../../hooks/useBillValuesHidden'
 import VencimentosToolbar from './VencimentosToolbar'
 import VencimentosListView from './VencimentosListView'
 import DuesSettingsModal from './DuesSettingsModal'
@@ -51,6 +53,7 @@ export default function Vencimentos({
   const [modalOpen, setModalOpen] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
+  const { hidden: valuesHidden, toggleValuesHidden } = useBillValuesHidden()
 
   const toggleSort = (field) => {
     setSortChain((prev) => {
@@ -178,6 +181,8 @@ export default function Vencimentos({
         totalPendenteMes={totalPendenteMes}
         totalPagoMes={totalPagoMes}
         totalAtrasado={totalAtrasado}
+        valuesHidden={valuesHidden}
+        onToggleValuesHidden={toggleValuesHidden}
         dueDateFilter={dueDateFilter}
         onClearDueDateFilter={() => setDueDateFilter(null)}
       />
@@ -221,17 +226,45 @@ export default function Vencimentos({
   )
 }
 
-function SummaryBar({ totalPendenteMes, totalPagoMes, totalAtrasado, dueDateFilter, onClearDueDateFilter }) {
+// Masks the three totals bank-app style — dots instead of digits, no data
+// touched or cleared, purely what's rendered here.
+const MASK = 'R$ ••••'
+
+function SummaryBar({
+  totalPendenteMes,
+  totalPagoMes,
+  totalAtrasado,
+  valuesHidden,
+  onToggleValuesHidden,
+  dueDateFilter,
+  onClearDueDateFilter,
+}) {
   return (
     <div className="flex flex-wrap items-center gap-4 border-b border-border bg-app-bg px-4 py-1.5 text-[11px]">
+      <button
+        type="button"
+        onClick={onToggleValuesHidden}
+        aria-label={valuesHidden ? 'Mostrar valores' : 'Ocultar valores'}
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-muted hover:bg-accent-soft/60 hover:text-primary"
+      >
+        {valuesHidden ? <EyeOff size={13} /> : <Eye size={13} />}
+      </button>
       <span className="text-text-secondary">
-        Pendente no mês <span className="font-semibold text-text">{formatCurrency(totalPendenteMes)}</span>
+        Pendente no mês{' '}
+        <span className="font-semibold text-text">
+          {valuesHidden ? MASK : formatCurrency(totalPendenteMes)}
+        </span>
       </span>
       <span className="text-text-secondary">
-        Pago no mês <span className="font-semibold text-text">{formatCurrency(totalPagoMes)}</span>
+        Pago no mês{' '}
+        <span className="font-semibold text-text">
+          {valuesHidden ? MASK : formatCurrency(totalPagoMes)}
+        </span>
       </span>
       {totalAtrasado > 0 && (
-        <span className="font-semibold text-danger">Atrasado {formatCurrency(totalAtrasado)}</span>
+        <span className="font-semibold text-danger">
+          Atrasado {valuesHidden ? MASK : formatCurrency(totalAtrasado)}
+        </span>
       )}
       {dueDateFilter && (
         <button

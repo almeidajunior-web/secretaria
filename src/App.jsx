@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { Construction } from 'lucide-react'
 import { useTheme } from './hooks/useTheme'
+import { usePrivacyMode } from './hooks/usePrivacyMode'
 import { useEvents } from './hooks/useEvents'
 import { useTags } from './hooks/useTags'
 import { usePlanning } from './hooks/usePlanning'
@@ -19,6 +20,7 @@ import { MODULE_DEFS } from './data/modules'
 import Topbar from './components/layout/Topbar'
 import Sidebar from './components/layout/Sidebar'
 import ModulesSettingsModal from './components/layout/ModulesSettingsModal'
+import PrivacyOverlay from './components/layout/PrivacyOverlay'
 import Agenda from './components/agenda/Agenda'
 import Planejamento from './components/planning/Planejamento'
 import Tarefas from './components/tasks/Tarefas'
@@ -32,6 +34,7 @@ const MODULE_NAMES = Object.fromEntries(MODULE_DEFS.map((m) => [m.id, m.label]))
 // restructuring.
 export default function App() {
   const { theme, toggleTheme } = useTheme()
+  const { hidden: privacyHidden, togglePrivacyMode } = usePrivacyMode()
   const eventsApi = useEvents()
   // Seed the tag list from tags already present on the events (first run only).
   const seedTags = [...new Set(eventsApi.events.flatMap((e) => e.tags || []))]
@@ -129,8 +132,13 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col bg-app-bg text-text">
-      <Topbar theme={theme} onToggleTheme={toggleTheme} />
-      <div className="flex flex-1 overflow-hidden">
+      <Topbar
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        privacyHidden={privacyHidden}
+        onTogglePrivacy={togglePrivacyMode}
+      />
+      <div className="relative flex flex-1 overflow-hidden">
         <Sidebar
           activeModule={activeModule}
           onSelectModule={handleSelectModule}
@@ -216,6 +224,8 @@ export default function App() {
             <ModulePlaceholder module={activeModule} />
           )}
         </main>
+
+        {privacyHidden && <PrivacyOverlay />}
       </div>
 
       {modulesSettingsOpen && (

@@ -41,6 +41,23 @@ npm run preview
   "Tarefas") em estilo discreto — um contorno fino com o número no mesmo
   tamanho/fonte do rótulo do módulo, sem preenchimento vermelho
 
+## Privacidade
+
+- Botão de "olho" no topbar, ao lado do alternador de tema claro/escuro,
+  ativa um **modo privado** global: a área de sidebar + módulo ativo recebe
+  um desfoque (blur) com um aviso "Modo privado ativado", e todo o conteúdo
+  por baixo fica temporariamente impossível de clicar
+- Não apaga, altera nem oculta dados de verdade — é só uma camada visual por
+  cima; ao desativar, tudo volta exatamente como estava
+- O próprio Topbar (o botão de olho e o de tema) continua sempre acessível
+  por cima do desfoque, para poder desativar o modo privado a qualquer
+  momento
+- Preferência persistida (sobrevive a recarregar a página), útil para sair
+  rapidamente de uma visualização exposta em local público
+- Independente do "olho" local do módulo Vencimentos (que só mascara os
+  totais em R$ da barra de resumo) — são dois recursos separados: um oculta
+  valores específicos, o outro oculta a tela inteira
+
 ## Funcionalidades do módulo Agenda
 
 - Quatro visões: **Anual**, **Mensal**, **Semanal** (padrão) e **Diária**
@@ -104,6 +121,9 @@ npm run preview
   é o centro da organização, diferente do agrupamento opcional de Compras
 - Resumo com totais no topo (pendente no mês, pago no mês, atrasado) —
   refletem o valor real independente do filtro "ocultar pagas"
+- Ícone de "olho" na barra de resumo oculta/exibe os três totais (estilo app
+  de banco, ex.: `R$ ••••`) por questões de privacidade — mascara só os
+  valores agregados, sem afetar os valores de cada conta na lista
 - Recorrência própria e mais simples que a da Agenda/Tarefas (Mensal,
   Bimestral, Trimestral, Semestral, Anual, baseada no dia do vencimento);
   ao marcar uma conta recorrente como paga, ela **não** avança no próprio
@@ -199,7 +219,8 @@ src/
   hooks/      # useTheme, useEvents, usePlanning, useTasks, useShoppingItems,
               # useBills, useModulesConfig...
   components/
-    layout/   # Sidebar, Topbar, MiniCalendar, ModulesSettingsModal
+    layout/   # Sidebar, Topbar, MiniCalendar, ModulesSettingsModal,
+              # PrivacyOverlay (modo privado global)
     common/   # componentes compartilhados entre módulos (TagSelector,
               # RecurrenceField, ConfirmDialog, EditableListSection,
               # DescriptionPopover)

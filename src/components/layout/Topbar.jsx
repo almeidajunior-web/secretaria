@@ -1,8 +1,10 @@
-import { Moon, Sun } from 'lucide-react'
+import { Eye, EyeOff, Moon, Sun } from 'lucide-react'
 import Logo from './Logo'
 
-// Fixed 52px header: brand on the left, theme toggle on the right.
-export default function Topbar({ theme, onToggleTheme }) {
+// Fixed 52px header: brand on the left, privacy + theme toggles on the
+// right. Always rendered above the PrivacyOverlay, so both stay reachable
+// even while the rest of the app is blurred and click-blocked.
+export default function Topbar({ theme, onToggleTheme, privacyHidden, onTogglePrivacy }) {
   return (
     <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-border bg-surface px-4">
       <div className="flex items-center gap-2">
@@ -12,14 +14,27 @@ export default function Topbar({ theme, onToggleTheme }) {
           <span className="font-normal text-text-muted">.ia</span>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onToggleTheme}
-        aria-label="Alternar tema"
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary hover:bg-accent-soft hover:text-primary"
-      >
-        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onTogglePrivacy}
+          aria-label={privacyHidden ? 'Desativar modo privado' : 'Ativar modo privado'}
+          className={[
+            'flex h-8 w-8 items-center justify-center rounded-md border text-text-secondary hover:bg-accent-soft hover:text-primary',
+            privacyHidden ? 'border-primary bg-accent-soft text-primary' : 'border-border',
+          ].join(' ')}
+        >
+          {privacyHidden ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          aria-label="Alternar tema"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-secondary hover:bg-accent-soft hover:text-primary"
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+      </div>
     </header>
   )
 }

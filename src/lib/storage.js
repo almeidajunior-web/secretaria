@@ -17,6 +17,8 @@ const KEYS = {
   shoppingPriorities: 'secretaria:shoppingPriorities',
   bills: 'secretaria:bills',
   billCategories: 'secretaria:billCategories',
+  privacyMode: 'secretaria:privacyMode',
+  billValuesHidden: 'secretaria:billValuesHidden',
   schemaVersion: 'secretaria:schemaVersion',
 }
 
@@ -314,4 +316,22 @@ export function loadTheme() {
 
 export function saveTheme(theme) {
   localStorage.setItem(KEYS.theme, theme)
+}
+
+// Both booleans below persist across reloads on purpose — a privacy toggle
+// that silently resets when you reopen the laptop would defeat its point.
+export function loadPrivacyMode() {
+  return localStorage.getItem(KEYS.privacyMode) === 'true'
+}
+
+export function savePrivacyMode(hidden) {
+  localStorage.setItem(KEYS.privacyMode, String(hidden))
+}
+
+export function loadBillValuesHidden() {
+  return localStorage.getItem(KEYS.billValuesHidden) === 'true'
+}
+
+export function saveBillValuesHidden(hidden) {
+  localStorage.setItem(KEYS.billValuesHidden, String(hidden))
 }
