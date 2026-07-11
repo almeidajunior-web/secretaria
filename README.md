@@ -33,7 +33,14 @@ npm run preview
 ## Barra lateral e navegação entre módulos
 
 - A engrenagem **Configurações** no rodapé da barra lateral abre um gerenciador
-  para reordenar os módulos (arraste) e ocultar/exibir cada um
+  para reordenar os módulos (arraste), ocultar/exibir cada um, e fazer backup
+  manual de todos os dados
+- **Backup**: "Exportar backup" baixa um único arquivo `.json` com os dados de
+  todos os módulos (eventos, tarefas, compras, contas, categorias e
+  preferências); "Importar backup" lê um arquivo exportado antes, confirma
+  antes de substituir os dados atuais e recarrega a página. Protege contra
+  perda de dados por limpar o navegador, já que tudo é salvo só localmente
+  (localStorage)
 - Ocultar um módulo só afeta a navegação por ele na barra lateral — os dados
   continuam intactos e qualquer link direto para ele (ex.: os atalhos de
   "Tarefas"/"Venc." na Agenda) continua abrindo o módulo normalmente
@@ -221,7 +228,8 @@ extra é necessária.
 
 ```
 src/
-  lib/        # storage (persistência), date e recurrence (helpers)
+  lib/        # storage (persistência), backup (exportar/importar .json),
+              # date e recurrence (helpers)
   hooks/      # useTheme, useEvents, usePlanning, useTasks, useShoppingItems,
               # useBills, useModulesConfig, usePersistentState (preferências
               # de visualização por módulo)...
