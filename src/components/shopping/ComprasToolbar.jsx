@@ -43,6 +43,7 @@ export default function ComprasToolbar({
   onBulkSetPriority,
   onBulkTogglePurchased,
   onBulkDeleteClick,
+  onNew,
 }) {
   const [filterOpen, setFilterOpen] = useState(false)
   const activeFilterCount = filters.categoryIds.length + filters.priorityIds.length
@@ -147,6 +148,13 @@ export default function ComprasToolbar({
         >
           <ListChecks size={13} />
           Selecionar
+        </button>
+        <button
+          type="button"
+          onClick={onNew}
+          className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover"
+        >
+          Novo item
         </button>
       </div>
     </div>

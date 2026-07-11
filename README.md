@@ -74,9 +74,12 @@ npm run preview
 
 ## Funcionalidades do módulo Compras
 
-- Lista única (sem modal) com edição 100% em linha, no mesmo espírito do
-  módulo Tarefas: título, Classificação, Prioridade e uma Descrição breve
-  (ícone que abre um popover pequeno) editáveis direto na linha
+- Lista única com edição 100% em linha, no mesmo espírito do módulo Tarefas:
+  título, Classificação, Prioridade e uma Descrição breve (ícone que abre um
+  popover pequeno) editáveis direto na linha
+- Criação via linha rápida no rodapé da lista ou pelo botão "Novo item" no
+  topbar (abre um modal — mesmo padrão do "Nova tarefa"/"Novo evento"); o
+  modal serve só para criar, a edição continua sempre em linha
 - Ícone de círculo à esquerda de cada item marca comprado/pendente — vazio
   para pendente, azul preenchido para comprado, com o mesmo efeito de risco
   usado em tarefas finalizadas

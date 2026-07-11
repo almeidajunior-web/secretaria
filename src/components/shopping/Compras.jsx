@@ -4,6 +4,7 @@ import { groupItemsByCategory } from '../../lib/shoppingGroups'
 import ComprasToolbar from './ComprasToolbar'
 import ComprasListView from './ComprasListView'
 import ShoppingSettingsModal from './ShoppingSettingsModal'
+import ShoppingItemModal from './ShoppingItemModal'
 
 function filterItems(items, filters) {
   return items.filter((it) => {
@@ -16,11 +17,14 @@ function filterItems(items, filters) {
 
 const DEFAULT_FILTERS = { categoryIds: [], priorityIds: [], hidePurchased: true }
 
-// Compras module: a single flat/grouped list, no modal anywhere — every
-// field is editable inline (title, classificação, prioridade, descrição via
-// a small popover) or via the quick-add row. Deleting an item is immediate,
-// no confirmation (unlike Tarefas), and items checked off auto-delete the
-// day after they were marked purchased (see useShoppingItems).
+// Compras module: a single flat/grouped list. Every field is editable inline
+// (title, classificação, prioridade, descrição via a small popover) — the
+// item modal is purely an alternate, more visual creation entry point next
+// to the quick-add row, not used for editing (no dirty/discard-confirmation
+// either, same low-friction spirit as skipping delete confirmation).
+// Deleting an item is immediate, no confirmation (unlike Tarefas), and items
+// checked off auto-delete the day after they were marked purchased (see
+// useShoppingItems).
 export default function Compras({
   items,
   addItem,
@@ -42,6 +46,7 @@ export default function Compras({
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [groupByCategory, setGroupByCategory] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
 
@@ -153,6 +158,7 @@ export default function Compras({
         onBulkSetPriority={bulkSetPriority}
         onBulkTogglePurchased={bulkTogglePurchased}
         onBulkDeleteClick={bulkDelete}
+        onNew={() => setModalOpen(true)}
       />
 
       <div className="flex-1 overflow-hidden">
@@ -183,6 +189,18 @@ export default function Compras({
           onDeletePriority={onDeletePriority}
           onReorderPriorities={reorderPriorities}
           onClose={() => setSettingsOpen(false)}
+        />
+      )}
+
+      {modalOpen && (
+        <ShoppingItemModal
+          categories={categories}
+          priorities={priorities}
+          onSave={(data) => {
+            handleQuickAdd(data)
+            setModalOpen(false)
+          }}
+          onClose={() => setModalOpen(false)}
         />
       )}
     </div>
