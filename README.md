@@ -58,21 +58,34 @@ npm run preview
 
 ## Funcionalidades do módulo Tarefas
 
-- Duas visualizações — **Lista** e **Kanban** (colunas fixas: Pendente, Em
-  Progresso, Finalizada, Congelada) — com os mesmos filtros e ordenação
-  compartilhados entre as duas
+- Duas visualizações — **Lista** e **Kanban** — com os mesmos filtros e
+  ordenação compartilhados entre as duas; as colunas do Kanban vêm dos
+  Status cadastrados, e a ordem dos cards dentro de cada coluna segue
+  sempre a mesma ordenação/filtros ativos na Lista (sem reordenação manual)
+- Prioridades, Tags e Status totalmente customizáveis nas Configurações
+  (nome, cor e ordem — arraste para reordenar); Status tem ainda um sinalizador
+  "conta como concluída" por item, usado pela recorrência e pelo filtro de
+  ocultar finalizadas
 - Ordenação hierárquica: clique em "Prazo", "Prioridade" ou "Status" na
   barra de ferramentas para empilhar critérios (1º clique define o
   principal, 2º clique em outro campo adiciona um critério secundário)
-- Prioridades totalmente customizáveis (nome, cor e ordem — arraste para
-  reordenar) e tags próprias do módulo, independentes da Agenda
+- Lista agrupada por prazo (Atrasadas, Hoje, Amanhã, Próximos 7 dias, Mais
+  tarde, Sem prazo), com as atrasadas sempre no topo; datas vencidas
+  aparecem em vermelho, tarefas previstas para hoje mantêm o estilo padrão
+- Edição direta na linha da lista — status, título, tags, prioridade e
+  prazo são todos editáveis ali mesmo, sem abrir o modal (que só abre ao
+  clicar fora dos campos, como no ClickUp); botão de relógio na linha adia
+  rapidamente o prazo em +1 dia ou +1 semana
+- Linha de resumo no topo com a contagem por status e o total de atrasadas,
+  e badge no ícone do módulo na barra lateral com o total de tarefas
+  atrasadas + previstas para hoje
 - Recorrência no mesmo padrão da Agenda, mas orientada a data (sem
   horário/duração obrigatórios) — completar uma tarefa recorrente avança o
   prazo para o próximo ciclo em vez de criar uma tarefa nova; se o prazo
   vencer sem conclusão, a tarefa avança sozinha para a próxima ocorrência
 - Kanban com arraste de cards entre colunas para mudar o status
 - Criação via modal ("Nova tarefa") ou direto na lista, numa linha rápida
-  sem abrir pop-up — título, prazo e prioridade opcionais ali mesmo
+  sem abrir pop-up — título, tags, prazo e prioridade ali mesmo
 
 ## Publicar online
 
@@ -115,7 +128,8 @@ src/
               # RecurrenceField, ConfirmDialog)
     agenda/   # Agenda e suas visões, card, popover e modal
     planning/ # Planejamento: grade, paleta de categorias e gerenciador
-    tasks/    # Tarefas: lista, kanban, modal e gerenciador de prioridades
+    tasks/    # Tarefas: lista, kanban, modal e configurações
+              # (prioridades, tags e status)
   data/       # dados de exemplo (seed) de cada módulo
   constants.js
 ```

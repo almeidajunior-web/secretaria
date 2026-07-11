@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { TASK_STATUSES } from '../../constants'
 import RecurrenceField from '../common/RecurrenceField'
-import TagSelector from '../common/TagSelector'
+import TagPickerPopover from './TagPickerPopover'
 import ConfirmDialog from '../common/ConfirmDialog'
 
 const inputClass =
@@ -15,9 +14,9 @@ const inputClass =
 export default function TaskModal({
   initial,
   priorities,
-  allTags,
+  tags,
+  statuses,
   onCreateTag,
-  onDeleteTag,
   onSave,
   onDelete,
   onClose,
@@ -26,8 +25,8 @@ export default function TaskModal({
   const [dueDate, setDueDate] = useState(initial.dueDate || '')
   const [dueTime, setDueTime] = useState(initial.dueTime || '')
   const [priorityId, setPriorityId] = useState(initial.priorityId || '')
-  const [status, setStatus] = useState(initial.status || 'pendente')
-  const [tags, setTags] = useState(initial.tags || [])
+  const [status, setStatus] = useState(initial.status || statuses[0]?.id)
+  const [tagIds, setTagIds] = useState(initial.tagIds || [])
   const [recurrence, setRecurrence] = useState(initial.recurrence || 'none')
   const [recurrenceDays, setRecurrenceDays] = useState(initial.recurrenceDays || [])
   const [recurrenceUntil, setRecurrenceUntil] = useState(initial.recurrenceUntil || '')
@@ -42,8 +41,8 @@ export default function TaskModal({
     dueDate !== (initial.dueDate || '') ||
     dueTime !== (initial.dueTime || '') ||
     priorityId !== (initial.priorityId || '') ||
-    status !== (initial.status || 'pendente') ||
-    JSON.stringify(tags) !== JSON.stringify(initial.tags || []) ||
+    status !== (initial.status || statuses[0]?.id) ||
+    JSON.stringify(tagIds) !== JSON.stringify(initial.tagIds || []) ||
     recurrence !== (initial.recurrence || 'none') ||
     JSON.stringify(recurrenceDays) !== JSON.stringify(initial.recurrenceDays || []) ||
     recurrenceUntil !== (initial.recurrenceUntil || '')
@@ -53,8 +52,8 @@ export default function TaskModal({
     else onClose()
   }
 
-  const toggleTag = (tag) =>
-    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
+  const toggleTag = (tagId) =>
+    setTagIds((prev) => (prev.includes(tagId) ? prev.filter((t) => t !== tagId) : [...prev, tagId]))
 
   const canSave = title.trim().length > 0
 
@@ -66,7 +65,7 @@ export default function TaskModal({
       dueTime: dueTime || null,
       priorityId: priorityId || null,
       status,
-      tags,
+      tagIds,
       recurrence,
       recurrenceDays: recurrence === 'custom' ? recurrenceDays : [],
       recurrenceUntil: recurrence === 'custom' && recurrenceUntil ? recurrenceUntil : null,
@@ -138,8 +137,8 @@ export default function TaskModal({
                 onChange={(e) => setStatus(e.target.value)}
                 className={inputClass}
               >
-                {TASK_STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>
+                {statuses.map((s) => (
+                  <option key={s.id} value={s.id}>
                     {s.label}
                   </option>
                 ))}
@@ -148,13 +147,7 @@ export default function TaskModal({
           </div>
 
           <Field label="Tags">
-            <TagSelector
-              allTags={allTags}
-              selected={tags}
-              onToggle={toggleTag}
-              onCreate={onCreateTag}
-              onDeleteTag={onDeleteTag}
-            />
+            <TagPickerPopover tags={tags} selectedIds={tagIds} onToggle={toggleTag} onCreate={onCreateTag} />
           </Field>
 
           <RecurrenceField

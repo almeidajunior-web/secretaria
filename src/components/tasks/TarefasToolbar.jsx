@@ -187,11 +187,15 @@ function FilterPopover({
             )}
             {tags.map((t) => (
               <FilterChip
-                key={t}
-                active={filters.tags.includes(t)}
-                onClick={() => onToggleFilter('tags', t)}
+                key={t.id}
+                active={filters.tags.includes(t.id)}
+                onClick={() => onToggleFilter('tags', t.id)}
               >
-                {t}
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: t.color }}
+                />
+                {t.label}
               </FilterChip>
             ))}
           </FilterSection>

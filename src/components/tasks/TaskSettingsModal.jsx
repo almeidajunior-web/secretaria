@@ -7,21 +7,32 @@ import ConfirmDialog from '../common/ConfirmDialog'
 const inputClass =
   'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
 
-// Manage Tarefas' priority levels: add/edit/color/delete, and drag to
-// reorder (array order = rank, first is highest priority — used when
-// sorting tasks by priority). Same pattern as Planejamento's category
-// manager.
-export default function TaskSettingsModal({ priorities, onAdd, onUpdate, onDelete, onReorder, onClose }) {
-  const [pendingDelete, setPendingDelete] = useState(null)
-  const [creating, setCreating] = useState(false)
-  const [newLabel, setNewLabel] = useState('')
-
-  const confirmCreate = () => {
-    const l = newLabel.trim()
-    if (l) onAdd(l, EVENT_COLORS[priorities.length % EVENT_COLORS.length])
-    setNewLabel('')
-    setCreating(false)
-  }
+// Manage Tarefas' three customizable lists — Prioridades, Tags and Status —
+// with the same add/edit-color/delete/drag-to-reorder pattern for each
+// (mirrors Planejamento's category manager). Status additionally exposes an
+// "isDone" toggle per row, since that flag drives recurrence rollover and
+// the hide-finished filter elsewhere in the module.
+export default function TaskSettingsModal({
+  priorities,
+  onAddPriority,
+  onUpdatePriority,
+  onDeletePriority,
+  onReorderPriorities,
+  tags,
+  onAddTag,
+  onUpdateTag,
+  onDeleteTag,
+  onReorderTags,
+  statuses,
+  onAddStatus,
+  onUpdateStatus,
+  onSetStatusDone,
+  onDeleteStatus,
+  onReorderStatuses,
+  onClose,
+}) {
+  const onlyDoneStatusId =
+    statuses.filter((s) => s.isDone).length === 1 ? statuses.find((s) => s.isDone)?.id : null
 
   return (
     <div
@@ -29,7 +40,7 @@ export default function TaskSettingsModal({ priorities, onAdd, onUpdate, onDelet
       onClick={onClose}
     >
       <div
-        className="thin-scroll max-h-[85vh] w-[420px] overflow-auto rounded-xl border border-border bg-surface p-5"
+        className="thin-scroll max-h-[85vh] w-[440px] overflow-auto rounded-xl border border-border bg-surface p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -44,70 +55,157 @@ export default function TaskSettingsModal({ priorities, onAdd, onUpdate, onDelet
           </button>
         </div>
 
-        <p className="mb-2 text-[11px] font-medium text-text-secondary">
-          Prioridades (arraste para reordenar — a primeira é a mais alta)
-        </p>
+        <EditableListSection
+          title="Prioridades"
+          hint="arraste para reordenar — a primeira é a mais alta"
+          items={priorities}
+          onAdd={onAddPriority}
+          onUpdate={onUpdatePriority}
+          onDelete={onDeletePriority}
+          onReorder={onReorderPriorities}
+          addLabel="Nova prioridade"
+          deleteWarning={(item) => `As tarefas com "${item.label}" ficam sem prioridade.`}
+        />
 
-        <div className="flex flex-col gap-3">
-          {priorities.map((p) => (
-            <PriorityRow
-              key={p.id}
-              priority={p}
-              onUpdate={(patch) => onUpdate(p.id, patch)}
-              onDeleteClick={() => setPendingDelete(p)}
-              onDropPriority={(draggedId) =>
-                onReorder(reorderIds(priorities.map((x) => x.id), draggedId, p.id))
-              }
-            />
-          ))}
-        </div>
+        <EditableListSection
+          title="Tags"
+          hint="arraste para reordenar"
+          items={tags}
+          onAdd={onAddTag}
+          onUpdate={onUpdateTag}
+          onDelete={onDeleteTag}
+          onReorder={onReorderTags}
+          addLabel="Nova tag"
+          deleteWarning={(item) => `A tag "${item.label}" será removida de todas as tarefas.`}
+        />
 
-        <div className="mt-4 border-t border-border pt-3">
-          {creating ? (
-            <div className="flex items-center gap-2">
-              <input
-                autoFocus
-                value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    confirmCreate()
-                  }
-                  if (e.key === 'Escape') {
-                    setNewLabel('')
-                    setCreating(false)
-                  }
-                }}
-                placeholder="Nova prioridade"
-                className={inputClass}
-              />
-              <button
-                type="button"
-                onClick={confirmCreate}
-                aria-label="Confirmar nova prioridade"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-primary hover:bg-accent-soft"
+        <EditableListSection
+          title="Status"
+          hint="arraste para reordenar — também define a ordem das colunas do Kanban"
+          items={statuses}
+          onAdd={onAddStatus}
+          onUpdate={onUpdateStatus}
+          onDelete={onDeleteStatus}
+          onReorder={onReorderStatuses}
+          addLabel="Novo status"
+          deleteWarning={(item) => `As tarefas com "${item.label}" voltam para o primeiro status.`}
+          minItems={1}
+          renderExtra={(item) => {
+            const isOnlyDone = item.id === onlyDoneStatusId
+            return (
+              <label
+                className={[
+                  'ml-auto flex items-center gap-1.5 text-[11px]',
+                  isOnlyDone ? 'text-text-muted' : 'text-text-secondary',
+                ].join(' ')}
               >
-                <Check size={15} />
-              </button>
-            </div>
-          ) : (
+                <input
+                  type="checkbox"
+                  checked={item.isDone}
+                  disabled={isOnlyDone}
+                  onChange={(e) => onSetStatusDone(item.id, e.target.checked)}
+                />
+                Conta como concluída
+              </label>
+            )
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function EditableListSection({
+  title,
+  hint,
+  items,
+  onAdd,
+  onUpdate,
+  onDelete,
+  onReorder,
+  addLabel,
+  deleteWarning,
+  minItems = 0,
+  renderExtra,
+}) {
+  const [pendingDelete, setPendingDelete] = useState(null)
+  const [creating, setCreating] = useState(false)
+  const [newLabel, setNewLabel] = useState('')
+
+  const confirmCreate = () => {
+    const l = newLabel.trim()
+    if (l) onAdd(l, EVENT_COLORS[items.length % EVENT_COLORS.length])
+    setNewLabel('')
+    setCreating(false)
+  }
+
+  return (
+    <div className="mb-5">
+      <p className="mb-2 text-[11px] font-medium text-text-secondary">
+        {title} {hint && <span className="font-normal text-text-muted">({hint})</span>}
+      </p>
+
+      <div className="flex flex-col gap-2">
+        {items.map((item) => (
+          <EditableRow
+            key={item.id}
+            item={item}
+            onUpdate={(patch) => onUpdate(item.id, patch)}
+            onDeleteClick={() => setPendingDelete(item)}
+            canDelete={items.length > minItems}
+            onDrop={(draggedId) =>
+              onReorder(reorderIds(items.map((x) => x.id), draggedId, item.id))
+            }
+            extra={renderExtra ? renderExtra(item) : null}
+          />
+        ))}
+      </div>
+
+      <div className="mt-2">
+        {creating ? (
+          <div className="flex items-center gap-2">
+            <input
+              autoFocus
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  confirmCreate()
+                }
+                if (e.key === 'Escape') {
+                  setNewLabel('')
+                  setCreating(false)
+                }
+              }}
+              placeholder={addLabel}
+              className={inputClass}
+            />
             <button
               type="button"
-              onClick={() => setCreating(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border-strong px-3 py-1.5 text-xs font-medium text-text-secondary hover:border-primary hover:text-primary"
+              onClick={confirmCreate}
+              aria-label={`Confirmar ${addLabel}`}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-primary hover:bg-accent-soft"
             >
-              <Plus size={13} />
-              Nova prioridade
+              <Check size={15} />
             </button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border-strong px-3 py-1.5 text-xs font-medium text-text-secondary hover:border-primary hover:text-primary"
+          >
+            <Plus size={13} />
+            {addLabel}
+          </button>
+        )}
       </div>
 
       {pendingDelete && (
         <ConfirmDialog
           title={`Excluir "${pendingDelete.label}"?`}
-          message="As tarefas com esta prioridade ficam sem prioridade. Esta ação não pode ser desfeita."
+          message={`${deleteWarning(pendingDelete)} Esta ação não pode ser desfeita.`}
           confirmLabel="Excluir"
           onConfirm={() => {
             onDelete(pendingDelete.id)
@@ -120,13 +218,13 @@ export default function TaskSettingsModal({ priorities, onAdd, onUpdate, onDelet
   )
 }
 
-function PriorityRow({ priority, onUpdate, onDeleteClick, onDropPriority }) {
-  const [label, setLabel] = useState(priority.label)
+function EditableRow({ item, onUpdate, onDeleteClick, canDelete, onDrop, extra }) {
+  const [label, setLabel] = useState(item.label)
 
   const commitLabel = () => {
     const l = label.trim()
-    if (l && l !== priority.label) onUpdate({ label: l })
-    else setLabel(priority.label)
+    if (l && l !== item.label) onUpdate({ label: l })
+    else setLabel(item.label)
   }
 
   return (
@@ -136,13 +234,13 @@ function PriorityRow({ priority, onUpdate, onDeleteClick, onDropPriority }) {
       onDrop={(e) => {
         e.preventDefault()
         const draggedId = e.dataTransfer.getData('text/plain')
-        if (draggedId) onDropPriority(draggedId)
+        if (draggedId) onDrop(draggedId)
       }}
     >
       <div className="flex items-center gap-2">
         <span
           draggable
-          onDragStart={(e) => e.dataTransfer.setData('text/plain', priority.id)}
+          onDragStart={(e) => e.dataTransfer.setData('text/plain', item.id)}
           aria-label="Arrastar para reordenar"
           className="shrink-0 cursor-grab text-text-muted active:cursor-grabbing"
         >
@@ -158,15 +256,16 @@ function PriorityRow({ priority, onUpdate, onDeleteClick, onDropPriority }) {
         <button
           type="button"
           onClick={onDeleteClick}
-          aria-label={`Excluir prioridade ${priority.label}`}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted hover:bg-danger/15 hover:text-danger"
+          disabled={!canDelete}
+          aria-label={`Excluir ${item.label}`}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted hover:bg-danger/15 hover:text-danger disabled:cursor-not-allowed disabled:opacity-30"
         >
           <Trash2 size={14} />
         </button>
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         {EVENT_COLORS.map((c) => {
-          const selected = c === priority.color
+          const selected = c === item.color
           return (
             <button
               key={c}
@@ -183,6 +282,7 @@ function PriorityRow({ priority, onUpdate, onDeleteClick, onDropPriority }) {
             />
           )
         })}
+        {extra}
       </div>
     </div>
   )

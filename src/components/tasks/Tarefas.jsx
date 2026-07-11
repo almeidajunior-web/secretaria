@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { buildTaskComparator, priorityRankMap } from '../../lib/taskSort'
+import { format } from 'date-fns'
+import { buildTaskComparator, rankMap } from '../../lib/taskSort'
 import TarefasToolbar from './TarefasToolbar'
 import TaskListView from './TaskListView'
 import TaskKanbanView from './TaskKanbanView'
@@ -7,12 +8,12 @@ import TaskModal from './TaskModal'
 import TaskSettingsModal from './TaskSettingsModal'
 import ConfirmDialog from '../common/ConfirmDialog'
 
-function blankTask() {
+function blankTask(statuses) {
   return {
     title: '',
-    status: 'pendente',
+    status: (statuses.find((s) => !s.isDone) || statuses[0])?.id,
     priorityId: null,
-    tags: [],
+    tagIds: [],
     dueDate: null,
     dueTime: null,
     recurrence: 'none',
@@ -21,11 +22,11 @@ function blankTask() {
   }
 }
 
-function filterTasks(tasks, filters, { applyHideFinished }) {
+function filterTasks(tasks, filters, { applyHideFinished, doneStatusIds }) {
   return tasks.filter((t) => {
     if (filters.priorityIds.length && !filters.priorityIds.includes(t.priorityId)) return false
-    if (filters.tags.length && !filters.tags.some((tag) => t.tags?.includes(tag))) return false
-    if (applyHideFinished && filters.hideFinished && t.status === 'finalizada') return false
+    if (filters.tags.length && !filters.tags.some((tagId) => t.tagIds?.includes(tagId))) return false
+    if (applyHideFinished && filters.hideFinished && doneStatusIds.has(t.status)) return false
     return true
   })
 }
@@ -34,7 +35,7 @@ const DEFAULT_FILTERS = { priorityIds: [], tags: [], hideFinished: true }
 
 // Tarefas module: list + kanban views over one task collection, sharing the
 // same filter/hierarchical-sort state. Fully independent from Agenda and
-// Planejamento — its own priorities, tags and storage domain.
+// Planejamento — its own priorities, tags, statuses and storage domain.
 export default function Tarefas({
   tasks,
   addTask,
@@ -48,7 +49,15 @@ export default function Tarefas({
   reorderPriorities,
   tags,
   onCreateTag,
+  updateTag,
   onDeleteTag,
+  reorderTags,
+  statuses,
+  addStatus,
+  updateStatus,
+  setStatusDone,
+  onDeleteStatus,
+  reorderStatuses,
 }) {
   const [view, setView] = useState('list')
   const [sortChain, setSortChain] = useState([{ field: 'dueDate', direction: 'asc' }])
@@ -56,6 +65,11 @@ export default function Tarefas({
   const [modalTask, setModalTask] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)
+
+  const doneStatusIds = useMemo(
+    () => new Set(statuses.filter((s) => s.isDone).map((s) => s.id)),
+    [statuses]
+  )
 
   const toggleSort = (field) => {
     setSortChain((prev) => {
@@ -78,19 +92,20 @@ export default function Tarefas({
     })
   }
 
-  const priorityRank = useMemo(() => priorityRankMap(priorities), [priorities])
+  const priorityRank = useMemo(() => rankMap(priorities), [priorities])
+  const statusRank = useMemo(() => rankMap(statuses), [statuses])
   const comparator = useMemo(
-    () => buildTaskComparator(sortChain, priorityRank),
-    [sortChain, priorityRank]
+    () => buildTaskComparator(sortChain, priorityRank, statusRank),
+    [sortChain, priorityRank, statusRank]
   )
 
   const visibleTasks = useMemo(
-    () => filterTasks(tasks, filters, { applyHideFinished: view === 'list' }),
-    [tasks, filters, view]
+    () => filterTasks(tasks, filters, { applyHideFinished: view === 'list', doneStatusIds }),
+    [tasks, filters, view, doneStatusIds]
   )
   const sortedTasks = useMemo(() => [...visibleTasks].sort(comparator), [visibleTasks, comparator])
 
-  const openCreate = () => setModalTask(blankTask())
+  const openCreate = () => setModalTask(blankTask(statuses))
   const openEdit = (task) => setModalTask(task)
 
   const handleSave = (data) => {
@@ -100,7 +115,7 @@ export default function Tarefas({
   }
 
   const handleQuickAdd = (partial) => {
-    addTask({ ...blankTask(), ...partial })
+    addTask({ ...blankTask(statuses), ...partial })
   }
 
   return (
@@ -120,20 +135,30 @@ export default function Tarefas({
         onManageClick={() => setSettingsOpen(true)}
       />
 
+      <TaskSummaryBar tasks={visibleTasks} statuses={statuses} doneStatusIds={doneStatusIds} />
+
       <div className="flex-1 overflow-hidden">
         {view === 'list' ? (
           <TaskListView
             tasks={sortedTasks}
             priorities={priorities}
+            tags={tags}
+            statuses={statuses}
+            doneStatusIds={doneStatusIds}
             onEdit={openEdit}
             onDeleteClick={setPendingDelete}
             onSetStatus={setTaskStatus}
+            onUpdateTask={updateTask}
+            onCreateTag={onCreateTag}
             onQuickAdd={handleQuickAdd}
           />
         ) : (
           <TaskKanbanView
             tasks={sortedTasks}
             priorities={priorities}
+            tags={tags}
+            statuses={statuses}
+            doneStatusIds={doneStatusIds}
             onEdit={openEdit}
             onSetStatus={setTaskStatus}
           />
@@ -144,9 +169,9 @@ export default function Tarefas({
         <TaskModal
           initial={modalTask}
           priorities={priorities}
-          allTags={tags}
+          tags={tags}
+          statuses={statuses}
           onCreateTag={onCreateTag}
-          onDeleteTag={onDeleteTag}
           onSave={handleSave}
           onDelete={
             modalTask.id
@@ -163,10 +188,21 @@ export default function Tarefas({
       {settingsOpen && (
         <TaskSettingsModal
           priorities={priorities}
-          onAdd={addPriority}
-          onUpdate={updatePriority}
-          onDelete={onDeletePriority}
-          onReorder={reorderPriorities}
+          onAddPriority={addPriority}
+          onUpdatePriority={updatePriority}
+          onDeletePriority={onDeletePriority}
+          onReorderPriorities={reorderPriorities}
+          tags={tags}
+          onAddTag={onCreateTag}
+          onUpdateTag={updateTag}
+          onDeleteTag={onDeleteTag}
+          onReorderTags={reorderTags}
+          statuses={statuses}
+          onAddStatus={addStatus}
+          onUpdateStatus={updateStatus}
+          onSetStatusDone={setStatusDone}
+          onDeleteStatus={onDeleteStatus}
+          onReorderStatuses={reorderStatuses}
           onClose={() => setSettingsOpen(false)}
         />
       )}
@@ -182,6 +218,31 @@ export default function Tarefas({
           }}
           onCancel={() => setPendingDelete(null)}
         />
+      )}
+    </div>
+  )
+}
+
+// Compact count-by-status line, reflecting the currently visible (filtered)
+// tasks — plus an overdue count pulled out in red for quick scanning.
+function TaskSummaryBar({ tasks, statuses, doneStatusIds }) {
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const overdueCount = tasks.filter(
+    (t) => t.dueDate && t.dueDate < todayStr && !doneStatusIds.has(t.status)
+  ).length
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-b border-border bg-app-bg px-4 py-1.5 text-[11px]">
+      {statuses.map((s) => (
+        <span key={s.id} className="flex items-center gap-1.5 text-text-secondary">
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: s.color }} />
+          {s.label} <span className="font-semibold text-text">{tasks.filter((t) => t.status === s.id).length}</span>
+        </span>
+      ))}
+      {overdueCount > 0 && (
+        <span className="ml-auto font-semibold text-danger">
+          {overdueCount} atrasada{overdueCount > 1 ? 's' : ''}
+        </span>
       )}
     </div>
   )

@@ -10,6 +10,7 @@ const KEYS = {
   tasks: 'secretaria:tasks',
   taskPriorities: 'secretaria:taskPriorities',
   taskTags: 'secretaria:taskTags',
+  taskStatuses: 'secretaria:taskStatuses',
   schemaVersion: 'secretaria:schemaVersion',
 }
 
@@ -161,7 +162,13 @@ export function loadTaskTags() {
     const raw = localStorage.getItem(KEYS.taskTags)
     if (!raw) return null
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : null
+    if (!Array.isArray(parsed)) return null
+    // Tags used to be bare label strings; migrate them to {id, label, color}
+    // objects (best-effort — tasks referencing the old string values won't
+    // automatically re-link, but the tag list itself stays usable).
+    return parsed.map((t, i) =>
+      typeof t === 'string' ? { id: `tag_legacy_${i}`, label: t, color: '#6B7280' } : t
+    )
   } catch {
     return null
   }
@@ -169,6 +176,21 @@ export function loadTaskTags() {
 
 export function saveTaskTags(tags) {
   localStorage.setItem(KEYS.taskTags, JSON.stringify(tags))
+}
+
+export function loadTaskStatuses() {
+  try {
+    const raw = localStorage.getItem(KEYS.taskStatuses)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveTaskStatuses(statuses) {
+  localStorage.setItem(KEYS.taskStatuses, JSON.stringify(statuses))
 }
 
 export function loadTheme() {

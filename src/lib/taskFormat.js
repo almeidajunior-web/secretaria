@@ -2,13 +2,16 @@ import { format, differenceInCalendarDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 // Parses 'yyyy-MM-dd' as a local-midnight Date (avoids UTC parsing shift).
-function toDate(dateStr) {
+export function parseDueDate(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number)
   return new Date(y, m - 1, d)
 }
+const toDate = parseDueDate
 
-export function isOverdue(task) {
-  if (!task.dueDate || task.status === 'finalizada') return false
+// Strictly before today only — a task due today is never "overdue" (kept
+// in the default styling, not the red warning).
+export function isOverdue(task, doneStatusIds) {
+  if (!task.dueDate || doneStatusIds.has(task.status)) return false
   const todayStr = format(new Date(), 'yyyy-MM-dd')
   return task.dueDate < todayStr
 }

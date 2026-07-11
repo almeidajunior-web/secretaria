@@ -1,40 +1,46 @@
 import { useState } from 'react'
 import { Repeat } from 'lucide-react'
-import { TASK_STATUSES } from '../../constants'
 import { formatDueDate, isOverdue } from '../../lib/taskFormat'
 
-// Fixed 4-column board (Pendente/Em Progresso/Finalizada/Congelada). Cards
-// are hold-and-drag reorderable between columns (native HTML5 drag-and-drop,
-// same pattern as Planejamento's category reorder) to change status.
-export default function TaskKanbanView({ tasks, priorities, onEdit, onSetStatus }) {
+// Board with one column per status (user-editable — order/color/label come
+// from `statuses`, which also drives the Kanban column order). Cards are
+// hold-and-drag reorderable between columns (native HTML5 drag-and-drop,
+// same pattern as Planejamento's category reorder) to change status. Each
+// column's internal order matches the incoming `tasks` array (already
+// filtered/sorted the same way as the List view) — cards are never manually
+// reorderable within a column.
+export default function TaskKanbanView({ tasks, priorities, tags, statuses, doneStatusIds, onEdit, onSetStatus }) {
   const priorityById = Object.fromEntries(priorities.map((p) => [p.id, p]))
+  const tagById = Object.fromEntries(tags.map((t) => [t.id, t]))
   const [dragOverStatus, setDragOverStatus] = useState(null)
 
   return (
     <div className="thin-scroll flex h-full gap-3 overflow-auto p-4">
-      {TASK_STATUSES.map((status) => {
-        const columnTasks = tasks.filter((t) => t.status === status.value)
+      {statuses.map((status) => {
+        const columnTasks = tasks.filter((t) => t.status === status.id)
         return (
           <div
-            key={status.value}
+            key={status.id}
             onDragOver={(e) => {
               e.preventDefault()
-              setDragOverStatus(status.value)
+              setDragOverStatus(status.id)
             }}
-            onDragLeave={() => setDragOverStatus((s) => (s === status.value ? null : s))}
+            onDragLeave={() => setDragOverStatus((s) => (s === status.id ? null : s))}
             onDrop={(e) => {
               e.preventDefault()
               const id = e.dataTransfer.getData('text/plain')
-              if (id) onSetStatus(id, status.value)
+              if (id) onSetStatus(id, status.id)
               setDragOverStatus(null)
             }}
             className={[
               'flex w-64 shrink-0 flex-col rounded-lg border bg-app-bg',
-              dragOverStatus === status.value ? 'border-primary' : 'border-border',
+              dragOverStatus === status.id ? 'border-primary' : 'border-border',
             ].join(' ')}
           >
             <div className="flex items-center justify-between border-b border-border px-3 py-2">
-              <span className="text-[12px] font-semibold text-text-secondary">{status.label}</span>
+              <span className="text-[12px] font-semibold" style={{ color: status.color }}>
+                {status.label}
+              </span>
               <span className="text-[11px] text-text-muted">{columnTasks.length}</span>
             </div>
             <div className="thin-scroll flex flex-1 flex-col gap-2 overflow-y-auto p-2">
@@ -43,6 +49,8 @@ export default function TaskKanbanView({ tasks, priorities, onEdit, onSetStatus 
                   key={task.id}
                   task={task}
                   priority={priorityById[task.priorityId]}
+                  taskTags={(task.tagIds || []).map((id) => tagById[id]).filter(Boolean)}
+                  doneStatusIds={doneStatusIds}
                   onEdit={() => onEdit(task)}
                 />
               ))}
@@ -54,8 +62,8 @@ export default function TaskKanbanView({ tasks, priorities, onEdit, onSetStatus 
   )
 }
 
-function TaskCard({ task, priority, onEdit }) {
-  const overdue = isOverdue(task)
+function TaskCard({ task, priority, taskTags, doneStatusIds, onEdit }) {
+  const overdue = isOverdue(task, doneStatusIds)
 
   return (
     <div
@@ -75,14 +83,23 @@ function TaskCard({ task, priority, onEdit }) {
             {priority.label}
           </span>
         )}
-        {task.tags?.map((t) => (
-          <span key={t} className="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-primary">
-            {t}
+        {taskTags.map((t) => (
+          <span
+            key={t.id}
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium"
+            style={{ backgroundColor: `${t.color}22`, color: t.color }}
+          >
+            {t.label}
           </span>
         ))}
         {task.recurrence !== 'none' && <Repeat size={11} className="text-text-muted" />}
         {task.dueDate && (
-          <span className={['ml-auto text-[11px]', overdue ? 'font-semibold text-danger' : 'text-text-secondary'].join(' ')}>
+          <span
+            className={[
+              'ml-auto text-[11px]',
+              overdue ? 'font-semibold text-danger' : 'text-text-secondary',
+            ].join(' ')}
+          >
             {formatDueDate(task.dueDate)}
           </span>
         )}

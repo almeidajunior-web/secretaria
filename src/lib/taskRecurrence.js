@@ -52,10 +52,11 @@ export function nextOccurrenceAfter(task, fromDateStr) {
 // Silently advances an overdue, unfinished recurring task's due date to the
 // next valid occurrence on/after `todayStr`. Returns the same task instance
 // unchanged when no rollover is needed (not recurring, not overdue, already
-// finalizada, or the recurrence has ended).
-export function rollForwardIfOverdue(task, todayStr) {
+// in a "done" status, or the recurrence has ended). `doneStatusIds` is a Set
+// of status ids currently marked isDone (statuses are user-editable).
+export function rollForwardIfOverdue(task, todayStr, doneStatusIds) {
   if (!task.recurrence || task.recurrence === 'none') return task
-  if (task.status === 'finalizada') return task
+  if (doneStatusIds.has(task.status)) return task
   if (task.dueDate >= todayStr) return task
   const next = nextOccurrenceOnOrAfter(task, todayStr)
   if (!next || next === task.dueDate) return task

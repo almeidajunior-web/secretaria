@@ -73,15 +73,6 @@ export const STATUSES = [
   { value: 'refused', label: 'Recusado' },
 ]
 
-// Fixed status enum for the Tarefas module — doubles as the Kanban column
-// order. Distinct from Agenda's STATUSES above (event attendance states).
-export const TASK_STATUSES = [
-  { value: 'pendente', label: 'Pendente' },
-  { value: 'em_progresso', label: 'Em Progresso' },
-  { value: 'finalizada', label: 'Finalizada' },
-  { value: 'congelada', label: 'Congelada' },
-]
-
 export const RECURRENCES = [
   { value: 'none', label: 'Sem recorrência' },
   { value: 'daily', label: 'Diária' },

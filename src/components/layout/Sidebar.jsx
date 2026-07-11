@@ -8,8 +8,10 @@ const MODULES = [
   { id: 'finance', label: 'Finanças', icon: Wallet },
 ]
 
-// 220px left rail: mini calendar on top, module navigation below.
-export default function Sidebar({ activeModule, onSelectModule, currentDate, onSelectDate }) {
+// 220px left rail: mini calendar on top, module navigation below. `badges`
+// is an optional { [moduleId]: count } map — e.g. Tarefas' overdue+today
+// count — rendered as a small pill next to the module label.
+export default function Sidebar({ activeModule, onSelectModule, currentDate, onSelectDate, badges = {} }) {
   return (
     <aside className="flex w-[220px] shrink-0 flex-col border-r border-border bg-sidebar p-3">
       <MiniCalendar currentDate={currentDate} onSelectDate={onSelectDate} />
@@ -23,6 +25,7 @@ export default function Sidebar({ activeModule, onSelectModule, currentDate, onS
       <nav className="flex flex-col gap-0.5">
         {MODULES.map(({ id, label, icon: Icon }) => {
           const active = id === activeModule
+          const badge = badges[id]
           return (
             <button
               key={id}
@@ -37,6 +40,11 @@ export default function Sidebar({ activeModule, onSelectModule, currentDate, onS
             >
               <Icon size={16} className={active ? 'text-primary' : 'text-text-muted'} />
               {label}
+              {badge > 0 && (
+                <span className="ml-auto flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+                  {badge}
+                </span>
+              )}
             </button>
           )
         })}

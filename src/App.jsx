@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { format } from 'date-fns'
 import { Construction } from 'lucide-react'
 import { useTheme } from './hooks/useTheme'
 import { useEvents } from './hooks/useEvents'
@@ -7,6 +8,7 @@ import { usePlanning } from './hooks/usePlanning'
 import { useTasks } from './hooks/useTasks'
 import { useTaskPriorities } from './hooks/useTaskPriorities'
 import { useTaskTags } from './hooks/useTaskTags'
+import { useTaskStatuses } from './hooks/useTaskStatuses'
 import Topbar from './components/layout/Topbar'
 import Sidebar from './components/layout/Sidebar'
 import Agenda from './components/agenda/Agenda'
@@ -23,10 +25,10 @@ export default function App() {
   const seedTags = [...new Set(eventsApi.events.flatMap((e) => e.tags || []))]
   const tagsApi = useTags(seedTags)
   const planningApi = usePlanning()
-  const tasksApi = useTasks()
+  const taskStatusesApi = useTaskStatuses()
+  const tasksApi = useTasks(taskStatusesApi.statuses)
   const taskPrioritiesApi = useTaskPriorities()
-  const seedTaskTags = [...new Set(tasksApi.tasks.flatMap((t) => t.tags || []))]
-  const taskTagsApi = useTaskTags(seedTaskTags)
+  const taskTagsApi = useTaskTags()
   const [activeModule, setActiveModule] = useState('agenda')
   const [currentDate, setCurrentDate] = useState(() => new Date())
 
@@ -38,15 +40,29 @@ export default function App() {
 
   // Deleting a task tag/priority removes it from the managed list and clears
   // it from every task that referenced it.
-  const handleDeleteTaskTag = (tag) => {
-    taskTagsApi.removeTag(tag)
-    tasksApi.removeTagFromAllTasks(tag)
+  const handleDeleteTaskTag = (id) => {
+    taskTagsApi.deleteTag(id)
+    tasksApi.removeTagFromAllTasks(id)
   }
 
   const handleDeleteTaskPriority = (id) => {
     taskPrioritiesApi.deletePriority(id)
     tasksApi.removePriorityFromAllTasks(id)
   }
+
+  // Deleting a status (only allowed when more than one remains — enforced in
+  // useTaskStatuses) reassigns its tasks to whichever status is now first.
+  const handleDeleteTaskStatus = (id) => {
+    const fallback = taskStatusesApi.statuses.find((s) => s.id !== id)?.id
+    taskStatusesApi.deleteStatus(id)
+    if (fallback) tasksApi.reassignStatusOnAllTasks(id, fallback)
+  }
+
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const doneStatusIds = new Set(taskStatusesApi.statuses.filter((s) => s.isDone).map((s) => s.id))
+  const overdueOrTodayCount = tasksApi.tasks.filter(
+    (t) => t.dueDate && t.dueDate <= todayStr && !doneStatusIds.has(t.status)
+  ).length
 
   return (
     <div className="flex h-full flex-col bg-app-bg text-text">
@@ -57,6 +73,7 @@ export default function App() {
           onSelectModule={setActiveModule}
           currentDate={currentDate}
           onSelectDate={setCurrentDate}
+          badges={{ todos: overdueOrTodayCount }}
         />
         <main className="flex-1 overflow-hidden">
           {activeModule === 'agenda' ? (
@@ -84,7 +101,15 @@ export default function App() {
               reorderPriorities={taskPrioritiesApi.reorderPriorities}
               tags={taskTagsApi.tags}
               onCreateTag={taskTagsApi.addTag}
+              updateTag={taskTagsApi.updateTag}
               onDeleteTag={handleDeleteTaskTag}
+              reorderTags={taskTagsApi.reorderTags}
+              statuses={taskStatusesApi.statuses}
+              addStatus={taskStatusesApi.addStatus}
+              updateStatus={taskStatusesApi.updateStatus}
+              setStatusDone={taskStatusesApi.setStatusDone}
+              onDeleteStatus={handleDeleteTaskStatus}
+              reorderStatuses={taskStatusesApi.reorderStatuses}
             />
           ) : (
             <ModulePlaceholder module={activeModule} />

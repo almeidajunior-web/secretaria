@@ -1,19 +1,29 @@
-import { useState } from 'react'
-import { Plus, Repeat, Trash2 } from 'lucide-react'
-import { TASK_STATUSES } from '../../constants'
-import { formatDueDate, isOverdue } from '../../lib/taskFormat'
+import { useEffect, useRef, useState } from 'react'
+import { format, addDays } from 'date-fns'
+import { Plus, Repeat, Trash2, Clock } from 'lucide-react'
+import { formatDueDate, isOverdue, parseDueDate } from '../../lib/taskFormat'
+import { groupTasksByDueDate } from '../../lib/taskGroups'
+import TagPickerPopover from './TagPickerPopover'
 
-const STATUS_COLORS = {
-  pendente: '#6B7280',
-  em_progresso: '#2563EB',
-  finalizada: '#16A34A',
-  congelada: '#7C3AED',
-}
-
-// Flat, sorted task list with inline status/priority controls and a
-// ClickUp-style quick-add row at the bottom for modal-free creation.
-export default function TaskListView({ tasks, priorities, onEdit, onDeleteClick, onSetStatus, onQuickAdd }) {
+// Flat, sorted task list grouped into due-date sections (Atrasadas first),
+// with fields editable directly in the row (ClickUp-style — the modal only
+// opens when clicking outside a dedicated field control), and a quick-add
+// row at the bottom for modal-free creation.
+export default function TaskListView({
+  tasks,
+  priorities,
+  tags,
+  statuses,
+  doneStatusIds,
+  onEdit,
+  onDeleteClick,
+  onSetStatus,
+  onUpdateTask,
+  onCreateTag,
+  onQuickAdd,
+}) {
   const priorityById = Object.fromEntries(priorities.map((p) => [p.id, p]))
+  const groups = groupTasksByDueDate(tasks)
 
   return (
     <div className="thin-scroll flex h-full flex-col overflow-auto">
@@ -23,81 +33,134 @@ export default function TaskListView({ tasks, priorities, onEdit, onDeleteClick,
         </p>
       ) : (
         <div className="flex flex-col">
-          {tasks.map((task) => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              priority={priorityById[task.priorityId]}
-              onEdit={() => onEdit(task)}
-              onDeleteClick={() => onDeleteClick(task)}
-              onSetStatus={(status) => onSetStatus(task.id, status)}
-            />
+          {groups.map((group) => (
+            <div key={group.key}>
+              <div className="sticky top-0 z-[1] bg-app-bg px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                {group.label} <span className="font-normal normal-case">({group.tasks.length})</span>
+              </div>
+              {group.tasks.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  priority={priorityById[task.priorityId]}
+                  priorities={priorities}
+                  tags={tags}
+                  statuses={statuses}
+                  doneStatusIds={doneStatusIds}
+                  onEdit={() => onEdit(task)}
+                  onDeleteClick={() => onDeleteClick(task)}
+                  onSetStatus={(status) => onSetStatus(task.id, status)}
+                  onUpdateTask={onUpdateTask}
+                  onCreateTag={onCreateTag}
+                />
+              ))}
+            </div>
           ))}
         </div>
       )}
 
-      <QuickAddRow priorities={priorities} onQuickAdd={onQuickAdd} />
+      <QuickAddRow priorities={priorities} tags={tags} onCreateTag={onCreateTag} onQuickAdd={onQuickAdd} />
     </div>
   )
 }
 
-function TaskRow({ task, priority, onEdit, onDeleteClick, onSetStatus }) {
-  const overdue = isOverdue(task)
-  const finished = task.status === 'finalizada'
+function TaskRow({
+  task,
+  priority,
+  priorities,
+  tags,
+  statuses,
+  doneStatusIds,
+  onEdit,
+  onDeleteClick,
+  onSetStatus,
+  onUpdateTask,
+  onCreateTag,
+}) {
+  const overdue = isOverdue(task, doneStatusIds)
+  const finished = doneStatusIds.has(task.status)
+  const [title, setTitle] = useState(task.title)
+
+  const commitTitle = () => {
+    const t = title.trim()
+    if (t && t !== task.title) onUpdateTask({ ...task, title: t })
+    else setTitle(task.title)
+  }
+
+  const toggleTag = (tagId) => {
+    const has = (task.tagIds || []).includes(tagId)
+    const next = has ? task.tagIds.filter((x) => x !== tagId) : [...(task.tagIds || []), tagId]
+    onUpdateTask({ ...task, tagIds: next })
+  }
 
   return (
     <div
       onClick={onEdit}
-      className="flex cursor-pointer items-center gap-3 border-b border-border px-4 py-2.5 hover:bg-accent-soft/30"
+      className="flex cursor-pointer items-center gap-2 border-b border-border px-4 py-2 hover:bg-accent-soft/30"
     >
       <select
         value={task.status}
         onClick={(e) => e.stopPropagation()}
         onChange={(e) => onSetStatus(e.target.value)}
-        style={{ color: STATUS_COLORS[task.status], borderColor: STATUS_COLORS[task.status] }}
-        className="shrink-0 rounded-md border bg-transparent px-1.5 py-1 text-[11px] font-medium outline-none"
+        style={{ color: statuses.find((s) => s.id === task.status)?.color }}
+        className="w-[112px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] font-medium outline-none"
       >
-        {TASK_STATUSES.map((s) => (
-          <option key={s.value} value={s.value}>
+        {statuses.map((s) => (
+          <option key={s.id} value={s.id}>
             {s.label}
           </option>
         ))}
       </select>
 
-      <span className={['flex-1 truncate text-[13px]', finished ? 'text-text-muted line-through' : 'text-text'].join(' ')}>
-        {task.title}
-      </span>
+      <input
+        value={title}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => setTitle(e.target.value)}
+        onBlur={commitTitle}
+        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+        className={[
+          'min-w-0 flex-1 bg-transparent text-[13px] outline-none',
+          finished ? 'text-text-muted line-through' : 'text-text',
+        ].join(' ')}
+      />
 
-      {task.recurrence !== 'none' && (
-        <Repeat size={13} className="shrink-0 text-text-muted" />
-      )}
+      {task.recurrence !== 'none' && <Repeat size={13} className="shrink-0 text-text-muted" />}
 
-      {task.tags?.length > 0 && (
-        <span className="hidden shrink-0 flex-wrap gap-1 sm:flex">
-          {task.tags.map((t) => (
-            <span
-              key={t}
-              className="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-primary"
-            >
-              {t}
-            </span>
-          ))}
-        </span>
-      )}
+      <TagPickerPopover
+        tags={tags}
+        selectedIds={task.tagIds || []}
+        onToggle={toggleTag}
+        onCreate={onCreateTag}
+        triggerClassName="flex shrink-0 flex-wrap items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-text-secondary hover:bg-accent-soft/50"
+      />
 
-      {priority && (
-        <span
-          className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-          style={{ backgroundColor: `${priority.color}22`, color: priority.color }}
-        >
-          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: priority.color }} />
-          {priority.label}
-        </span>
-      )}
+      <select
+        value={task.priorityId || ''}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => onUpdateTask({ ...task, priorityId: e.target.value || null })}
+        style={{ color: priority?.color }}
+        className="w-[118px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] font-medium outline-none"
+      >
+        <option value="">Sem prioridade</option>
+        {priorities.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.label}
+          </option>
+        ))}
+      </select>
 
-      <span className={['w-16 shrink-0 text-right text-[11px]', overdue ? 'font-semibold text-danger' : 'text-text-secondary'].join(' ')}>
-        {formatDueDate(task.dueDate)}
-      </span>
+      <input
+        type="date"
+        value={task.dueDate || ''}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => onUpdateTask({ ...task, dueDate: e.target.value || null })}
+        className={[
+          'w-[130px] shrink-0 rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] outline-none',
+          overdue ? 'font-semibold text-danger' : 'text-text-secondary',
+        ].join(' ')}
+      />
+
+      <PostponeButton task={task} onUpdateTask={onUpdateTask} />
 
       <button
         type="button"
@@ -114,10 +177,68 @@ function TaskRow({ task, priority, onEdit, onDeleteClick, onSetStatus }) {
   )
 }
 
-function QuickAddRow({ priorities, onQuickAdd }) {
+function PostponeButton({ task, onUpdateTask }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  const postpone = (days) => {
+    const base = task.dueDate ? parseDueDate(task.dueDate) : new Date()
+    onUpdateTask({ ...task, dueDate: format(addDays(base, days), 'yyyy-MM-dd') })
+    setOpen(false)
+  }
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen((v) => !v)
+        }}
+        aria-label="Adiar tarefa"
+        className="flex h-6 w-6 items-center justify-center rounded-full text-text-muted hover:bg-accent-soft/60 hover:text-primary"
+      >
+        <Clock size={13} />
+      </button>
+      {open && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute right-0 top-full z-50 mt-1.5 flex w-32 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1.5 shadow-lg"
+        >
+          <button
+            type="button"
+            onClick={() => postpone(1)}
+            className="rounded-lg px-2 py-1.5 text-left text-xs font-medium text-text-secondary hover:bg-accent-soft hover:text-primary"
+          >
+            +1 dia
+          </button>
+          <button
+            type="button"
+            onClick={() => postpone(7)}
+            className="rounded-lg px-2 py-1.5 text-left text-xs font-medium text-text-secondary hover:bg-accent-soft hover:text-primary"
+          >
+            +1 semana
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function QuickAddRow({ priorities, tags, onCreateTag, onQuickAdd }) {
   const [title, setTitle] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [priorityId, setPriorityId] = useState('')
+  const [tagIds, setTagIds] = useState([])
 
   const commit = () => {
     const t = title.trim()
@@ -126,10 +247,12 @@ function QuickAddRow({ priorities, onQuickAdd }) {
       title: t,
       dueDate: dueDate || null,
       priorityId: priorityId || null,
+      tagIds,
     })
     setTitle('')
     setDueDate('')
     setPriorityId('')
+    setTagIds([])
   }
 
   return (
@@ -139,8 +262,16 @@ function QuickAddRow({ priorities, onQuickAdd }) {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && commit()}
-        placeholder="Nova tarefa rápida…"
+        placeholder="Nova tarefa…"
         className="flex-1 bg-transparent text-[13px] text-text outline-none placeholder:text-text-muted"
+      />
+      <TagPickerPopover
+        tags={tags}
+        selectedIds={tagIds}
+        onToggle={(id) =>
+          setTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+        }
+        onCreate={onCreateTag}
       />
       <input
         type="date"
