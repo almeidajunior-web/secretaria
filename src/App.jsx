@@ -269,6 +269,7 @@ export default function App() {
               updateEntry={financeEntriesApi.updateEntry}
               deleteEntry={financeEntriesApi.deleteEntry}
               duplicateEntry={financeEntriesApi.duplicateEntry}
+              ensureNextOccurrences={financeEntriesApi.ensureNextOccurrences}
               expenseCategories={financeExpenseCategoriesApi.categories}
               addExpenseCategory={financeExpenseCategoriesApi.addCategory}
               updateExpenseCategory={financeExpenseCategoriesApi.updateCategory}

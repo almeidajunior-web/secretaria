@@ -223,6 +223,18 @@ npm run preview
 - Card **"Fatura atual do cartão"** no Resumo: soma dos lançamentos do
   cartão cujo ciclo ainda está aberto (isto é, o mesmo ciclo em que uma
   compra feita hoje entraria), com as datas de fechamento e vencimento
+- **Contas fixas recorrentes**: qualquer lançamento (receita ou despesa)
+  pode receber uma recorrência (mensal, bimestral, trimestral, semestral,
+  anual) pelo campo Recorrência no modal, na linha rápida ou pelo chip da
+  coluna "Recorrência" na tabela — reaproveita as mesmas opções de
+  Vencimentos (`src/lib/billRecurrence.js`). A partir do momento em que a
+  instância mais recente de uma série deixa de ser previsto (sua data
+  efetiva chega), a próxima ocorrência é gerada sozinha, já como previsto
+  — sempre com exatamente uma ocorrência futura pendente por série, sem
+  acumular lançamentos além disso. Módulo independente do sistema de
+  recorrência de Vencimentos (contas fixas aqui não têm relação com
+  contas cadastradas lá). "Duplicar" continua criando uma cópia avulsa,
+  sem herdar a recorrência/série do lançamento original
 
 ## Funcionalidades do módulo Tarefas
 

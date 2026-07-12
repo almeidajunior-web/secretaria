@@ -58,6 +58,8 @@ export function buildSeedEntries() {
       categoryId: 'salario',
       paymentMethodId: 'transferencia',
       accountId: null,
+      recurrence: 'monthly',
+      seriesId: 'finseries_seed_salario',
     },
     {
       id: 'fin_seed_2',
@@ -81,6 +83,8 @@ export function buildSeedEntries() {
       paymentMethodId: 'transferencia',
       accountId: null,
       essential: true,
+      recurrence: 'monthly',
+      seriesId: 'finseries_seed_aluguel',
     },
     {
       id: 'fin_seed_4',

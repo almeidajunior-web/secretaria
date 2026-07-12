@@ -2,6 +2,7 @@ import { useState } from 'react'
 import TagPickerPopover from '../common/TagPickerPopover'
 import { creditCardEffectiveDate } from '../../lib/creditCard'
 import { fmt, fromDateInput } from '../../lib/date'
+import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
 
 const inputClass =
   'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
@@ -31,6 +32,7 @@ export default function FinanceEntryModal({
   const [accountId, setAccountId] = useState('')
   const [tagIds, setTagIds] = useState([])
   const [essential, setEssential] = useState(false)
+  const [recurrence, setRecurrence] = useState('none')
   const [description, setDescription] = useState('')
 
   const isExpense = type === 'expense'
@@ -59,6 +61,7 @@ export default function FinanceEntryModal({
       accountId: accountId || null,
       tagIds,
       essential: isExpense ? essential : false,
+      recurrence,
       description: description.trim(),
     })
   }
@@ -165,18 +168,29 @@ export default function FinanceEntryModal({
             </p>
           )}
 
-          {accounts.length > 0 && (
-            <Field label="Conta (opcional)">
-              <select value={accountId} onChange={(e) => setAccountId(e.target.value)} className={inputClass}>
-                <option value="">Não informado</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.label}
+          <div className="grid grid-cols-2 gap-3">
+            {accounts.length > 0 && (
+              <Field label="Conta (opcional)">
+                <select value={accountId} onChange={(e) => setAccountId(e.target.value)} className={inputClass}>
+                  <option value="">Não informado</option>
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+            <Field label="Recorrência">
+              <select value={recurrence} onChange={(e) => setRecurrence(e.target.value)} className={inputClass}>
+                {RECURRENCE_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
                   </option>
                 ))}
               </select>
             </Field>
-          )}
+          </div>
 
           <div className="flex items-center justify-between gap-3">
             <Field label="Tags (opcional)">

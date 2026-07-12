@@ -2,16 +2,32 @@ import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { loadFinanceEntries, saveFinanceEntries } from '../lib/storage'
 import { buildSeedEntries } from '../data/financeSeed'
+import { nextDueDate } from '../lib/billRecurrence'
 
 let nextId = 1
 function genEntryId() {
   return `fin_${Date.now()}_${nextId++}`
 }
+function genSeriesId() {
+  return `finseries_${Date.now()}_${nextId++}`
+}
 
-// CRUD over the finance entry collection. Unlike Vencimentos' bills, an
-// entry is a movement that already happened — there's no pending/paid
-// state and no recurrence-spawn engine here. The closest thing to
-// recurrence in V1 is `duplicateEntry`, a one-click copy dated today.
+// Ensures an entry with a recurrence has a seriesId (assigned once, reused
+// by every occurrence spawned from it) — mirrors useBills.js#withSeriesId.
+function withSeriesId(entry) {
+  if (entry.recurrence && entry.recurrence !== 'none' && !entry.seriesId) {
+    return { ...entry, seriesId: genSeriesId() }
+  }
+  return entry
+}
+
+// CRUD over the finance entry collection, plus a lightweight recurrence
+// engine (`ensureNextOccurrences`) for contas fixas — see Financas.jsx,
+// which calls it after every mutation. Unlike Vencimentos' bills, an entry
+// has no paid/unpaid state to gate spawning on: the next occurrence is
+// spawned once the latest known instance of a series stops being previsto
+// (its effective date has arrived), keeping exactly one future instance
+// pending per series at all times.
 export function useFinanceEntries() {
   const [entries, setEntries] = useState(() => {
     const stored = loadFinanceEntries()
@@ -25,11 +41,13 @@ export function useFinanceEntries() {
 
   const addEntry = (entry) => {
     const id = genEntryId()
-    setEntries((prev) => [...prev, { ...entry, id }])
+    setEntries((prev) => [...prev, withSeriesId({ ...entry, id })])
   }
 
   const updateEntry = (entry) => {
-    setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, ...entry } : e)))
+    setEntries((prev) =>
+      prev.map((e) => (e.id === entry.id ? withSeriesId({ ...e, ...entry }) : e))
+    )
   }
 
   const deleteEntry = (id) => {
@@ -37,14 +55,46 @@ export function useFinanceEntries() {
   }
 
   // `transform` lets the caller recompute derived fields (effectiveDate) on
-  // the duplicated entry before it lands in state — see Financas.jsx.
+  // the duplicated entry before it lands in state — see Financas.jsx. A
+  // duplicate is a one-off manual copy, not a new member of the source's
+  // recurring series, so recurrence/seriesId are deliberately dropped.
   const duplicateEntry = (id, transform) => {
     setEntries((prev) => {
       const source = prev.find((e) => e.id === id)
       if (!source) return prev
       const todayStr = format(new Date(), 'yyyy-MM-dd')
-      const duplicated = { ...source, id: genEntryId(), date: todayStr }
+      const duplicated = { ...source, id: genEntryId(), date: todayStr, recurrence: 'none', seriesId: undefined }
       return [...prev, transform ? transform(duplicated) : duplicated]
+    })
+  }
+
+  // Keeps exactly one future ("previsto") instance pending per recurring
+  // series. For each series, looks at its chronologically-latest member; if
+  // that instance is no longer previsto (its effective date has arrived or
+  // passed) and nothing later already exists, spawns the next one via
+  // nextDueDate (billRecurrence.js). `transform` lets the caller recompute
+  // effectiveDate (credit-card cycle) on the spawned entry — see Financas.jsx.
+  // Idempotent and safe to call after every mutation: once a series has its
+  // one pending future instance, there's nothing left to spawn.
+  const ensureNextOccurrences = (transform) => {
+    const todayStr = format(new Date(), 'yyyy-MM-dd')
+    setEntries((prev) => {
+      const seriesSeen = new Set()
+      const toSpawn = []
+      prev.forEach((entry) => {
+        if (!entry.recurrence || entry.recurrence === 'none' || !entry.seriesId) return
+        if (seriesSeen.has(entry.seriesId)) return
+        seriesSeen.add(entry.seriesId)
+        const siblings = prev.filter((e) => e.seriesId === entry.seriesId)
+        const latest = siblings.reduce((a, b) => (a.date > b.date ? a : b))
+        const effective = latest.effectiveDate || latest.date
+        if (!effective || effective > todayStr) return // still previsto, nothing to add yet
+        const nextDate = nextDueDate(latest.date, latest.recurrence)
+        if (!nextDate) return
+        const spawned = { ...latest, id: genEntryId(), date: nextDate }
+        toSpawn.push(transform ? transform(spawned) : spawned)
+      })
+      return toSpawn.length ? [...prev, ...toSpawn] : prev
     })
   }
 
@@ -80,6 +130,7 @@ export function useFinanceEntries() {
     updateEntry,
     deleteEntry,
     duplicateEntry,
+    ensureNextOccurrences,
     removeCategoryFromAllEntries,
     removePaymentMethodFromAllEntries,
     removeAccountFromAllEntries,

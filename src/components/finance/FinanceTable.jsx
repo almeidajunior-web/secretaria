@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { TrendingUp, TrendingDown, Copy, Trash2, Star, ArrowUp, ArrowDown, ListFilter, Clock } from 'lucide-react'
 import { fmt, fromDateInput } from '../../lib/date'
 import { creditCardEffectiveDate } from '../../lib/creditCard'
+import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
 import DescriptionPopover from '../common/DescriptionPopover'
 import ChipSelect from '../common/ChipSelect'
 import InlineDate from '../common/InlineDate'
@@ -11,6 +12,8 @@ const TYPE_OPTIONS = [
   { id: 'income', label: 'Receita' },
   { id: 'expense', label: 'Despesa' },
 ]
+
+const RECURRENCE_CHIP_OPTIONS = RECURRENCE_OPTIONS.map((r) => ({ id: r.value, label: r.label }))
 
 // Excel-style table: a sticky header whose column titles sort (asc→desc→off)
 // and whose categorical columns carry a funnel that opens a per-column
@@ -43,7 +46,7 @@ export default function FinanceTable({
 }) {
   const showAccounts = accounts.length > 0
   const allCategories = [...expenseCategories, ...incomeCategories]
-  const colSpanEmpty = 8 + (showAccounts ? 1 : 0) + (selectMode ? 1 : 0)
+  const colSpanEmpty = 9 + (showAccounts ? 1 : 0) + (selectMode ? 1 : 0)
 
   return (
     <div className="thin-scroll h-full overflow-auto">
@@ -119,6 +122,9 @@ export default function FinanceTable({
             </th>
             <th className="px-2 py-2">
               <HeaderCell label="Data" sortField="date" sortChain={sortChain} onToggleSort={onToggleSort} />
+            </th>
+            <th className="px-2 py-2">
+              <HeaderCell label="Recorrência" />
             </th>
             <th className="w-16 px-2 py-2" />
           </tr>
@@ -422,6 +428,15 @@ function EntryRow({
           </p>
         )}
       </td>
+      <td className={cell}>
+        <ChipSelect
+          value={entry.recurrence || 'none'}
+          options={RECURRENCE_CHIP_OPTIONS}
+          onChange={(id) => onUpdateEntry({ ...entry, recurrence: id || 'none' })}
+          allowNull={false}
+          colorless
+        />
+      </td>
       <td className={`${cell} text-right`}>
         <div className="flex items-center justify-end gap-0.5">
           <button
@@ -467,6 +482,7 @@ function QuickAddRow({
   const [accountId, setAccountId] = useState('')
   const [tagIds, setTagIds] = useState([])
   const [essential, setEssential] = useState(false)
+  const [recurrence, setRecurrence] = useState('none')
 
   const isIncome = type === 'income'
   const categories = isIncome ? incomeCategories : expenseCategories
@@ -488,6 +504,7 @@ function QuickAddRow({
       accountId: accountId || null,
       tagIds,
       essential: isIncome ? false : essential,
+      recurrence,
     })
     setTitle('')
     setAmount('')
@@ -497,6 +514,7 @@ function QuickAddRow({
     setAccountId('')
     setTagIds([])
     setEssential(false)
+    setRecurrence('none')
   }
 
   const cell = 'px-2 py-1.5 align-middle'
@@ -601,6 +619,15 @@ function QuickAddRow({
             desconta {fmt(fromDateInput(effectivePreview), 'dd/MM')}
           </p>
         )}
+      </td>
+      <td className={cell}>
+        <ChipSelect
+          value={recurrence}
+          options={RECURRENCE_CHIP_OPTIONS}
+          onChange={(id) => setRecurrence(id || 'none')}
+          allowNull={false}
+          colorless
+        />
       </td>
       <td className={`${cell} text-right`}>
         <button

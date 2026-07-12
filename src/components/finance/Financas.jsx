@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { format, subMonths } from 'date-fns'
 import { usePersistentState } from '../../hooks/usePersistentState'
 import { useFinanceValuesHidden } from '../../hooks/useFinanceValuesHidden'
@@ -41,6 +41,7 @@ export default function Financas({
   updateEntry,
   deleteEntry,
   duplicateEntry,
+  ensureNextOccurrences,
   expenseCategories,
   addExpenseCategory,
   updateExpenseCategory,
@@ -162,6 +163,14 @@ export default function Financas({
     [entries, creditCardConfig, todayStr]
   )
 
+  // Keeps every recurring series topped up with exactly one pending previsto
+  // instance — runs after every mutation and once on mount. Idempotent: once
+  // a series has its future instance, ensureNextOccurrences is a no-op, so
+  // this settles after at most one extra render instead of looping.
+  useEffect(() => {
+    ensureNextOccurrences((entry) => withEffectiveDate(entry, creditCardConfig))
+  }, [entries, creditCardConfig, ensureNextOccurrences])
+
   const selectAllVisible = () => setSelectedIds(new Set(sortedEntries.map((e) => e.id)))
   const clearSelection = () => setSelectedIds(new Set())
 
@@ -198,6 +207,7 @@ export default function Financas({
       amount: 0,
       date: null,
       type: 'expense',
+      recurrence: 'none',
       ...partial,
     }
     addEntry(withEffectiveDate(base, creditCardConfig))
