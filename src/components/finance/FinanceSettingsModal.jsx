@@ -4,6 +4,47 @@ import SettingsShell from '../common/SettingsShell'
 
 // Manage Finanças' customizable lists — expense/income categories, payment
 // methods and accounts — each on its own tab in the shared settings sidebar.
+const clampDay = (v) => {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return 1
+  return Math.min(31, Math.max(1, Math.round(n)))
+}
+
+const dayInputClass =
+  'w-14 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary'
+
+// "Cartão de Crédito" (id `credito`) is a fixed, non-deletable/non-renamable
+// payment method — its closing/due days are configured here, inline via
+// renderExtra, instead of a separate settings tab.
+function CreditCardDaysFields({ config, onUpdateConfig }) {
+  return (
+    <div className="flex items-center gap-3 text-[11px] text-text-secondary">
+      <label className="flex items-center gap-1.5">
+        Fechamento
+        <input
+          type="number"
+          min="1"
+          max="31"
+          value={config.closingDay}
+          onChange={(e) => onUpdateConfig({ closingDay: clampDay(e.target.value) })}
+          className={dayInputClass}
+        />
+      </label>
+      <label className="flex items-center gap-1.5">
+        Vencimento
+        <input
+          type="number"
+          min="1"
+          max="31"
+          value={config.dueDay}
+          onChange={(e) => onUpdateConfig({ dueDay: clampDay(e.target.value) })}
+          className={dayInputClass}
+        />
+      </label>
+    </div>
+  )
+}
+
 export default function FinanceSettingsModal({
   expenseCategories,
   onAddExpenseCategory,
@@ -20,6 +61,8 @@ export default function FinanceSettingsModal({
   onUpdatePaymentMethod,
   onDeletePaymentMethod,
   onReorderPaymentMethods,
+  creditCardConfig,
+  onUpdateCreditCardConfig,
   accounts,
   onAddAccount,
   onUpdateAccount,
@@ -85,6 +128,13 @@ export default function FinanceSettingsModal({
           addLabel="Nova forma de pagamento"
           deleteWarning={(item) => `Os lançamentos com "${item.label}" ficam sem forma de pagamento.`}
           hideColor
+          isItemDeletable={(item) => item.id !== 'credito'}
+          isItemLabelLocked={(item) => item.id === 'credito'}
+          renderExtra={(item) =>
+            item.id === 'credito' ? (
+              <CreditCardDaysFields config={creditCardConfig} onUpdateConfig={onUpdateCreditCardConfig} />
+            ) : null
+          }
         />
       ),
     },

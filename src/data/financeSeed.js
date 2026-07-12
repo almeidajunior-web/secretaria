@@ -1,6 +1,13 @@
 import { format, setDate, subMonths } from 'date-fns'
+import { creditCardEffectiveDate } from '../lib/creditCard'
 
 const dateInMonth = (monthsAgo, day) => format(setDate(subMonths(new Date(), monthsAgo), day), 'yyyy-MM-dd')
+
+// Mirrors useFinanceCreditCard's DEFAULT_CREDIT_CARD — keeps the seeded
+// card entries' effectiveDate consistent with the config a fresh install
+// starts with.
+const SEED_CLOSING_DAY = 25
+const SEED_DUE_DAY = 5
 
 // Expense and income categories are deliberately separate lists — mixing
 // "Salário" with "Moradia" in one list makes no sense. Colors drawn from
@@ -82,6 +89,7 @@ export function buildSeedEntries() {
       description: '',
       amount: 450,
       date: dateInMonth(0, 10),
+      effectiveDate: creditCardEffectiveDate(dateInMonth(0, 10), SEED_CLOSING_DAY, SEED_DUE_DAY),
       categoryId: 'alimentacao',
       paymentMethodId: 'credito',
       accountId: null,
@@ -138,6 +146,7 @@ export function buildSeedEntries() {
       description: '',
       amount: 500,
       date: dateInMonth(1, 8),
+      effectiveDate: creditCardEffectiveDate(dateInMonth(1, 8), SEED_CLOSING_DAY, SEED_DUE_DAY),
       categoryId: 'alimentacao',
       paymentMethodId: 'credito',
       accountId: null,

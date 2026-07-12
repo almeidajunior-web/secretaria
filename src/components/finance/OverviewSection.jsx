@@ -1,5 +1,6 @@
-import { Eye, EyeOff, ArrowUp, ArrowDown } from 'lucide-react'
+import { Eye, EyeOff, ArrowUp, ArrowDown, CreditCard } from 'lucide-react'
 import { formatCurrency } from '../../lib/currency'
+import { fmt, fromDateInput } from '../../lib/date'
 import CategoryBreakdownChart from './CategoryBreakdownChart'
 import TrendChart from './TrendChart'
 
@@ -15,6 +16,7 @@ export default function OverviewSection({
   essential,
   categoryData,
   trendData,
+  invoice,
   valuesHidden,
   onToggleValuesHidden,
 }) {
@@ -62,6 +64,23 @@ export default function OverviewSection({
           hidden={valuesHidden}
         />
       </div>
+
+      {invoice && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-surface p-4">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-primary">
+            <CreditCard size={16} />
+          </span>
+          <div className="flex-1">
+            <p className="text-[11px] font-medium text-text-secondary">Fatura atual do cartão</p>
+            <span className="text-lg font-semibold text-text">
+              {valuesHidden ? 'R$ ••••' : formatCurrency(invoice.total)}
+            </span>
+          </div>
+          <p className="text-[11px] text-text-muted">
+            Fecha dia {invoice.closingDay} · vence em {fmt(fromDateInput(invoice.dueDate), 'dd/MM/yyyy')}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-xl border border-border bg-surface p-4">

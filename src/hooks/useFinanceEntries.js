@@ -36,12 +36,15 @@ export function useFinanceEntries() {
     setEntries((prev) => prev.filter((e) => e.id !== id))
   }
 
-  const duplicateEntry = (id) => {
+  // `transform` lets the caller recompute derived fields (effectiveDate) on
+  // the duplicated entry before it lands in state — see Financas.jsx.
+  const duplicateEntry = (id, transform) => {
     setEntries((prev) => {
       const source = prev.find((e) => e.id === id)
       if (!source) return prev
       const todayStr = format(new Date(), 'yyyy-MM-dd')
-      return [...prev, { ...source, id: genEntryId(), date: todayStr }]
+      const duplicated = { ...source, id: genEntryId(), date: todayStr }
+      return [...prev, transform ? transform(duplicated) : duplicated]
     })
   }
 

@@ -25,6 +25,7 @@ const KEYS = {
   financePaymentMethods: 'secretaria:financePaymentMethods',
   financeAccounts: 'secretaria:financeAccounts',
   financeTags: 'secretaria:financeTags',
+  financeCreditCard: 'secretaria:financeCreditCard',
   financeValuesHidden: 'secretaria:financeValuesHidden',
   schemaVersion: 'secretaria:schemaVersion',
 }
@@ -433,6 +434,24 @@ export function loadFinanceTags() {
 
 export function saveFinanceTags(tags) {
   localStorage.setItem(KEYS.financeTags, JSON.stringify(tags))
+}
+
+// Single global card config — { closingDay, dueDay } — not an array like
+// every other finance*Category/list domain.
+export function loadFinanceCreditCard() {
+  try {
+    const raw = localStorage.getItem(KEYS.financeCreditCard)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+export function saveFinanceCreditCard(config) {
+  localStorage.setItem(KEYS.financeCreditCard, JSON.stringify(config))
 }
 
 export function loadFinanceValuesHidden() {

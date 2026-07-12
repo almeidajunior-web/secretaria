@@ -4,6 +4,7 @@ import { usePersistentState } from '../../hooks/usePersistentState'
 import { useFinanceValuesHidden } from '../../hooks/useFinanceValuesHidden'
 import { buildFinanceComparator } from '../../lib/financeSort'
 import { filterEntriesByPeriod, shiftPeriod, formatPeriodLabel } from '../../lib/financePeriod'
+import { withEffectiveDate, currentInvoiceTotal } from '../../lib/creditCard'
 import {
   monthTotals,
   percentChange,
@@ -65,6 +66,8 @@ export default function Financas({
   updateTag,
   onDeleteTag,
   reorderTags,
+  creditCardConfig,
+  onUpdateCreditCardConfig,
 }) {
   const [tab, setTab] = usePersistentState('secretaria:financeTab', 'resumo')
   const [period, setPeriod] = usePersistentState('secretaria:financePeriod', 'month')
@@ -146,7 +149,7 @@ export default function Financas({
     [expenseCategories]
   )
   const currentMonthEntries = useMemo(
-    () => entries.filter((e) => e.date?.startsWith(monthStr)),
+    () => entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr)),
     [entries, monthStr]
   )
   const categoryData = useMemo(
@@ -154,15 +157,29 @@ export default function Financas({
     [currentMonthEntries, categoryLabelById, expenseCategoryColorById]
   )
   const trendData = useMemo(() => monthlyTrend(entries, 6), [entries])
+  const invoice = useMemo(
+    () => currentInvoiceTotal(entries, creditCardConfig, todayStr),
+    [entries, creditCardConfig, todayStr]
+  )
 
   const selectAllVisible = () => setSelectedIds(new Set(sortedEntries.map((e) => e.id)))
   const clearSelection = () => setSelectedIds(new Set())
 
+  const entryById = useMemo(() => Object.fromEntries(entries.map((e) => [e.id, e])), [entries])
+
+  // Single centralized point for every entry mutation: merges the (possibly
+  // partial) patch onto the current entry, then recomputes effectiveDate —
+  // covers inline edits, bulk actions, add and duplicate alike.
+  const applyEntryUpdate = (patch) => {
+    const source = entryById[patch.id] || {}
+    updateEntry(withEffectiveDate({ ...source, ...patch }, creditCardConfig))
+  }
+
   const bulkSetPaymentMethod = (paymentMethodId) => {
-    selectedIds.forEach((id) => updateEntry({ id, paymentMethodId: paymentMethodId || null }))
+    selectedIds.forEach((id) => applyEntryUpdate({ id, paymentMethodId: paymentMethodId || null }))
   }
   const bulkSetAccount = (accountId) => {
-    selectedIds.forEach((id) => updateEntry({ id, accountId: accountId || null }))
+    selectedIds.forEach((id) => applyEntryUpdate({ id, accountId: accountId || null }))
   }
   const bulkDelete = () => {
     selectedIds.forEach((id) => deleteEntry(id))
@@ -170,7 +187,7 @@ export default function Financas({
   }
 
   const handleQuickAdd = (partial) => {
-    addEntry({
+    const base = {
       title: '',
       description: '',
       categoryId: null,
@@ -182,8 +199,11 @@ export default function Financas({
       date: null,
       type: 'expense',
       ...partial,
-    })
+    }
+    addEntry(withEffectiveDate(base, creditCardConfig))
   }
+
+  const handleDuplicate = (id) => duplicateEntry(id, (entry) => withEffectiveDate(entry, creditCardConfig))
 
   const tableProps = {
     expenseCategories,
@@ -195,14 +215,15 @@ export default function Financas({
     onToggleSort: toggleSort,
     filters,
     onToggleFilter: toggleFilter,
-    onUpdateEntry: updateEntry,
+    onUpdateEntry: applyEntryUpdate,
     onDeleteClick: deleteEntry,
-    onDuplicate: duplicateEntry,
+    onDuplicate: handleDuplicate,
     onCreateTag: addTag,
     selectMode,
     selectedIds,
     onToggleSelect: toggleSelectEntry,
     today: todayStr,
+    creditCardConfig,
   }
 
   return (
@@ -240,6 +261,7 @@ export default function Financas({
             essential={essential}
             categoryData={categoryData}
             trendData={trendData}
+            invoice={invoice}
             valuesHidden={valuesHidden}
             onToggleValuesHidden={toggleValuesHidden}
           />
@@ -275,6 +297,8 @@ export default function Financas({
           onUpdatePaymentMethod={updatePaymentMethod}
           onDeletePaymentMethod={onDeletePaymentMethod}
           onReorderPaymentMethods={reorderPaymentMethods}
+          creditCardConfig={creditCardConfig}
+          onUpdateCreditCardConfig={onUpdateCreditCardConfig}
           accounts={accounts}
           onAddAccount={addAccount}
           onUpdateAccount={updateAccount}
@@ -296,6 +320,7 @@ export default function Financas({
           paymentMethods={paymentMethods}
           accounts={accounts}
           tags={tags}
+          creditCardConfig={creditCardConfig}
           onCreateTag={addTag}
           onSave={(data) => {
             handleQuickAdd(data)

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { TrendingUp, TrendingDown, Copy, Trash2, Star, ArrowUp, ArrowDown, ListFilter, Clock } from 'lucide-react'
 import { fmt, fromDateInput } from '../../lib/date'
+import { creditCardEffectiveDate } from '../../lib/creditCard'
 import DescriptionPopover from '../common/DescriptionPopover'
 import ChipSelect from '../common/ChipSelect'
 import InlineDate from '../common/InlineDate'
@@ -38,6 +39,7 @@ export default function FinanceTable({
   onToggleSelect,
   onQuickAdd,
   today,
+  creditCardConfig,
 }) {
   const showAccounts = accounts.length > 0
   const allCategories = [...expenseCategories, ...incomeCategories]
@@ -147,6 +149,7 @@ export default function FinanceTable({
               selected={selectedIds?.has(entry.id)}
               onToggleSelect={() => onToggleSelect(entry.id)}
               today={today}
+              creditCardConfig={creditCardConfig}
             />
           ))}
           {onQuickAdd && (
@@ -160,6 +163,7 @@ export default function FinanceTable({
               onCreateTag={onCreateTag}
               onQuickAdd={onQuickAdd}
               selectMode={selectMode}
+              creditCardConfig={creditCardConfig}
             />
           )}
         </tbody>
@@ -276,12 +280,15 @@ function EntryRow({
   selected,
   onToggleSelect,
   today,
+  creditCardConfig,
 }) {
   const [title, setTitle] = useState(entry.title)
   const isIncome = entry.type === 'income'
   const categories = isIncome ? incomeCategories : expenseCategories
   const effective = entry.effectiveDate || entry.date
   const previsto = effective && today && effective > today
+  const isCredit = entry.paymentMethodId === 'credito'
+  const showsInvoiceHint = isCredit && effective && effective !== entry.date
   const tagIds = entry.tagIds || []
 
   useEffect(() => {
@@ -409,6 +416,11 @@ function EntryRow({
           muted
           placeholder="Data"
         />
+        {showsInvoiceHint && (
+          <p className="mt-0.5 text-[10px] text-text-muted">
+            desconta {fmt(fromDateInput(effective), 'dd/MM')}
+          </p>
+        )}
       </td>
       <td className={`${cell} text-right`}>
         <div className="flex items-center justify-end gap-0.5">
@@ -444,6 +456,7 @@ function QuickAddRow({
   onCreateTag,
   onQuickAdd,
   selectMode,
+  creditCardConfig,
 }) {
   const [type, setType] = useState('expense')
   const [title, setTitle] = useState('')
@@ -458,6 +471,10 @@ function QuickAddRow({
   const isIncome = type === 'income'
   const categories = isIncome ? incomeCategories : expenseCategories
   const canAdd = title.trim() && date
+  const effectivePreview =
+    paymentMethodId === 'credito' && date && creditCardConfig?.closingDay && creditCardConfig?.dueDay
+      ? creditCardEffectiveDate(date, creditCardConfig.closingDay, creditCardConfig.dueDay)
+      : null
 
   const commit = () => {
     if (!canAdd) return
@@ -579,6 +596,11 @@ function QuickAddRow({
       </td>
       <td className={cell}>
         <InlineDate value={date || null} onChange={(v) => setDate(v || '')} placeholder="Data" />
+        {effectivePreview && (
+          <p className="mt-0.5 text-[10px] text-text-muted">
+            desconta {fmt(fromDateInput(effectivePreview), 'dd/MM')}
+          </p>
+        )}
       </td>
       <td className={`${cell} text-right`}>
         <button

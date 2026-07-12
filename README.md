@@ -200,6 +200,29 @@ npm run preview
 - Módulo independente de Vencimentos — nenhum lançamento é criado
   automaticamente a partir de uma conta paga lá, mantendo a mesma filosofia
   de módulos independentes do resto do app
+- **Cartão de crédito com fatura**: a forma de pagamento "Crédito" é fixa
+  (não pode ser renomeada nem excluída) e tem, nas Configurações, dois
+  campos de dia — **Fechamento** e **Vencimento** — configurados uma única
+  vez para o cartão. Toda compra no crédito ganha uma **data efetiva**
+  calculada automaticamente (`src/lib/creditCard.js`): antes do fechamento,
+  a compra entra na fatura do ciclo atual; no dia do fechamento ou depois,
+  vai para o mês seguinte; o dia de vencimento é ajustado ao último dia do
+  mês quando necessário
+- **Previsto x realizado**, derivado (sem status manual): quando a data
+  efetiva de um lançamento (a própria data, ou a data calculada da fatura
+  para o cartão) ainda está no futuro, a linha aparece com opacidade
+  reduzida e um ícone de relógio; passou, é tratado como realizado. No
+  modal e na linha rápida, escolher "Crédito" mostra ao vivo "desconta em
+  DD/MM/AAAA"; na tabela, a célula de data ganha uma segunda linha
+  discreta ("desconta DD/MM") quando a fatura empurra a cobrança para uma
+  data diferente da compra
+- Métricas do mês, o filtro de período da tabela e o indicador de
+  essenciais passaram a considerar a **data efetiva** (com fallback para a
+  data da compra) — uma compra no crédito perto do fechamento aparece no
+  mês em que o dinheiro efetivamente sai, não no mês da compra
+- Card **"Fatura atual do cartão"** no Resumo: soma dos lançamentos do
+  cartão cujo ciclo ainda está aberto (isto é, o mesmo ciclo em que uma
+  compra feita hoje entraria), com as datas de fechamento e vencimento
 
 ## Funcionalidades do módulo Tarefas
 

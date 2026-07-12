@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import TagPickerPopover from '../common/TagPickerPopover'
+import { creditCardEffectiveDate } from '../../lib/creditCard'
+import { fmt, fromDateInput } from '../../lib/date'
 
 const inputClass =
   'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
@@ -15,6 +17,7 @@ export default function FinanceEntryModal({
   paymentMethods,
   accounts,
   tags,
+  creditCardConfig,
   onCreateTag,
   onSave,
   onClose,
@@ -33,6 +36,11 @@ export default function FinanceEntryModal({
   const isExpense = type === 'expense'
   const categories = isExpense ? expenseCategories : incomeCategories
   const canSave = title.trim().length > 0 && date
+  const isCredit = paymentMethodId === 'credito'
+  const effectivePreview =
+    isCredit && date && creditCardConfig?.closingDay && creditCardConfig?.dueDay
+      ? creditCardEffectiveDate(date, creditCardConfig.closingDay, creditCardConfig.dueDay)
+      : null
 
   const handleTypeChange = (next) => {
     setType(next)
@@ -150,6 +158,12 @@ export default function FinanceEntryModal({
               </select>
             </Field>
           </div>
+
+          {effectivePreview && (
+            <p className="-mt-2 text-[11px] text-text-muted">
+              Desconta em <span className="font-medium text-text">{fmt(fromDateInput(effectivePreview), 'dd/MM/yyyy')}</span>
+            </p>
+          )}
 
           {accounts.length > 0 && (
             <Field label="Conta (opcional)">

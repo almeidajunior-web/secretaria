@@ -27,7 +27,7 @@ export const PERIOD_OPTIONS = [
 // browsing — see financeMetrics.js.
 export function filterEntriesByPeriod(entries, period, referenceDate) {
   return entries.filter((e) => {
-    const entryDate = fromDateInput(e.date)
+    const entryDate = fromDateInput(e.effectiveDate || e.date)
     if (!entryDate) return false
     switch (period) {
       case 'day':

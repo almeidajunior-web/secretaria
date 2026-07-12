@@ -22,6 +22,7 @@ import { useFinanceIncomeCategories } from './hooks/useFinanceIncomeCategories'
 import { useFinancePaymentMethods } from './hooks/useFinancePaymentMethods'
 import { useFinanceAccounts } from './hooks/useFinanceAccounts'
 import { useFinanceTags } from './hooks/useFinanceTags'
+import { useFinanceCreditCard } from './hooks/useFinanceCreditCard'
 import { MODULE_DEFS } from './data/modules'
 import Topbar from './components/layout/Topbar'
 import Sidebar from './components/layout/Sidebar'
@@ -63,6 +64,7 @@ export default function App() {
   const financePaymentMethodsApi = useFinancePaymentMethods()
   const financeAccountsApi = useFinanceAccounts()
   const financeTagsApi = useFinanceTags()
+  const financeCreditCardApi = useFinanceCreditCard()
   const [activeModule, setActiveModule] = useState('agenda')
   const [currentDate, setCurrentDate] = useState(() => new Date())
   const [modulesSettingsOpen, setModulesSettingsOpen] = useState(false)
@@ -292,6 +294,8 @@ export default function App() {
               updateTag={financeTagsApi.updateTag}
               onDeleteTag={handleDeleteFinanceTag}
               reorderTags={financeTagsApi.reorderTags}
+              creditCardConfig={financeCreditCardApi.config}
+              onUpdateCreditCardConfig={financeCreditCardApi.updateConfig}
             />
           ) : (
             <ModulePlaceholder module={activeModule} />

@@ -26,6 +26,7 @@ export default function EditableListSection({
   deleteWarning,
   minItems = 0,
   isItemDeletable,
+  isItemLabelLocked,
   renderExtra,
   hideColor = false,
 }) {
@@ -59,6 +60,7 @@ export default function EditableListSection({
             }
             extra={renderExtra ? renderExtra(item) : null}
             hideColor={hideColor}
+            labelLocked={isItemLabelLocked ? isItemLabelLocked(item) : false}
           />
         ))}
       </div>
@@ -120,7 +122,7 @@ export default function EditableListSection({
   )
 }
 
-function EditableRow({ item, onUpdate, onDeleteClick, canDelete, onDrop, extra, hideColor }) {
+function EditableRow({ item, onUpdate, onDeleteClick, canDelete, onDrop, extra, hideColor, labelLocked }) {
   const [label, setLabel] = useState(item.label)
 
   const commitLabel = () => {
@@ -153,7 +155,8 @@ function EditableRow({ item, onUpdate, onDeleteClick, canDelete, onDrop, extra, 
           onChange={(e) => setLabel(e.target.value)}
           onBlur={commitLabel}
           onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-          className={inputClass}
+          disabled={labelLocked}
+          className={[inputClass, labelLocked ? 'cursor-default opacity-70' : ''].join(' ')}
         />
         <button
           type="button"

@@ -6,7 +6,7 @@ import { fmt } from './date'
 // being fixed to the current calendar month regardless of the table's own
 // period selector (see financePeriod.js).
 export function monthTotals(entries, monthStr) {
-  const monthEntries = entries.filter((e) => e.date?.startsWith(monthStr))
+  const monthEntries = entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr))
   const income = monthEntries
     .filter((e) => e.type === 'income')
     .reduce((sum, e) => sum + (e.amount || 0), 0)
@@ -27,7 +27,9 @@ export function percentChange(current, previous) {
 // Essential vs. total expense for a month: how much of the spending was on
 // things flagged essential, in absolute value and as a share of expenses.
 export function essentialTotals(entries, monthStr) {
-  const expenses = entries.filter((e) => e.type === 'expense' && e.date?.startsWith(monthStr))
+  const expenses = entries.filter(
+    (e) => e.type === 'expense' && (e.effectiveDate || e.date)?.startsWith(monthStr)
+  )
   const total = expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
   const essential = expenses.filter((e) => e.essential).reduce((sum, e) => sum + (e.amount || 0), 0)
   return { essential, total, ratio: total ? essential / total : 0 }
