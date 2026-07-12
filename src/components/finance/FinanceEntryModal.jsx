@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import TagPickerPopover from '../common/TagPickerPopover'
 
 const inputClass =
   'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
@@ -13,6 +14,8 @@ export default function FinanceEntryModal({
   incomeCategories,
   paymentMethods,
   accounts,
+  tags,
+  onCreateTag,
   onSave,
   onClose,
 }) {
@@ -23,9 +26,12 @@ export default function FinanceEntryModal({
   const [categoryId, setCategoryId] = useState('')
   const [paymentMethodId, setPaymentMethodId] = useState('')
   const [accountId, setAccountId] = useState('')
+  const [tagIds, setTagIds] = useState([])
+  const [essential, setEssential] = useState(false)
   const [description, setDescription] = useState('')
 
-  const categories = type === 'income' ? incomeCategories : expenseCategories
+  const isExpense = type === 'expense'
+  const categories = isExpense ? expenseCategories : incomeCategories
   const canSave = title.trim().length > 0 && date
 
   const handleTypeChange = (next) => {
@@ -43,6 +49,8 @@ export default function FinanceEntryModal({
       categoryId: categoryId || null,
       paymentMethodId: paymentMethodId || null,
       accountId: accountId || null,
+      tagIds,
+      essential: isExpense ? essential : false,
       description: description.trim(),
     })
   }
@@ -155,6 +163,29 @@ export default function FinanceEntryModal({
               </select>
             </Field>
           )}
+
+          <div className="flex items-center justify-between gap-3">
+            <Field label="Tags (opcional)">
+              <TagPickerPopover
+                tags={tags}
+                selectedIds={tagIds}
+                onToggle={(id) =>
+                  setTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+                }
+                onCreate={onCreateTag}
+              />
+            </Field>
+            {isExpense && (
+              <label className="flex cursor-pointer items-center gap-2 self-end pb-1.5 text-[13px] text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={essential}
+                  onChange={(e) => setEssential(e.target.checked)}
+                />
+                Essencial?
+              </label>
+            )}
+          </div>
 
           <Field label="Descrição (opcional)">
             <textarea

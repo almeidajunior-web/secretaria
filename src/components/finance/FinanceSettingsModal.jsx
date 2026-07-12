@@ -1,4 +1,4 @@
-import { TrendingDown, TrendingUp, Wallet, Landmark } from 'lucide-react'
+import { TrendingDown, TrendingUp, Wallet, Landmark, Tag } from 'lucide-react'
 import EditableListSection from '../common/EditableListSection'
 import SettingsShell from '../common/SettingsShell'
 
@@ -25,6 +25,11 @@ export default function FinanceSettingsModal({
   onUpdateAccount,
   onDeleteAccount,
   onReorderAccounts,
+  tags,
+  onAddTag,
+  onUpdateTag,
+  onDeleteTag,
+  onReorderTags,
   onClose,
 }) {
   const sections = [
@@ -79,6 +84,7 @@ export default function FinanceSettingsModal({
           onReorder={onReorderPaymentMethods}
           addLabel="Nova forma de pagamento"
           deleteWarning={(item) => `Os lançamentos com "${item.label}" ficam sem forma de pagamento.`}
+          hideColor
         />
       ),
     },
@@ -97,6 +103,24 @@ export default function FinanceSettingsModal({
           onReorder={onReorderAccounts}
           addLabel="Nova conta"
           deleteWarning={(item) => `Os lançamentos com "${item.label}" ficam sem conta.`}
+        />
+      ),
+    },
+    {
+      id: 'tags',
+      label: 'Tags',
+      icon: Tag,
+      render: () => (
+        <EditableListSection
+          title="Tags"
+          hint="arraste para reordenar"
+          items={tags}
+          onAdd={onAddTag}
+          onUpdate={onUpdateTag}
+          onDelete={onDeleteTag}
+          onReorder={onReorderTags}
+          addLabel="Nova tag"
+          deleteWarning={(item) => `A tag "${item.label}" será removida de todos os lançamentos.`}
         />
       ),
     },

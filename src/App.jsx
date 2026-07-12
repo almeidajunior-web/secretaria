@@ -21,6 +21,7 @@ import { useFinanceExpenseCategories } from './hooks/useFinanceExpenseCategories
 import { useFinanceIncomeCategories } from './hooks/useFinanceIncomeCategories'
 import { useFinancePaymentMethods } from './hooks/useFinancePaymentMethods'
 import { useFinanceAccounts } from './hooks/useFinanceAccounts'
+import { useFinanceTags } from './hooks/useFinanceTags'
 import { MODULE_DEFS } from './data/modules'
 import Topbar from './components/layout/Topbar'
 import Sidebar from './components/layout/Sidebar'
@@ -61,6 +62,7 @@ export default function App() {
   const financeIncomeCategoriesApi = useFinanceIncomeCategories()
   const financePaymentMethodsApi = useFinancePaymentMethods()
   const financeAccountsApi = useFinanceAccounts()
+  const financeTagsApi = useFinanceTags()
   const [activeModule, setActiveModule] = useState('agenda')
   const [currentDate, setCurrentDate] = useState(() => new Date())
   const [modulesSettingsOpen, setModulesSettingsOpen] = useState(false)
@@ -152,6 +154,11 @@ export default function App() {
   const handleDeleteFinanceAccount = (id) => {
     financeAccountsApi.deleteAccount(id)
     financeEntriesApi.removeAccountFromAllEntries(id)
+  }
+
+  const handleDeleteFinanceTag = (id) => {
+    financeTagsApi.deleteTag(id)
+    financeEntriesApi.removeTagFromAllEntries(id)
   }
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -280,6 +287,11 @@ export default function App() {
               updateAccount={financeAccountsApi.updateAccount}
               onDeleteAccount={handleDeleteFinanceAccount}
               reorderAccounts={financeAccountsApi.reorderAccounts}
+              tags={financeTagsApi.tags}
+              addTag={financeTagsApi.addTag}
+              updateTag={financeTagsApi.updateTag}
+              onDeleteTag={handleDeleteFinanceTag}
+              reorderTags={financeTagsApi.reorderTags}
             />
           ) : (
             <ModulePlaceholder module={activeModule} />

@@ -4,10 +4,16 @@ import { usePersistentState } from '../../hooks/usePersistentState'
 import { useFinanceValuesHidden } from '../../hooks/useFinanceValuesHidden'
 import { buildFinanceComparator } from '../../lib/financeSort'
 import { filterEntriesByPeriod, shiftPeriod, formatPeriodLabel } from '../../lib/financePeriod'
-import { monthTotals, percentChange, categoryBreakdown, monthlyTrend } from '../../lib/financeMetrics'
+import {
+  monthTotals,
+  percentChange,
+  categoryBreakdown,
+  monthlyTrend,
+  essentialTotals,
+} from '../../lib/financeMetrics'
 import FinanceToolbar from './FinanceToolbar'
 import OverviewSection from './OverviewSection'
-import FinanceTableView from './FinanceTableView'
+import FinanceTable from './FinanceTable'
 import FinanceEntryModal from './FinanceEntryModal'
 import FinanceSettingsModal from './FinanceSettingsModal'
 
@@ -17,17 +23,17 @@ function filterEntries(entries, filters) {
     if (filters.categoryIds.length && !filters.categoryIds.includes(e.categoryId)) return false
     if (filters.paymentMethodIds.length && !filters.paymentMethodIds.includes(e.paymentMethodId)) return false
     if (filters.accountIds.length && !filters.accountIds.includes(e.accountId)) return false
+    if (filters.tagIds.length && !filters.tagIds.some((t) => (e.tagIds || []).includes(t))) return false
     return true
   })
 }
 
-const DEFAULT_FILTERS = { categoryIds: [], paymentMethodIds: [], accountIds: [], types: [] }
+const DEFAULT_FILTERS = { categoryIds: [], paymentMethodIds: [], accountIds: [], tagIds: [], types: [] }
 
-// Finanças module: a fixed "current month" Overview pinned above an
-// interactive, period-browsable table — the two sections are deliberately
-// independent (see OverviewSection), matching how the user described the
-// layout. Fully independent from every other module's data, including
-// Vencimentos — no automatic cross-posting between the two.
+// Finanças module: two tabs (Resumo = métricas + gráficos + tabela recente;
+// Lançamentos = tabela completa), both scoped by the period selector. The
+// table is an Excel-style grid whose header does the sorting/filtering
+// (shared, persisted state). Fully independent from every other module.
 export default function Financas({
   entries,
   addEntry,
@@ -54,7 +60,13 @@ export default function Financas({
   updateAccount,
   onDeleteAccount,
   reorderAccounts,
+  tags,
+  addTag,
+  updateTag,
+  onDeleteTag,
+  reorderTags,
 }) {
+  const [tab, setTab] = usePersistentState('secretaria:financeTab', 'resumo')
   const [period, setPeriod] = usePersistentState('secretaria:financePeriod', 'month')
   const [referenceDate, setReferenceDate] = useState(() => new Date())
   const [sortChain, setSortChain] = usePersistentState('secretaria:financeSortChain', [
@@ -82,7 +94,7 @@ export default function Financas({
 
   const toggleFilter = (dimension, value) => {
     setFilters((prev) => {
-      const list = prev[dimension]
+      const list = prev[dimension] || []
       const next = list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
       return { ...prev, [dimension]: next }
     })
@@ -119,21 +131,23 @@ export default function Financas({
   const sortedEntries = useMemo(() => [...visibleEntries].sort(comparator), [visibleEntries, comparator])
 
   // Overview always reflects the true current month, independent of
-  // whatever period/filters the table above is browsing.
-  const todayStr = format(new Date(), 'yyyy-MM')
+  // whatever period/filters the table below is browsing.
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const monthStr = format(new Date(), 'yyyy-MM')
   const prevMonthStr = format(subMonths(new Date(), 1), 'yyyy-MM')
-  const currentTotals = useMemo(() => monthTotals(entries, todayStr), [entries, todayStr])
+  const currentTotals = useMemo(() => monthTotals(entries, monthStr), [entries, monthStr])
   const previousTotals = useMemo(() => monthTotals(entries, prevMonthStr), [entries, prevMonthStr])
   const incomeChange = percentChange(currentTotals.income, previousTotals.income)
   const expenseChange = percentChange(currentTotals.expense, previousTotals.expense)
   const balanceChange = percentChange(currentTotals.balance, previousTotals.balance)
+  const essential = useMemo(() => essentialTotals(entries, monthStr), [entries, monthStr])
   const expenseCategoryColorById = useMemo(
     () => Object.fromEntries(expenseCategories.map((c) => [c.id, c.color])),
     [expenseCategories]
   )
   const currentMonthEntries = useMemo(
-    () => entries.filter((e) => e.date?.startsWith(todayStr)),
-    [entries, todayStr]
+    () => entries.filter((e) => e.date?.startsWith(monthStr)),
+    [entries, monthStr]
   )
   const categoryData = useMemo(
     () => categoryBreakdown(currentMonthEntries, 'expense', categoryLabelById, expenseCategoryColorById),
@@ -162,6 +176,8 @@ export default function Financas({
       categoryId: null,
       paymentMethodId: null,
       accountId: null,
+      tagIds: [],
+      essential: false,
       amount: 0,
       date: null,
       type: 'expense',
@@ -169,22 +185,37 @@ export default function Financas({
     })
   }
 
+  const tableProps = {
+    expenseCategories,
+    incomeCategories,
+    paymentMethods,
+    accounts,
+    tags,
+    sortChain,
+    onToggleSort: toggleSort,
+    filters,
+    onToggleFilter: toggleFilter,
+    onUpdateEntry: updateEntry,
+    onDeleteClick: deleteEntry,
+    onDuplicate: duplicateEntry,
+    onCreateTag: addTag,
+    selectMode,
+    selectedIds,
+    onToggleSelect: toggleSelectEntry,
+    today: todayStr,
+  }
+
   return (
     <div className="flex h-full flex-col">
       <FinanceToolbar
+        tab={tab}
+        onChangeTab={setTab}
         period={period}
         onChangePeriod={setPeriod}
         periodLabel={formatPeriodLabel(referenceDate, period)}
         onPrevPeriod={() => setReferenceDate((d) => shiftPeriod(d, period, -1))}
         onNextPeriod={() => setReferenceDate((d) => shiftPeriod(d, period, 1))}
         onTodayPeriod={() => setReferenceDate(new Date())}
-        sortChain={sortChain}
-        onToggleSort={toggleSort}
-        filters={filters}
-        onToggleFilter={toggleFilter}
-        onClearFilters={() => setFilters(DEFAULT_FILTERS)}
-        expenseCategories={expenseCategories}
-        incomeCategories={incomeCategories}
         paymentMethods={paymentMethods}
         accounts={accounts}
         onManageClick={() => setSettingsOpen(true)}
@@ -199,33 +230,33 @@ export default function Financas({
         onNew={() => setModalOpen(true)}
       />
 
-      <OverviewSection
-        currentTotals={currentTotals}
-        incomeChange={incomeChange}
-        expenseChange={expenseChange}
-        balanceChange={balanceChange}
-        categoryData={categoryData}
-        trendData={trendData}
-        valuesHidden={valuesHidden}
-        onToggleValuesHidden={toggleValuesHidden}
-      />
-
-      <div className="flex-1 overflow-hidden">
-        <FinanceTableView
-          entries={sortedEntries}
-          expenseCategories={expenseCategories}
-          incomeCategories={incomeCategories}
-          paymentMethods={paymentMethods}
-          accounts={accounts}
-          onUpdateEntry={updateEntry}
-          onDeleteClick={deleteEntry}
-          onDuplicate={duplicateEntry}
-          selectMode={selectMode}
-          selectedIds={selectedIds}
-          onToggleSelect={toggleSelectEntry}
-          onQuickAdd={handleQuickAdd}
-        />
-      </div>
+      {tab === 'resumo' ? (
+        <div className="thin-scroll flex-1 overflow-auto">
+          <OverviewSection
+            currentTotals={currentTotals}
+            incomeChange={incomeChange}
+            expenseChange={expenseChange}
+            balanceChange={balanceChange}
+            essential={essential}
+            categoryData={categoryData}
+            trendData={trendData}
+            valuesHidden={valuesHidden}
+            onToggleValuesHidden={toggleValuesHidden}
+          />
+          <div className="px-4 pb-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+              Lançamentos do período
+            </p>
+            <div className="rounded-xl border border-border bg-surface">
+              <FinanceTable {...tableProps} entries={sortedEntries.slice(0, 8)} />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-hidden">
+          <FinanceTable {...tableProps} entries={sortedEntries} onQuickAdd={handleQuickAdd} />
+        </div>
+      )}
 
       {settingsOpen && (
         <FinanceSettingsModal
@@ -249,6 +280,11 @@ export default function Financas({
           onUpdateAccount={updateAccount}
           onDeleteAccount={onDeleteAccount}
           onReorderAccounts={reorderAccounts}
+          tags={tags}
+          onAddTag={addTag}
+          onUpdateTag={updateTag}
+          onDeleteTag={onDeleteTag}
+          onReorderTags={reorderTags}
           onClose={() => setSettingsOpen(false)}
         />
       )}
@@ -259,6 +295,8 @@ export default function Financas({
           incomeCategories={incomeCategories}
           paymentMethods={paymentMethods}
           accounts={accounts}
+          tags={tags}
+          onCreateTag={addTag}
           onSave={(data) => {
             handleQuickAdd(data)
             setModalOpen(false)

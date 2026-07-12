@@ -27,6 +27,7 @@ export default function EditableListSection({
   minItems = 0,
   isItemDeletable,
   renderExtra,
+  hideColor = false,
 }) {
   const [pendingDelete, setPendingDelete] = useState(null)
   const [creating, setCreating] = useState(false)
@@ -57,6 +58,7 @@ export default function EditableListSection({
               onReorder(reorderIds(items.map((x) => x.id), draggedId, item.id))
             }
             extra={renderExtra ? renderExtra(item) : null}
+            hideColor={hideColor}
           />
         ))}
       </div>
@@ -118,7 +120,7 @@ export default function EditableListSection({
   )
 }
 
-function EditableRow({ item, onUpdate, onDeleteClick, canDelete, onDrop, extra }) {
+function EditableRow({ item, onUpdate, onDeleteClick, canDelete, onDrop, extra, hideColor }) {
   const [label, setLabel] = useState(item.label)
 
   const commitLabel = () => {
@@ -163,27 +165,30 @@ function EditableRow({ item, onUpdate, onDeleteClick, canDelete, onDrop, extra }
           <Trash2 size={14} />
         </button>
       </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {EVENT_COLORS.map((c) => {
-          const selected = c === item.color
-          return (
-            <button
-              key={c}
-              type="button"
-              aria-label={`Cor ${c}`}
-              onClick={() => onUpdate({ color: c })}
-              style={{
-                backgroundColor: c,
-                transform: selected ? 'scale(1.15)' : 'none',
-                borderColor: selected ? 'var(--c-text)' : 'transparent',
-                borderWidth: selected ? '2.5px' : '2px',
-              }}
-              className="h-5 w-5 rounded-full border"
-            />
-          )
-        })}
-        {extra}
-      </div>
+      {(!hideColor || extra) && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {!hideColor &&
+            EVENT_COLORS.map((c) => {
+              const selected = c === item.color
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  aria-label={`Cor ${c}`}
+                  onClick={() => onUpdate({ color: c })}
+                  style={{
+                    backgroundColor: c,
+                    transform: selected ? 'scale(1.15)' : 'none',
+                    borderColor: selected ? 'var(--c-text)' : 'transparent',
+                    borderWidth: selected ? '2.5px' : '2px',
+                  }}
+                  className="h-5 w-5 rounded-full border"
+                />
+              )
+            })}
+          {extra}
+        </div>
+      )}
     </div>
   )
 }

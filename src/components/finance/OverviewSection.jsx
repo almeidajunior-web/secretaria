@@ -12,11 +12,18 @@ export default function OverviewSection({
   incomeChange,
   expenseChange,
   balanceChange,
+  essential,
   categoryData,
   trendData,
   valuesHidden,
   onToggleValuesHidden,
 }) {
+  const essentialSubline =
+    essential && essential.total > 0
+      ? `Essenciais: ${valuesHidden ? 'R$ ••••' : formatCurrency(essential.essential)} (${Math.round(
+          essential.ratio * 100
+        )}%)`
+      : null
   return (
     <div className="border-b border-border bg-app-bg px-4 py-4">
       <div className="mb-3 flex items-center justify-between">
@@ -45,6 +52,7 @@ export default function OverviewSection({
           change={expenseChange}
           upIsGood={false}
           hidden={valuesHidden}
+          subline={essentialSubline}
         />
         <StatTile
           label="Saldo do mês"
@@ -80,7 +88,7 @@ function deltaColorClass(change, upIsGood) {
   return isGood ? 'text-success' : 'text-danger'
 }
 
-function StatTile({ label, value, change, upIsGood, hidden }) {
+function StatTile({ label, value, change, upIsGood, hidden, subline }) {
   return (
     <div className="flex-1 rounded-xl border border-border bg-surface p-4">
       <p className="text-[11px] font-medium text-text-secondary">{label}</p>
@@ -98,6 +106,7 @@ function StatTile({ label, value, change, upIsGood, hidden }) {
         )}
       </div>
       <p className="mt-0.5 text-[10px] text-text-muted">vs. mês anterior</p>
+      {subline && <p className="mt-1 text-[10px] text-text-muted">{subline}</p>}
     </div>
   )
 }

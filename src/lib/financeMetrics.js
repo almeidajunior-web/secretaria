@@ -24,6 +24,15 @@ export function percentChange(current, previous) {
   return ((current - previous) / previous) * 100
 }
 
+// Essential vs. total expense for a month: how much of the spending was on
+// things flagged essential, in absolute value and as a share of expenses.
+export function essentialTotals(entries, monthStr) {
+  const expenses = entries.filter((e) => e.type === 'expense' && e.date?.startsWith(monthStr))
+  const total = expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
+  const essential = expenses.filter((e) => e.essential).reduce((sum, e) => sum + (e.amount || 0), 0)
+  return { essential, total, ratio: total ? essential / total : 0 }
+}
+
 export function categoryBreakdown(entries, type, categoryLabelById, colorById) {
   const totals = new Map()
   entries

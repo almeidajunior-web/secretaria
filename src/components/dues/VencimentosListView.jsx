@@ -199,7 +199,7 @@ function QuickAddRow({ categories, onQuickAdd }) {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && commit()}
-        placeholder="Nova conta…"
+        placeholder="Novo vencimento…"
         className="flex-1 bg-transparent text-[13px] text-text outline-none placeholder:text-text-muted"
       />
       <div className="flex shrink-0 items-center gap-0.5">

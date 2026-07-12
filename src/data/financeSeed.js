@@ -73,6 +73,7 @@ export function buildSeedEntries() {
       categoryId: 'moradia',
       paymentMethodId: 'transferencia',
       accountId: null,
+      essential: true,
     },
     {
       id: 'fin_seed_4',
@@ -84,6 +85,7 @@ export function buildSeedEntries() {
       categoryId: 'alimentacao',
       paymentMethodId: 'credito',
       accountId: null,
+      essential: true,
     },
     {
       id: 'fin_seed_5',

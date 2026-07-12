@@ -33,6 +33,10 @@ npm run preview
 - A engrenagem **Configurações** no rodapé da barra lateral abre um gerenciador
   para reordenar os módulos (arraste), ocultar/exibir cada um, e fazer backup
   manual de todos os dados
+- Todos os modais de **Configurações** (o global e o de cada módulo) usam um
+  layout de "app de configurações": uma barra lateral de tópicos à esquerda
+  (ex.: em Tarefas → Prioridades, Tags, Status) e o painel do tópico
+  selecionado à direita, em vez de uma lista empilhada única
 - **Backup**: "Exportar backup" baixa um único arquivo `.json` com os dados de
   todos os módulos (eventos, tarefas, compras, contas, categorias e
   preferências); "Importar backup" lê um arquivo exportado antes, confirma
@@ -149,8 +153,8 @@ npm run preview
   Classificação, Valor ou Vencimento
 - Ícone de círculo à esquerda de cada conta marca paga/pendente, com o
   mesmo efeito de risco usado em Tarefas/Compras
-- Criação via linha rápida no rodapé da lista ou pelo botão "Nova conta" no
-  topbar (modal, mesmo padrão do "Novo item"/"Nova tarefa")
+- Criação via linha rápida no rodapé da lista ou pelo botão "Novo vencimento"
+  no topbar (modal, mesmo padrão do "Novo item"/"Nova tarefa")
 - Modo de seleção em massa: atribua Classificação, marque como paga/
   pendente ou exclua várias contas de uma vez; exclusão sempre imediata,
   sem confirmação
@@ -160,27 +164,35 @@ npm run preview
 
 - Finanças pessoais: lançamentos de receita e despesa com categoria (listas
   **separadas** para receita e despesa — "Salário" e "Moradia" nunca se
-  misturam), forma de pagamento e conta/banco (todos editáveis nas
-  Configurações, mesmo padrão de listas dos outros módulos)
-- **Overview** sempre fixo no mês vigente, independente do período que a
-  tabela abaixo estiver navegando: três indicadores (Receitas, Despesas,
-  Saldo do mês) cada um com variação percentual vs. o mês anterior, um
-  gráfico de barras das despesas por categoria e um gráfico de linha
-  comparando receita x despesa nos últimos 6 meses — ambos em SVG artesanal,
-  sem nenhuma biblioteca de gráficos adicionada ao projeto
-- Ícone de "olho" no Overview oculta/exibe os valores (totais, gráficos),
+  misturam), forma de pagamento, conta/banco e **tags** (domínio próprio,
+  independente das tags de Tarefas) — todos editáveis nas Configurações
+  (cada um numa aba da barra lateral do modal)
+- Duas abas no topo, escopadas pelo mesmo seletor de período (Dia/Semana/
+  Mês/Ano): **Resumo** (métricas + gráficos + uma tabela dos últimos
+  lançamentos do período) e **Lançamentos** (a tabela completa)
+- **Resumo**: três indicadores fixos no mês vigente (Receitas, Despesas,
+  Saldo do mês) cada um com variação percentual vs. o mês anterior; sob as
+  Despesas, um indicador discreto de **gastos essenciais** (valor absoluto +
+  % das despesas do mês); um gráfico de barras das despesas por categoria e
+  um de linha comparando receita x despesa nos últimos 6 meses — ambos em
+  SVG artesanal, sem biblioteca de gráficos adicionada ao projeto
+- Ícone de "olho" no Resumo oculta/exibe os valores (totais, gráficos),
   igual ao padrão já usado em Vencimentos
-- Abaixo do Overview, uma tabela 100% editável em linha, navegável por
-  período (Dia, Semana, Mês, Ano, com navegação anterior/próximo/hoje),
-  ordenável e filtrável (categoria, forma de pagamento, conta, tipo)
+- A tabela é no estilo planilha/Excel: cabeçalho fixo cujo **título ordena**
+  (clique cicla asc→desc→sem ordem) e cujas colunas categóricas (tipo,
+  categoria, pagamento, conta, tags) têm um **funil que abre um filtro por
+  coluna**. Todas as células continuam editáveis diretamente na linha
+- Forma de pagamento é mostrada sem cor (não faz sentido destacá-la por cor)
+- Despesas têm um campo **"Essencial?"** (estrela na linha; checkbox no modal
+  e no lançamento rápido) para marcar gastos essenciais
 - Cada lançamento tem um ícone de tendência (↑ receita em verde, ↓ despesa
   em vermelho) clicável para alternar o tipo — a categoria é limpa ao
   trocar, já que as listas de categoria são específicas por tipo
 - Sem recorrência automática nesta primeira versão — um lançamento
   recorrente (salário, assinatura) se resolve com o botão "Duplicar" em
   cada linha, que cria uma cópia já na data de hoje
-- Criação via linha rápida no rodapé da tabela ou pelo botão "Novo
-  lançamento" no topbar (modal)
+- Criação via linha rápida no rodapé da tabela (com todos os campos do
+  modal) ou pelo botão "Novo lançamento" no topbar (modal)
 - Modo de seleção em massa: atribua forma de pagamento/conta ou exclua
   vários lançamentos de uma vez (recategorizar em massa fica de fora
   propositalmente — uma seleção pode misturar receita e despesa, que têm

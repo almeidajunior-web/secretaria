@@ -63,6 +63,14 @@ export function useFinanceEntries() {
     setEntries((prev) => prev.map((e) => (e.accountId === accountId ? { ...e, accountId: null } : e)))
   }
 
+  const removeTagFromAllEntries = (tagId) => {
+    setEntries((prev) =>
+      prev.map((e) =>
+        (e.tagIds || []).includes(tagId) ? { ...e, tagIds: e.tagIds.filter((t) => t !== tagId) } : e
+      )
+    )
+  }
+
   return {
     entries,
     addEntry,
@@ -72,5 +80,6 @@ export function useFinanceEntries() {
     removeCategoryFromAllEntries,
     removePaymentMethodFromAllEntries,
     removeAccountFromAllEntries,
+    removeTagFromAllEntries,
   }
 }

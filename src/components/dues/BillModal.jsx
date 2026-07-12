@@ -40,7 +40,7 @@ export default function BillModal({ categories, onSave, onClose }) {
         className="w-[420px] rounded-xl border border-border bg-surface p-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-4 text-base font-semibold text-text">Nova conta</h2>
+        <h2 className="mb-4 text-base font-semibold text-text">Novo vencimento</h2>
 
         <div className="flex flex-col gap-4">
           <Field label="Título">
