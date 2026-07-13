@@ -1,4 +1,4 @@
-import { format, subMonths } from 'date-fns'
+import { format, subMonths, getDaysInMonth } from 'date-fns'
 import { fmt } from './date'
 
 // All pure functions, no React — the Overview section composes these over
@@ -122,4 +122,142 @@ export function reserveMonths(entries, accounts, todayStr, monthsBack = 3) {
   if (!avgExpense) return null
   const reserveTotal = reserveAccounts.reduce((sum, a) => sum + accountBalance(entries, a, todayStr), 0)
   return reserveTotal / avgExpense
+}
+
+// Share of this month's income left over after expenses. Null when there's
+// no income to compare against — a savings rate is meaningless without one.
+export function savingsRate(entries, monthStr) {
+  const { income, balance } = monthTotals(entries, monthStr)
+  return income ? (balance / income) * 100 : null
+}
+
+// Share of this month's income already spoken for by recurring ("contas
+// fixas") expenses — anything with a recurrence other than 'none'.
+export function incomeCommitmentRatio(entries, monthStr) {
+  const { income } = monthTotals(entries, monthStr)
+  if (!income) return null
+  const fixed = entries
+    .filter((e) => e.type === 'expense' && e.recurrence && e.recurrence !== 'none')
+    .filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr))
+    .reduce((sum, e) => sum + (e.amount || 0), 0)
+  return (fixed / income) * 100
+}
+
+// monthTotals already includes previstos (it keys off effectiveDate
+// regardless of whether that date has arrived yet), so it doubles as the
+// "projected end of month" figure; "realized" re-filters down to entries
+// whose effective date has actually passed, for a realized-vs-projected
+// contrast in the same indicator.
+export function projectedMonthBalance(entries, monthStr, todayStr) {
+  const projected = monthTotals(entries, monthStr).balance
+  const monthEntries = entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr))
+  const realizedEntries = monthEntries.filter((e) => (e.effectiveDate || e.date) <= todayStr)
+  const realizedIncome = realizedEntries
+    .filter((e) => e.type === 'income')
+    .reduce((sum, e) => sum + (e.amount || 0), 0)
+  const realizedExpense = realizedEntries
+    .filter((e) => e.type === 'expense')
+    .reduce((sum, e) => sum + (e.amount || 0), 0)
+  return { projected, realized: realizedIncome - realizedExpense }
+}
+
+// Month-to-date daily average expense (realized only) vs. the trailing
+// daily average across the last `monthsBack` completed months — flags
+// "spending faster than usual" at a glance.
+export function averageDailySpend(entries, monthStr, todayStr, monthsBack = 3) {
+  const dayOfMonth = Number(todayStr.slice(8, 10)) || 1
+  const spentSoFar = entries
+    .filter((e) => e.type === 'expense')
+    .filter((e) => {
+      const effective = e.effectiveDate || e.date
+      return effective?.startsWith(monthStr) && effective <= todayStr
+    })
+    .reduce((sum, e) => sum + (e.amount || 0), 0)
+  const current = spentSoFar / dayOfMonth
+
+  let historicalTotal = 0
+  let historicalDays = 0
+  for (let i = 1; i <= monthsBack; i++) {
+    const date = subMonths(new Date(), i)
+    historicalTotal += monthTotals(entries, format(date, 'yyyy-MM')).expense
+    historicalDays += getDaysInMonth(date)
+  }
+  const historical = historicalDays ? historicalTotal / historicalDays : 0
+
+  return { current, historical }
+}
+
+// Per-month totals for the top-N `type` categories over the trailing
+// `monthsBack` months (oldest → newest, ending on the current month) — the
+// rest fold into a single "Outros" series instead of growing the legend
+// indefinitely, per the categorical-color rule (never a generated hue).
+export function categoryMonthlyTrend(entries, type, monthsBack, categoryLabelById, colorById, topN = 5) {
+  const monthDates = []
+  for (let i = monthsBack - 1; i >= 0; i--) monthDates.push(subMonths(new Date(), i))
+  const monthStrs = monthDates.map((d) => format(d, 'yyyy-MM'))
+
+  const totalsByCategory = new Map()
+  entries
+    .filter((e) => e.type === type && e.categoryId && monthStrs.includes((e.effectiveDate || e.date)?.slice(0, 7)))
+    .forEach((e) => totalsByCategory.set(e.categoryId, (totalsByCategory.get(e.categoryId) || 0) + (e.amount || 0)))
+
+  const topIds = [...totalsByCategory.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([id]) => id)
+  const series = topIds.map((id) => ({
+    categoryId: id,
+    label: categoryLabelById[id] || 'Sem categoria',
+    color: colorById[id] || '#6B7280',
+  }))
+  const hasOthers = totalsByCategory.size > topN
+  if (hasOthers) series.push({ categoryId: '__others__', label: 'Outros', color: '#9CA3AF' })
+
+  const months = monthDates.map((date, i) => {
+    const monthStr = monthStrs[i]
+    const monthEntries = entries.filter((e) => e.type === type && (e.effectiveDate || e.date)?.startsWith(monthStr))
+    const byCategory = {}
+    let knownTotal = 0
+    topIds.forEach((id) => {
+      const total = monthEntries
+        .filter((e) => e.categoryId === id)
+        .reduce((sum, e) => sum + (e.amount || 0), 0)
+      byCategory[id] = total
+      knownTotal += total
+    })
+    const total = monthEntries.reduce((sum, e) => sum + (e.amount || 0), 0)
+    if (hasOthers) byCategory.__others__ = Math.max(total - knownTotal, 0)
+    return { month: monthStr, label: fmt(date, 'MMM'), byCategory, total }
+  })
+
+  return { series, months }
+}
+
+// This month's per-category expense totals against the trailing
+// `monthsBack`-month average for that category — positive variance means
+// spending more than usual, negative means less.
+export function categoryComparison(entries, monthStr, monthsBack, categoryLabelById, colorById) {
+  const current = categoryBreakdown(
+    entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr)),
+    'expense',
+    categoryLabelById,
+    colorById
+  )
+
+  const averages = new Map()
+  for (let i = 1; i <= monthsBack; i++) {
+    const pastMonthStr = format(subMonths(new Date(), i), 'yyyy-MM')
+    categoryBreakdown(
+      entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(pastMonthStr)),
+      'expense',
+      categoryLabelById,
+      colorById
+    ).forEach((c) => averages.set(c.categoryId, (averages.get(c.categoryId) || 0) + c.total / monthsBack))
+  }
+
+  return current.map((c) => {
+    const average = averages.get(c.categoryId) || 0
+    const variance = average ? ((c.total - average) / average) * 100 : null
+    return { ...c, average, variance }
+  })
 }

@@ -14,6 +14,12 @@ import {
   accountBalance,
   consolidatedBalance,
   reserveMonths,
+  savingsRate,
+  incomeCommitmentRatio,
+  projectedMonthBalance,
+  averageDailySpend,
+  categoryMonthlyTrend,
+  categoryComparison,
 } from '../../lib/financeMetrics'
 import FinanceToolbar from './FinanceToolbar'
 import OverviewSection from './OverviewSection'
@@ -177,6 +183,23 @@ export default function Financas({
     }),
     [entries, accounts, todayStr, hasReserveAccount]
   )
+  const indicators = useMemo(
+    () => ({
+      savingsRate: savingsRate(entries, monthStr),
+      commitmentRatio: incomeCommitmentRatio(entries, monthStr),
+      projection: projectedMonthBalance(entries, monthStr, todayStr),
+      dailySpend: averageDailySpend(entries, monthStr, todayStr),
+    }),
+    [entries, monthStr, todayStr]
+  )
+  const categoryTrendData = useMemo(
+    () => categoryMonthlyTrend(entries, 'expense', 6, categoryLabelById, expenseCategoryColorById),
+    [entries, categoryLabelById, expenseCategoryColorById]
+  )
+  const categoryComparisonData = useMemo(
+    () => categoryComparison(entries, monthStr, 3, categoryLabelById, expenseCategoryColorById),
+    [entries, monthStr, categoryLabelById, expenseCategoryColorById]
+  )
 
   // Keeps every recurring series topped up with exactly one pending previsto
   // instance — runs after every mutation and once on mount. Idempotent: once
@@ -288,6 +311,9 @@ export default function Financas({
             trendData={trendData}
             invoice={invoice}
             accountsSummary={accountsSummary}
+            indicators={indicators}
+            categoryTrendData={categoryTrendData}
+            categoryComparisonData={categoryComparisonData}
             valuesHidden={valuesHidden}
             onToggleValuesHidden={toggleValuesHidden}
           />

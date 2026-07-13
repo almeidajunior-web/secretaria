@@ -21,6 +21,15 @@ function niceTicks(maxValue, targetTicks = 4) {
   return ticks
 }
 
+// Exact abbreviation instead of a blind "round to nearest thousand" — a
+// step below 1000 (e.g. 500) would otherwise mislabel 1500 as "2k".
+function formatTick(t) {
+  if (t === 0) return '0'
+  if (t < 1000) return String(t)
+  const k = t / 1000
+  return `${Number.isInteger(k) ? k : k.toFixed(1)}k`
+}
+
 // Last-N-months line chart, Receita vs. Despesa — one axis (never a
 // dual-axis), 2px lines with a hover crosshair that reads out both series
 // at once. Both series use the app's own semantic success/danger tokens
@@ -87,7 +96,7 @@ export default function TrendChart({ data, valuesHidden }) {
                 textAnchor="end"
                 className="fill-text-muted text-[9px] tabular-nums"
               >
-                {valuesHidden ? '••' : Math.round(t / 1000) + (t >= 1000 ? 'k' : '')}
+                {valuesHidden ? '••' : formatTick(t)}
               </text>
             </g>
           ))}

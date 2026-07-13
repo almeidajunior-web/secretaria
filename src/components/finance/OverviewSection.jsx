@@ -3,6 +3,7 @@ import { formatCurrency } from '../../lib/currency'
 import { fmt, fromDateInput } from '../../lib/date'
 import CategoryBreakdownChart from './CategoryBreakdownChart'
 import TrendChart from './TrendChart'
+import CategoryTrendChart from './CategoryTrendChart'
 
 // Always the current calendar month, independent of whatever period the
 // table below is browsing — this is the fixed "how am I doing right now"
@@ -18,6 +19,9 @@ export default function OverviewSection({
   trendData,
   invoice,
   accountsSummary,
+  indicators,
+  categoryTrendData,
+  categoryComparisonData,
   valuesHidden,
   onToggleValuesHidden,
 }) {
@@ -127,7 +131,52 @@ export default function OverviewSection({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      {indicators && (
+        <div className="mb-4 grid grid-cols-4 gap-3">
+          <IndicatorTile
+            label="Taxa de poupança"
+            value={indicators.savingsRate == null ? '—' : `${indicators.savingsRate.toFixed(0)}%`}
+            colorClass={
+              indicators.savingsRate == null
+                ? 'text-text-muted'
+                : indicators.savingsRate >= 0
+                  ? 'text-success'
+                  : 'text-danger'
+            }
+          />
+          <IndicatorTile
+            label="Comprometimento de renda"
+            value={indicators.commitmentRatio == null ? '—' : `${indicators.commitmentRatio.toFixed(0)}%`}
+            colorClass={
+              indicators.commitmentRatio == null
+                ? 'text-text-muted'
+                : indicators.commitmentRatio > 60
+                  ? 'text-danger'
+                  : indicators.commitmentRatio > 30
+                    ? 'text-text'
+                    : 'text-success'
+            }
+          />
+          <IndicatorTile
+            label="Saldo projetado"
+            value={valuesHidden ? 'R$ ••••' : formatCurrency(indicators.projection.projected)}
+            colorClass={indicators.projection.projected >= 0 ? 'text-success' : 'text-danger'}
+            subline={`Realizado: ${valuesHidden ? 'R$ ••••' : formatCurrency(indicators.projection.realized)}`}
+          />
+          <IndicatorTile
+            label="Gasto médio diário"
+            value={`${valuesHidden ? 'R$ ••••' : formatCurrency(indicators.dailySpend.current)}/dia`}
+            colorClass={
+              indicators.dailySpend.current > indicators.dailySpend.historical ? 'text-danger' : 'text-success'
+            }
+            subline={`Média: ${
+              valuesHidden ? 'R$ ••••' : formatCurrency(indicators.dailySpend.historical)
+            }/dia`}
+          />
+        </div>
+      )}
+
+      <div className="mb-4 grid grid-cols-2 gap-4">
         <div className="rounded-xl border border-border bg-surface p-4">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
             Despesas por categoria
@@ -141,6 +190,68 @@ export default function OverviewSection({
           <TrendChart data={trendData} valuesHidden={valuesHidden} />
         </div>
       </div>
+
+      {categoryTrendData && categoryTrendData.series.length > 0 && (
+        <div className="mb-4 rounded-xl border border-border bg-surface p-4">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+            Evolução mensal por categoria
+          </p>
+          <CategoryTrendChart data={categoryTrendData} valuesHidden={valuesHidden} />
+        </div>
+      )}
+
+      {categoryComparisonData && categoryComparisonData.length > 0 && (
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+            Comparação com a média (3 meses)
+          </p>
+          <div className="flex items-center gap-2 pb-1.5 text-[10px] text-text-muted">
+            <span className="flex-1">Categoria</span>
+            <span className="w-24 text-right">Média (3m)</span>
+            <span className="w-24 text-right">Este mês</span>
+            <span className="w-16 shrink-0 text-right">Variação</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {categoryComparisonData.map((c) => (
+              <div key={c.categoryId} className="flex items-center gap-2 text-[12px]">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: c.color }} />
+                <span className="flex-1 truncate text-text-secondary">{c.label}</span>
+                <span className="w-24 text-right tabular-nums text-text-muted">
+                  {valuesHidden ? 'R$ ••••' : formatCurrency(c.average)}
+                </span>
+                <span className="w-24 text-right font-medium tabular-nums text-text">
+                  {valuesHidden ? 'R$ ••••' : formatCurrency(c.total)}
+                </span>
+                <span
+                  className={[
+                    'flex w-16 shrink-0 items-center justify-end gap-0.5 text-[11px] font-medium',
+                    c.variance == null
+                      ? 'text-text-muted'
+                      : c.variance > 0
+                        ? 'text-danger'
+                        : c.variance < 0
+                          ? 'text-success'
+                          : 'text-text-muted',
+                  ].join(' ')}
+                >
+                  {c.variance != null && (c.variance > 0 ? <ArrowUp size={11} /> : c.variance < 0 ? <ArrowDown size={11} /> : null)}
+                  {c.variance == null ? '—' : `${Math.abs(c.variance).toFixed(0)}%`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function IndicatorTile({ label, value, colorClass, subline }) {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-3">
+      <p className="text-[10px] font-medium text-text-secondary">{label}</p>
+      <p className={`mt-1 text-base font-semibold ${colorClass}`}>{value}</p>
+      {subline && <p className="mt-0.5 text-[10px] text-text-muted">{subline}</p>}
     </div>
   )
 }

@@ -245,6 +245,23 @@ npm run preview
   houver conta(s) marcada(s) como reserva, o consolidado **sem reservas**
   e quantos **meses de despesa** a reserva cobre (reserva ÷ média de
   despesa dos últimos 3 meses fechados)
+- **Indicadores do mês** no Resumo: **taxa de poupança** (quanto sobrou da
+  receita), **comprometimento de renda** (% da receita já preso em contas
+  fixas recorrentes), **saldo projetado** (realizado + previstos do mês,
+  com o realizado até agora como referência) e **gasto médio diário**
+  (mês corrente vs. a média diária dos últimos 3 meses fechados) — cada
+  um colorido por sinal/direção (positivo/negativo, acima/abaixo da
+  média)
+- Gráfico **"Evolução mensal por categoria"**: barras empilhadas dos
+  últimos 6 meses para as categorias de despesa mais relevantes (o
+  restante entra em "Outros" em vez de crescer a legenda indefinidamente),
+  com tooltip ao passar o mouse — `CategoryTrendChart.jsx`, paleta por
+  cor de categoria (as mesmas cores editáveis pelo usuário, sempre
+  legendadas por nome já que uma cor livre não pode ser validada como
+  segura para daltonismo)
+- Lista **"Comparação com a média (3 meses)"**: cada categoria de despesa
+  do mês atual contra a média dos 3 meses anteriores, com a variação
+  percentual (▲ gastando mais que o normal, ▼ gastando menos)
 
 ## Funcionalidades do módulo Tarefas
 
