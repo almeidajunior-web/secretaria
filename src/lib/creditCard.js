@@ -47,9 +47,11 @@ export function currentInvoiceTotal(entries, creditCfg, todayStr) {
   const dueDate = creditCardEffectiveDate(todayStr, closingDay, dueDay)
   // Falls back to recomputing from `date` for entries stored before this
   // field existed, same fallback convention as financeMetrics/financePeriod.
+  // Income on a card (a refund/chargeback) posts as a credit, so it lowers
+  // the invoice rather than adding to it.
   const total = entries
     .filter((e) => e.paymentMethodId === 'credito' && e.date)
     .filter((e) => (e.effectiveDate || creditCardEffectiveDate(e.date, closingDay, dueDay)) === dueDate)
-    .reduce((sum, e) => sum + (e.amount || 0), 0)
+    .reduce((sum, e) => sum + (e.type === 'income' ? -(e.amount || 0) : e.amount || 0), 0)
   return { total, dueDate, closingDay, dueDay }
 }

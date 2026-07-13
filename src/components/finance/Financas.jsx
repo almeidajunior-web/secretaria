@@ -12,6 +12,7 @@ import {
   monthlyTrend,
   essentialTotals,
   accountBalance,
+  unassignedBalance,
   consolidatedBalance,
   reserveMonths,
   savingsRate,
@@ -175,6 +176,7 @@ export default function Financas({
   const accountsSummary = useMemo(
     () => ({
       balances: accounts.map((a) => ({ ...a, balance: accountBalance(entries, a, todayStr) })),
+      unassigned: unassignedBalance(entries, todayStr),
       consolidated: consolidatedBalance(entries, accounts, todayStr),
       consolidatedExReserve: hasReserveAccount
         ? consolidatedBalance(entries, accounts, todayStr, { excludeReserve: true })

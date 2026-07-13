@@ -31,6 +31,13 @@ export default function OverviewSection({
           essential.ratio * 100
         )}%)`
       : null
+  // "Saldo do mês" already reflects the projected total (monthTotals keys off
+  // effectiveDate, so it includes this month's previstos); the realized figure
+  // as a subline is what makes it distinct from a raw projection — this is why
+  // there's no separate "Saldo projetado" tile.
+  const saldoSubline = indicators
+    ? `Realizado: ${valuesHidden ? 'R$ ••••' : formatCurrency(indicators.projection.realized)}`
+    : null
   return (
     <div className="border-b border-border bg-app-bg px-4 py-4">
       <div className="mb-3 flex items-center justify-between">
@@ -67,6 +74,7 @@ export default function OverviewSection({
           change={balanceChange}
           upIsGood
           hidden={valuesHidden}
+          subline={saldoSubline}
         />
       </div>
 
@@ -103,6 +111,17 @@ export default function OverviewSection({
                 </span>
               </div>
             ))}
+            {/* Realized money with no account attached — shown so the listed
+                balances actually reconcile with the consolidated total. */}
+            {accountsSummary.unassigned !== 0 && (
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="h-2 w-2 shrink-0 rounded-full border border-dashed border-border-strong" />
+                <span className="flex-1 text-text-muted">Sem conta</span>
+                <span className="font-medium tabular-nums text-text-muted">
+                  {valuesHidden ? 'R$ ••••' : formatCurrency(accountsSummary.unassigned)}
+                </span>
+              </div>
+            )}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border pt-3 text-[11px] text-text-muted">
             <span className="inline-flex items-center gap-1.5">
@@ -132,7 +151,7 @@ export default function OverviewSection({
       )}
 
       {indicators && (
-        <div className="mb-4 grid grid-cols-4 gap-3">
+        <div className="mb-4 grid grid-cols-3 gap-3">
           <IndicatorTile
             label="Taxa de poupança"
             value={indicators.savingsRate == null ? '—' : `${indicators.savingsRate.toFixed(0)}%`}
@@ -156,12 +175,6 @@ export default function OverviewSection({
                     ? 'text-text'
                     : 'text-success'
             }
-          />
-          <IndicatorTile
-            label="Saldo projetado"
-            value={valuesHidden ? 'R$ ••••' : formatCurrency(indicators.projection.projected)}
-            colorClass={indicators.projection.projected >= 0 ? 'text-success' : 'text-danger'}
-            subline={`Realizado: ${valuesHidden ? 'R$ ••••' : formatCurrency(indicators.projection.realized)}`}
           />
           <IndicatorTile
             label="Gasto médio diário"

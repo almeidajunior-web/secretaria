@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { loadFinanceEntries, saveFinanceEntries } from '../lib/storage'
 import { buildSeedEntries } from '../data/financeSeed'
@@ -75,28 +75,34 @@ export function useFinanceEntries() {
   // nextDueDate (billRecurrence.js). `transform` lets the caller recompute
   // effectiveDate (credit-card cycle) on the spawned entry — see Financas.jsx.
   // Idempotent and safe to call after every mutation: once a series has its
-  // one pending future instance, there's nothing left to spawn.
-  const ensureNextOccurrences = (transform) => {
+  // one pending future instance, there's nothing left to spawn. Memoized
+  // (stable identity) so it can sit in a useEffect dependency list without
+  // re-firing the scan on unrelated re-renders — it only touches the stable
+  // functional form of setEntries.
+  const ensureNextOccurrences = useCallback((transform) => {
     const todayStr = format(new Date(), 'yyyy-MM-dd')
     setEntries((prev) => {
-      const seriesSeen = new Set()
+      // Group by series in a single pass, then spawn at most one per series.
+      const bySeriesId = new Map()
+      for (const e of prev) {
+        if (!e.recurrence || e.recurrence === 'none' || !e.seriesId) continue
+        const list = bySeriesId.get(e.seriesId)
+        if (list) list.push(e)
+        else bySeriesId.set(e.seriesId, [e])
+      }
       const toSpawn = []
-      prev.forEach((entry) => {
-        if (!entry.recurrence || entry.recurrence === 'none' || !entry.seriesId) return
-        if (seriesSeen.has(entry.seriesId)) return
-        seriesSeen.add(entry.seriesId)
-        const siblings = prev.filter((e) => e.seriesId === entry.seriesId)
+      for (const siblings of bySeriesId.values()) {
         const latest = siblings.reduce((a, b) => (a.date > b.date ? a : b))
         const effective = latest.effectiveDate || latest.date
-        if (!effective || effective > todayStr) return // still previsto, nothing to add yet
+        if (!effective || effective > todayStr) continue // still previsto, nothing to add yet
         const nextDate = nextDueDate(latest.date, latest.recurrence)
-        if (!nextDate) return
+        if (!nextDate) continue
         const spawned = { ...latest, id: genEntryId(), date: nextDate }
         toSpawn.push(transform ? transform(spawned) : spawned)
-      })
+      }
       return toSpawn.length ? [...prev, ...toSpawn] : prev
     })
-  }
+  }, [])
 
   // categoryId is never shared between the expense and income lists, so
   // matching on it alone is enough — no need to also check entry.type.

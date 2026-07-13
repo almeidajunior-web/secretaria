@@ -46,7 +46,9 @@ export default function FinanceTable({
 }) {
   const showAccounts = accounts.length > 0
   const allCategories = [...expenseCategories, ...incomeCategories]
-  const colSpanEmpty = 9 + (showAccounts ? 1 : 0) + (selectMode ? 1 : 0)
+  // Always-present columns: Tipo, Título, Valor, Categoria, Pagamento, Tags,
+  // ★(essencial), Data, Recorrência, ações = 10; plus Conta/seleção if shown.
+  const colSpanEmpty = 10 + (showAccounts ? 1 : 0) + (selectMode ? 1 : 0)
 
   return (
     <div className="thin-scroll h-full overflow-auto">
