@@ -28,6 +28,7 @@ import Topbar from './components/layout/Topbar'
 import Sidebar from './components/layout/Sidebar'
 import ModulesSettingsModal from './components/layout/ModulesSettingsModal'
 import PrivacyOverlay from './components/layout/PrivacyOverlay'
+import ErrorBoundary from './components/common/ErrorBoundary'
 import Agenda from './components/agenda/Agenda'
 import Planejamento from './components/planning/Planejamento'
 import Tarefas from './components/tasks/Tarefas'
@@ -192,6 +193,7 @@ export default function App() {
           onOpenSettings={() => setModulesSettingsOpen(true)}
         />
         <main className="flex-1 overflow-hidden">
+          <ErrorBoundary resetKey={activeModule}>
           {activeModule === 'agenda' ? (
             <Agenda
               currentDate={currentDate}
@@ -301,6 +303,7 @@ export default function App() {
           ) : (
             <ModulePlaceholder module={activeModule} />
           )}
+          </ErrorBoundary>
         </main>
 
         {privacyHidden && <PrivacyOverlay />}

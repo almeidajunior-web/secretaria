@@ -16,8 +16,13 @@ function genCategoryId() {
 export function usePlanning() {
   const [state, setState] = useState(() => {
     const stored = loadPlanning()
+    // Seed categories only on a true first run (no stored planning data at
+    // all). Once the user has ever saved — even down to zero categories —
+    // their data is respected as-is; previously, an empty list (e.g. after
+    // deleting every category) was indistinguishable from "never touched"
+    // and silently got replaced with the defaults on the next reload.
     return {
-      categories: stored?.categories?.length ? stored.categories : PLANNING_SEED_CATEGORIES,
+      categories: stored ? stored.categories : PLANNING_SEED_CATEGORIES,
       grid: stored?.grid || {},
       splits: stored?.splits || {},
       hourStart: stored?.hourStart ?? DEFAULT_HOUR_START,
