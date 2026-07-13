@@ -1,24 +1,18 @@
-import { ChevronLeft, ChevronRight, Settings, ListChecks, Trash2, X } from 'lucide-react'
-import { PERIOD_OPTIONS } from '../../lib/financePeriod'
+import { Settings, ListChecks, Trash2, X } from 'lucide-react'
 
 const TABS = [
   { value: 'resumo', label: 'Resumo' },
   { value: 'lancamentos', label: 'Lançamentos' },
 ]
 
-// Tabs (Resumo/Lançamentos) + period navigation. Sorting and filtering now
-// live on the table header (Excel-style), so the toolbar no longer carries
-// sort chips or a filter popover. While `selectMode` is active the toolbar
-// body swaps for the bulk-actions bar.
+// Just the tab switcher (Resumo/Lançamentos) plus the settings/select/new
+// actions. There's no period selector — the Resumo is a fixed current-month
+// snapshot and the Lançamentos table is narrowed via its own column
+// header filters/sort. While `selectMode` is active the toolbar body swaps
+// for the bulk-actions bar.
 export default function FinanceToolbar({
   tab,
   onChangeTab,
-  period,
-  onChangePeriod,
-  periodLabel,
-  onPrevPeriod,
-  onNextPeriod,
-  onTodayPeriod,
   paymentMethods,
   accounts,
   onManageClick,
@@ -64,52 +58,6 @@ export default function FinanceToolbar({
               ].join(' ')}
             >
               {t.label}
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          aria-label="Período anterior"
-          onClick={onPrevPeriod}
-          className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-text-secondary hover:bg-accent-soft hover:text-primary"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <button
-          type="button"
-          aria-label="Próximo período"
-          onClick={onNextPeriod}
-          className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-text-secondary hover:bg-accent-soft hover:text-primary"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
-      <button
-        type="button"
-        onClick={onTodayPeriod}
-        className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-accent-soft hover:text-primary"
-      >
-        Hoje
-      </button>
-      <h2 className="text-[13px] font-semibold text-text">{periodLabel}</h2>
-
-      <div className="flex items-center rounded-lg border border-border bg-app-bg p-0.5">
-        {PERIOD_OPTIONS.map((p) => {
-          const active = p.value === period
-          return (
-            <button
-              key={p.value}
-              type="button"
-              onClick={() => onChangePeriod(p.value)}
-              className={[
-                'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                active ? 'bg-primary text-white' : 'text-text-secondary hover:text-text',
-              ].join(' ')}
-            >
-              {p.label}
             </button>
           )
         })}

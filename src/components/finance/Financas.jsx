@@ -3,7 +3,6 @@ import { format, subMonths } from 'date-fns'
 import { usePersistentState } from '../../hooks/usePersistentState'
 import { useFinanceValuesHidden } from '../../hooks/useFinanceValuesHidden'
 import { buildFinanceComparator } from '../../lib/financeSort'
-import { filterEntriesByPeriod, shiftPeriod, formatPeriodLabel } from '../../lib/financePeriod'
 import { withEffectiveDate, currentInvoiceTotal } from '../../lib/creditCard'
 import {
   monthTotals,
@@ -28,13 +27,22 @@ import FinanceTable from './FinanceTable'
 import FinanceEntryModal from './FinanceEntryModal'
 import FinanceSettingsModal from './FinanceSettingsModal'
 
+// Each dimension is read with `|| []` because a filters object persisted by
+// an older version may be missing a key added later (tagIds/types) — reading
+// `.length` off an undefined key would otherwise crash the whole module the
+// moment any entry is present for the callback to run over.
 function filterEntries(entries, filters) {
+  const types = filters.types || []
+  const categoryIds = filters.categoryIds || []
+  const paymentMethodIds = filters.paymentMethodIds || []
+  const accountIds = filters.accountIds || []
+  const tagIds = filters.tagIds || []
   return entries.filter((e) => {
-    if (filters.types.length && !filters.types.includes(e.type)) return false
-    if (filters.categoryIds.length && !filters.categoryIds.includes(e.categoryId)) return false
-    if (filters.paymentMethodIds.length && !filters.paymentMethodIds.includes(e.paymentMethodId)) return false
-    if (filters.accountIds.length && !filters.accountIds.includes(e.accountId)) return false
-    if (filters.tagIds.length && !filters.tagIds.some((t) => (e.tagIds || []).includes(t))) return false
+    if (types.length && !types.includes(e.type)) return false
+    if (categoryIds.length && !categoryIds.includes(e.categoryId)) return false
+    if (paymentMethodIds.length && !paymentMethodIds.includes(e.paymentMethodId)) return false
+    if (accountIds.length && !accountIds.includes(e.accountId)) return false
+    if (tagIds.length && !tagIds.some((t) => (e.tagIds || []).includes(t))) return false
     return true
   })
 }
@@ -42,9 +50,10 @@ function filterEntries(entries, filters) {
 const DEFAULT_FILTERS = { categoryIds: [], paymentMethodIds: [], accountIds: [], tagIds: [], types: [] }
 
 // Finanças module: two tabs (Resumo = métricas + gráficos + tabela recente;
-// Lançamentos = tabela completa), both scoped by the period selector. The
-// table is an Excel-style grid whose header does the sorting/filtering
-// (shared, persisted state). Fully independent from every other module.
+// Lançamentos = tabela completa). There's no period selector — the Overview
+// is a fixed current-month snapshot, and the Lançamentos table shows every
+// entry, narrowed via the column header filters/sort (shared, persisted
+// state). Fully independent from every other module.
 export default function Financas({
   entries,
   addEntry,
@@ -81,8 +90,6 @@ export default function Financas({
   onUpdateCreditCardConfig,
 }) {
   const [tab, setTab] = usePersistentState('secretaria:financeTab', 'resumo')
-  const [period, setPeriod] = usePersistentState('secretaria:financePeriod', 'month')
-  const [referenceDate, setReferenceDate] = useState(() => new Date())
   const [sortChain, setSortChain] = usePersistentState('secretaria:financeSortChain', [
     { field: 'date', direction: 'desc' },
   ])
@@ -137,11 +144,7 @@ export default function Financas({
     [sortChain, categoryLabelById]
   )
 
-  const periodEntries = useMemo(
-    () => filterEntriesByPeriod(entries, period, referenceDate),
-    [entries, period, referenceDate]
-  )
-  const visibleEntries = useMemo(() => filterEntries(periodEntries, filters), [periodEntries, filters])
+  const visibleEntries = useMemo(() => filterEntries(entries, filters), [entries, filters])
   const sortedEntries = useMemo(() => [...visibleEntries].sort(comparator), [visibleEntries, comparator])
 
   // Overview always reflects the true current month, independent of
@@ -281,12 +284,6 @@ export default function Financas({
       <FinanceToolbar
         tab={tab}
         onChangeTab={setTab}
-        period={period}
-        onChangePeriod={setPeriod}
-        periodLabel={formatPeriodLabel(referenceDate, period)}
-        onPrevPeriod={() => setReferenceDate((d) => shiftPeriod(d, period, -1))}
-        onNextPeriod={() => setReferenceDate((d) => shiftPeriod(d, period, 1))}
-        onTodayPeriod={() => setReferenceDate(new Date())}
         paymentMethods={paymentMethods}
         accounts={accounts}
         onManageClick={() => setSettingsOpen(true)}
@@ -321,7 +318,7 @@ export default function Financas({
           />
           <div className="px-4 pb-4">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-              Lançamentos do período
+              Lançamentos recentes
             </p>
             <div className="rounded-xl border border-border bg-surface">
               <FinanceTable {...tableProps} entries={sortedEntries.slice(0, 8)} />

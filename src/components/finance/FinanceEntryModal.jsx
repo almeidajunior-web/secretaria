@@ -31,7 +31,8 @@ export default function FinanceEntryModal({
   const [paymentMethodId, setPaymentMethodId] = useState('')
   const [accountId, setAccountId] = useState('')
   const [tagIds, setTagIds] = useState([])
-  const [essential, setEssential] = useState(false)
+  // Defaults to essential; the user unchecks it for the exceptions.
+  const [essential, setEssential] = useState(true)
   const [recurrence, setRecurrence] = useState('none')
   const [description, setDescription] = useState('')
 

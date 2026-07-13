@@ -2,9 +2,9 @@ import { format, subMonths, getDaysInMonth } from 'date-fns'
 import { fmt } from './date'
 
 // All pure functions, no React — the Overview section composes these over
-// the full entry list. `monthStr` is always 'yyyy-MM', matching the Overview
-// being fixed to the current calendar month regardless of the table's own
-// period selector (see financePeriod.js).
+// the full entry list. `monthStr` is always 'yyyy-MM': the Overview is a
+// fixed current-calendar-month snapshot, independent of the Lançamentos
+// table (which shows every entry, narrowed by its own column filters).
 export function monthTotals(entries, monthStr) {
   const monthEntries = entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr))
   const income = monthEntries

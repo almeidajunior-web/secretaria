@@ -46,7 +46,7 @@ export function currentInvoiceTotal(entries, creditCfg, todayStr) {
   const { closingDay, dueDay } = creditCfg
   const dueDate = creditCardEffectiveDate(todayStr, closingDay, dueDay)
   // Falls back to recomputing from `date` for entries stored before this
-  // field existed, same fallback convention as financeMetrics/financePeriod.
+  // field existed, same fallback convention as financeMetrics.
   // Income on a card (a refund/chargeback) posts as a credit, so it lowers
   // the invoice rather than adding to it.
   const total = entries

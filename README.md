@@ -167,9 +167,11 @@ npm run preview
   misturam), forma de pagamento, conta/banco e **tags** (domínio próprio,
   independente das tags de Tarefas) — todos editáveis nas Configurações
   (cada um numa aba da barra lateral do modal)
-- Duas abas no topo, escopadas pelo mesmo seletor de período (Dia/Semana/
-  Mês/Ano): **Resumo** (métricas + gráficos + uma tabela dos últimos
-  lançamentos do período) e **Lançamentos** (a tabela completa)
+- Duas abas no topo: **Resumo** (métricas + gráficos + uma tabela dos
+  lançamentos mais recentes) e **Lançamentos** (a tabela completa de todos
+  os lançamentos). Não há seletor de período — o Resumo é sempre um retrato
+  fixo do mês corrente, e a aba Lançamentos mostra tudo, sendo recortada
+  pelos filtros/ordenação do próprio cabeçalho da tabela
 - **Resumo**: três indicadores fixos no mês vigente (Receitas, Despesas,
   Saldo do mês) cada um com variação percentual vs. o mês anterior; sob as
   Despesas, um indicador discreto de **gastos essenciais** (valor absoluto +
@@ -184,13 +186,14 @@ npm run preview
   coluna**. Todas as células continuam editáveis diretamente na linha
 - Forma de pagamento é mostrada sem cor (não faz sentido destacá-la por cor)
 - Despesas têm um campo **"Essencial?"** (estrela na linha; checkbox no modal
-  e no lançamento rápido) para marcar gastos essenciais
+  e no lançamento rápido) para marcar gastos essenciais — vem **marcado por
+  padrão** (a ideia é desmarcar só as exceções)
 - Cada lançamento tem um ícone de tendência (↑ receita em verde, ↓ despesa
   em vermelho) clicável para alternar o tipo — a categoria é limpa ao
   trocar, já que as listas de categoria são específicas por tipo
-- Sem recorrência automática nesta primeira versão — um lançamento
-  recorrente (salário, assinatura) se resolve com o botão "Duplicar" em
-  cada linha, que cria uma cópia já na data de hoje
+- Além da recorrência automática (contas fixas, ver abaixo), o botão
+  "Duplicar" em cada linha cria uma cópia avulsa já na data de hoje — útil
+  para repetir um lançamento pontual sem torná-lo uma série
 - Criação via linha rápida no rodapé da tabela (com todos os campos do
   modal) ou pelo botão "Novo lançamento" no topbar (modal)
 - Modo de seleção em massa: atribua forma de pagamento/conta ou exclua
@@ -216,9 +219,9 @@ npm run preview
   DD/MM/AAAA"; na tabela, a célula de data ganha uma segunda linha
   discreta ("desconta DD/MM") quando a fatura empurra a cobrança para uma
   data diferente da compra
-- Métricas do mês, o filtro de período da tabela e o indicador de
-  essenciais passaram a considerar a **data efetiva** (com fallback para a
-  data da compra) — uma compra no crédito perto do fechamento aparece no
+- Métricas do mês e o indicador de essenciais passaram a considerar a
+  **data efetiva** (com fallback para a data da compra) — uma compra no
+  crédito perto do fechamento aparece no
   mês em que o dinheiro efetivamente sai, não no mês da compra
 - Card **"Fatura atual do cartão"** no Resumo: soma dos lançamentos do
   cartão cujo ciclo ainda está aberto (isto é, o mesmo ciclo em que uma

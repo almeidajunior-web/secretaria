@@ -483,7 +483,8 @@ function QuickAddRow({
   const [paymentMethodId, setPaymentMethodId] = useState('')
   const [accountId, setAccountId] = useState('')
   const [tagIds, setTagIds] = useState([])
-  const [essential, setEssential] = useState(false)
+  // Defaults to essential; the user unchecks it for the exceptions.
+  const [essential, setEssential] = useState(true)
   const [recurrence, setRecurrence] = useState('none')
 
   const isIncome = type === 'income'
@@ -515,7 +516,7 @@ function QuickAddRow({
     setPaymentMethodId('')
     setAccountId('')
     setTagIds([])
-    setEssential(false)
+    setEssential(true)
     setRecurrence('none')
   }
 

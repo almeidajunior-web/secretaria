@@ -347,9 +347,9 @@ export function saveBillValuesHidden(hidden) {
 // Finance entries have no Date objects — date is a plain 'yyyy-MM-dd'
 // string, same convention as bills/tasks. Also drops any non-object item
 // (null, a stray primitive) instead of returning them as-is — every
-// consumer (financePeriod.js, financeMetrics.js, creditCard.js) reads
-// fields like `e.effectiveDate` straight off each entry with no per-item
-// guard, so one malformed item used to crash the whole module.
+// consumer (financeMetrics.js, creditCard.js, the table) reads fields like
+// `e.effectiveDate` straight off each entry with no per-item guard, so one
+// malformed item used to crash the whole module.
 export function loadFinanceEntries() {
   try {
     const raw = localStorage.getItem(KEYS.financeEntries)
