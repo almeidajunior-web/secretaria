@@ -1,4 +1,4 @@
-import { Eye, EyeOff, ArrowUp, ArrowDown, CreditCard } from 'lucide-react'
+import { Eye, EyeOff, ArrowUp, ArrowDown, CreditCard, Landmark, ShieldCheck } from 'lucide-react'
 import { formatCurrency } from '../../lib/currency'
 import { fmt, fromDateInput } from '../../lib/date'
 import CategoryBreakdownChart from './CategoryBreakdownChart'
@@ -17,6 +17,7 @@ export default function OverviewSection({
   categoryData,
   trendData,
   invoice,
+  accountsSummary,
   valuesHidden,
   onToggleValuesHidden,
 }) {
@@ -79,6 +80,50 @@ export default function OverviewSection({
           <p className="text-[11px] text-text-muted">
             Fecha dia {invoice.closingDay} · vence em {fmt(fromDateInput(invoice.dueDate), 'dd/MM/yyyy')}
           </p>
+        </div>
+      )}
+
+      {accountsSummary && accountsSummary.balances.length > 0 && (
+        <div className="mb-4 rounded-xl border border-border bg-surface p-4">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">Contas</p>
+          <div className="flex flex-col gap-2">
+            {accountsSummary.balances.map((a) => (
+              <div key={a.id} className="flex items-center gap-2 text-[12px]">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: a.color }} />
+                <span className="flex-1 text-text-secondary">{a.label}</span>
+                {a.isReserve && (
+                  <ShieldCheck size={12} className="shrink-0 text-primary" aria-label="Reserva de emergência" />
+                )}
+                <span className="font-medium tabular-nums text-text">
+                  {valuesHidden ? 'R$ ••••' : formatCurrency(a.balance)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border pt-3 text-[11px] text-text-muted">
+            <span className="inline-flex items-center gap-1.5">
+              <Landmark size={12} />
+              Saldo consolidado:{' '}
+              <span className="font-medium text-text">
+                {valuesHidden ? 'R$ ••••' : formatCurrency(accountsSummary.consolidated)}
+              </span>
+            </span>
+            {accountsSummary.consolidatedExReserve != null && (
+              <span>
+                sem reservas:{' '}
+                <span className="font-medium text-text">
+                  {valuesHidden ? 'R$ ••••' : formatCurrency(accountsSummary.consolidatedExReserve)}
+                </span>
+              </span>
+            )}
+            {accountsSummary.reserveMonths != null && (
+              <span>
+                reserva cobre{' '}
+                <span className="font-medium text-text">{accountsSummary.reserveMonths.toFixed(1)} meses</span> de
+                despesa
+              </span>
+            )}
+          </div>
         </div>
       )}
 

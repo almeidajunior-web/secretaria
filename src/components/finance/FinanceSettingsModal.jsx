@@ -45,6 +45,42 @@ function CreditCardDaysFields({ config, onUpdateConfig }) {
   )
 }
 
+// Saldo inicial (o ponto de partida do saldo calculado da conta) e o
+// marcador de reserva de emergência — ambos opcionais, por isso ficam como
+// controles extras na própria linha da conta em vez de puxarem mais uma
+// aba de configurações.
+function AccountBalanceFields({ account, onUpdateAccount }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-[11px] text-text-secondary">
+      <label className="flex items-center gap-1.5">
+        Saldo inicial
+        <div className="flex items-center gap-1">
+          <span className="text-text-muted">R$</span>
+          <input
+            type="number"
+            step="0.01"
+            value={account.initialBalance ?? 0}
+            onChange={(e) =>
+              onUpdateAccount(account.id, {
+                initialBalance: e.target.value === '' ? 0 : Number(e.target.value),
+              })
+            }
+            className="w-24 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
+          />
+        </div>
+      </label>
+      <label className="flex cursor-pointer items-center gap-1.5">
+        <input
+          type="checkbox"
+          checked={!!account.isReserve}
+          onChange={(e) => onUpdateAccount(account.id, { isReserve: e.target.checked })}
+        />
+        Reserva de emergência
+      </label>
+    </div>
+  )
+}
+
 export default function FinanceSettingsModal({
   expenseCategories,
   onAddExpenseCategory,
@@ -153,6 +189,9 @@ export default function FinanceSettingsModal({
           onReorder={onReorderAccounts}
           addLabel="Nova conta"
           deleteWarning={(item) => `Os lançamentos com "${item.label}" ficam sem conta.`}
+          renderExtra={(item) => (
+            <AccountBalanceFields account={item} onUpdateAccount={onUpdateAccount} />
+          )}
         />
       ),
     },

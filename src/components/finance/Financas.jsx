@@ -11,6 +11,9 @@ import {
   categoryBreakdown,
   monthlyTrend,
   essentialTotals,
+  accountBalance,
+  consolidatedBalance,
+  reserveMonths,
 } from '../../lib/financeMetrics'
 import FinanceToolbar from './FinanceToolbar'
 import OverviewSection from './OverviewSection'
@@ -162,6 +165,18 @@ export default function Financas({
     () => currentInvoiceTotal(entries, creditCardConfig, todayStr),
     [entries, creditCardConfig, todayStr]
   )
+  const hasReserveAccount = accounts.some((a) => a.isReserve)
+  const accountsSummary = useMemo(
+    () => ({
+      balances: accounts.map((a) => ({ ...a, balance: accountBalance(entries, a, todayStr) })),
+      consolidated: consolidatedBalance(entries, accounts, todayStr),
+      consolidatedExReserve: hasReserveAccount
+        ? consolidatedBalance(entries, accounts, todayStr, { excludeReserve: true })
+        : null,
+      reserveMonths: reserveMonths(entries, accounts, todayStr),
+    }),
+    [entries, accounts, todayStr, hasReserveAccount]
+  )
 
   // Keeps every recurring series topped up with exactly one pending previsto
   // instance — runs after every mutation and once on mount. Idempotent: once
@@ -272,6 +287,7 @@ export default function Financas({
             categoryData={categoryData}
             trendData={trendData}
             invoice={invoice}
+            accountsSummary={accountsSummary}
             valuesHidden={valuesHidden}
             onToggleValuesHidden={toggleValuesHidden}
           />

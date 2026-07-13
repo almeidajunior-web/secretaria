@@ -235,6 +235,16 @@ npm run preview
   recorrência de Vencimentos (contas fixas aqui não têm relação com
   contas cadastradas lá). "Duplicar" continua criando uma cópia avulsa,
   sem herdar a recorrência/série do lançamento original
+- **Saldo por conta e reserva de emergência**: cada conta (Configurações →
+  Contas) ganha um **saldo inicial** e um marcador opcional de **reserva de
+  emergência**. O saldo de cada conta é o saldo inicial mais os lançamentos
+  já realizados atribuídos a ela (previstos não contam — ainda não
+  aconteceram). Um card **"Contas"** no Resumo (só aparece quando existe
+  ao menos uma conta cadastrada) lista o saldo de cada uma, o **saldo
+  consolidado** (soma de todas as contas + lançamentos sem conta) e, se
+  houver conta(s) marcada(s) como reserva, o consolidado **sem reservas**
+  e quantos **meses de despesa** a reserva cobre (reserva ÷ média de
+  despesa dos últimos 3 meses fechados)
 
 ## Funcionalidades do módulo Tarefas
 
