@@ -65,6 +65,7 @@ function AccountBalanceFields({ account, onUpdateAccount }) {
                 initialBalance: e.target.value === '' ? 0 : Number(e.target.value),
               })
             }
+            onFocus={(e) => e.target.select()}
             className="w-24 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
           />
         </div>

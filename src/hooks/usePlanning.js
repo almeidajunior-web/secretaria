@@ -105,8 +105,8 @@ export function usePlanning() {
   }
 
   // Merges the two halves back into a single empty hour window, discarding
-  // whatever data either half had. Callers should confirm with the user
-  // first when either half isn't already empty.
+  // whatever data either half had (no confirmation — merging is treated as
+  // low-stakes, unlike the eraser's clearWindowCompletely).
   const mergeWindow = (day, hour) => {
     setState((prev) => {
       const wholeKey = cellKey(day, hour)

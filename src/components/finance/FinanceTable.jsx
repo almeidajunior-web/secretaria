@@ -345,6 +345,14 @@ function EntryRow({
             onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
             className="w-full min-w-[120px] bg-transparent text-[13px] text-text outline-none"
           />
+          {entry.installment && (
+            <span
+              className="shrink-0 rounded bg-accent-soft px-1 py-0.5 text-[10px] font-medium text-text-secondary"
+              title="Compra parcelada"
+            >
+              {entry.installment.current}/{entry.installment.total}
+            </span>
+          )}
           <DescriptionPopover item={entry} onUpdateItem={onUpdateEntry} />
         </div>
       </td>

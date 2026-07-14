@@ -63,7 +63,15 @@ export function useFinanceEntries() {
       const source = prev.find((e) => e.id === id)
       if (!source) return prev
       const todayStr = format(new Date(), 'yyyy-MM-dd')
-      const duplicated = { ...source, id: genEntryId(), date: todayStr, recurrence: 'none', seriesId: undefined }
+      const duplicated = {
+        ...source,
+        id: genEntryId(),
+        date: todayStr,
+        recurrence: 'none',
+        seriesId: undefined,
+        installment: undefined,
+        installmentGroupId: undefined,
+      }
       return [...prev, transform ? transform(duplicated) : duplicated]
     })
   }

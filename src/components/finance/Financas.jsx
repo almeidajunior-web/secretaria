@@ -3,7 +3,7 @@ import { format, subMonths } from 'date-fns'
 import { usePersistentState } from '../../hooks/usePersistentState'
 import { useFinanceValuesHidden } from '../../hooks/useFinanceValuesHidden'
 import { buildFinanceComparator } from '../../lib/financeSort'
-import { withEffectiveDate, currentInvoiceTotal } from '../../lib/creditCard'
+import { withEffectiveDate, currentInvoiceTotal, splitIntoInstallments } from '../../lib/creditCard'
 import {
   monthTotals,
   percentChange,
@@ -239,6 +239,7 @@ export default function Financas({
   }
 
   const handleQuickAdd = (partial) => {
+    const { installmentCount, ...rest } = partial
     const base = {
       title: '',
       description: '',
@@ -251,9 +252,15 @@ export default function Financas({
       date: null,
       type: 'expense',
       recurrence: 'none',
-      ...partial,
+      ...rest,
     }
-    addEntry(withEffectiveDate(base, creditCardConfig))
+    if (installmentCount && installmentCount >= 2 && base.paymentMethodId === 'credito') {
+      splitIntoInstallments(base, installmentCount).forEach((part) =>
+        addEntry(withEffectiveDate(part, creditCardConfig))
+      )
+    } else {
+      addEntry(withEffectiveDate(base, creditCardConfig))
+    }
   }
 
   const handleDuplicate = (id) => duplicateEntry(id, (entry) => withEffectiveDate(entry, creditCardConfig))

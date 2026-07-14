@@ -2,6 +2,7 @@ import { useState } from 'react'
 import TagPickerPopover from '../common/TagPickerPopover'
 import { creditCardEffectiveDate } from '../../lib/creditCard'
 import { fmt, fromDateInput } from '../../lib/date'
+import { formatCurrency } from '../../lib/currency'
 import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
 
 const inputClass =
@@ -35,11 +36,14 @@ export default function FinanceEntryModal({
   const [essential, setEssential] = useState(true)
   const [recurrence, setRecurrence] = useState('none')
   const [description, setDescription] = useState('')
+  const [installmentEnabled, setInstallmentEnabled] = useState(false)
+  const [installmentCount, setInstallmentCount] = useState(2)
 
   const isExpense = type === 'expense'
   const categories = isExpense ? expenseCategories : incomeCategories
   const canSave = title.trim().length > 0 && date
   const isCredit = paymentMethodId === 'credito'
+  const showInstallmentOption = isCredit && isExpense
   const effectivePreview =
     isCredit && date && creditCardConfig?.closingDay && creditCardConfig?.dueDay
       ? creditCardEffectiveDate(date, creditCardConfig.closingDay, creditCardConfig.dueDay)
@@ -64,6 +68,7 @@ export default function FinanceEntryModal({
       essential: isExpense ? essential : false,
       recurrence,
       description: description.trim(),
+      installmentCount: showInstallmentOption && installmentEnabled ? installmentCount : null,
     })
   }
 
@@ -166,6 +171,40 @@ export default function FinanceEntryModal({
           {effectivePreview && (
             <p className="-mt-2 text-[11px] text-text-muted">
               Desconta em <span className="font-medium text-text">{fmt(fromDateInput(effectivePreview), 'dd/MM/yyyy')}</span>
+            </p>
+          )}
+
+          {showInstallmentOption && (
+            <div className="-mt-1 flex items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2 text-[13px] text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={installmentEnabled}
+                  onChange={(e) => setInstallmentEnabled(e.target.checked)}
+                />
+                Parcelado?
+              </label>
+              {installmentEnabled && (
+                <label className="flex items-center gap-1.5 text-[13px] text-text-secondary">
+                  Parcelas
+                  <input
+                    type="number"
+                    min="2"
+                    max="48"
+                    value={installmentCount}
+                    onChange={(e) => setInstallmentCount(Math.min(48, Math.max(2, Number(e.target.value) || 2)))}
+                    className="w-14 rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[13px] text-text outline-none focus:border-primary"
+                  />
+                </label>
+              )}
+            </div>
+          )}
+          {showInstallmentOption && installmentEnabled && amount !== '' && (
+            <p className="-mt-2 text-[11px] text-text-muted">
+              Valor total de {formatCurrency(Number(amount))} em {installmentCount}x de{' '}
+              <span className="font-medium text-text">
+                {formatCurrency(Number(amount) / installmentCount)}
+              </span>
             </p>
           )}
 

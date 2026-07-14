@@ -44,14 +44,7 @@ export default function Planejamento({
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [windowPopover, setWindowPopover] = useState(null) // { day, hour, half, rect }
   const [descriptionTarget, setDescriptionTarget] = useState(null) // { day, hour, half }
-  const [mergeConfirm, setMergeConfirm] = useState(null) // { day, hour }
   const [eraseConfirm, setEraseConfirm] = useState(null) // { day, hour, half }
-
-  const requestMerge = (day, hour) => {
-    const hasData = !!grid[cellKey(day, hour, 0)] || !!grid[cellKey(day, hour, 30)]
-    if (hasData) setMergeConfirm({ day, hour })
-    else mergeWindow(day, hour)
-  }
 
   const targetEntry = (t) => (t ? grid[cellKey(t.day, t.hour, t.half)] : null)
 
@@ -110,7 +103,7 @@ export default function Planejamento({
             setWindowPopover(null)
           }}
           onMerge={() => {
-            requestMerge(windowPopover.day, windowPopover.hour)
+            mergeWindow(windowPopover.day, windowPopover.hour)
             setWindowPopover(null)
           }}
           onDescription={() => {
@@ -138,19 +131,6 @@ export default function Planejamento({
               : undefined
           }
           onClose={() => setDescriptionTarget(null)}
-        />
-      )}
-
-      {mergeConfirm && (
-        <ConfirmDialog
-          title="Unir os dois blocos de 30 min?"
-          message="As pinturas e descrições de ambas as metades serão apagadas e a hora volta a ser uma única janela vazia. Esta ação não pode ser desfeita."
-          confirmLabel="Unir"
-          onConfirm={() => {
-            mergeWindow(mergeConfirm.day, mergeConfirm.hour)
-            setMergeConfirm(null)
-          }}
-          onCancel={() => setMergeConfirm(null)}
         />
       )}
 

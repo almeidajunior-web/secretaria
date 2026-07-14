@@ -37,6 +37,33 @@ export function withEffectiveDate(entry, creditCfg) {
   return { ...entry, effectiveDate: creditCardEffectiveDate(entry.date, creditCfg.closingDay, creditCfg.dueDay) }
 }
 
+// Splits a single credit-card purchase into `count` monthly installment
+// entries: the amount is divided evenly in cents (any leftover cent goes to
+// the earliest installments, so the parts always sum back to the original
+// total), each installment's `date` is one month further than the last, and
+// the title gets a "(i/N)" suffix so the series reads clearly in the table.
+// recurrence is force-cleared — installments are a fixed-count series, not
+// an open-ended recurring bill, so the two mechanisms must never combine on
+// the same entries. effectiveDate is deliberately left for the caller to
+// (re)compute per part via withEffectiveDate, so each installment lands in
+// its own correct invoice cycle.
+export function splitIntoInstallments(entry, count) {
+  const cents = Math.round((entry.amount || 0) * 100)
+  const base = Math.floor(cents / count)
+  const remainder = cents - base * count
+  const groupId = `inst_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  const baseDate = toDate(entry.date)
+  return Array.from({ length: count }, (_, i) => ({
+    ...entry,
+    amount: (base + (i < remainder ? 1 : 0)) / 100,
+    date: format(addMonths(baseDate, i), 'yyyy-MM-dd'),
+    title: `${entry.title} (${i + 1}/${count})`,
+    recurrence: 'none',
+    installment: { current: i + 1, total: count },
+    installmentGroupId: groupId,
+  }))
+}
+
 // The invoice currently accumulating (not yet closed): whatever a purchase
 // made today would be assigned to. Since every card entry's effectiveDate
 // already equals its invoice's due date, entries sharing that same due date

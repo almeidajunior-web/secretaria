@@ -1,4 +1,5 @@
-import { Fragment, useEffect, useMemo, useRef } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { StickyNote } from 'lucide-react'
 import { HOUR_HEIGHT, WEEKDAYS_SHORT_ORDERED } from '../../constants'
 import { weekdayOrder } from '../../lib/date'
@@ -97,7 +98,7 @@ export default function PlanningGrid({
       {activeBrush == null && (
         <p className="mb-2 text-[11px] text-text-muted">
           Selecione uma categoria acima para pintar a grade. Clique com o botão direito numa
-          janela preenchida para dividir ou adicionar uma descrição.
+          janela para dividir ou adicionar uma descrição.
         </p>
       )}
       <div
@@ -211,17 +212,23 @@ function Window({
   skipRightBorder,
 }) {
   const cat = entry?.categoryId ? categoryById[entry.categoryId] : null
+  const cellRef = useRef(null)
+  const [tooltipRect, setTooltipRect] = useState(null)
 
   return (
     <div
+      ref={cellRef}
       onMouseDown={(e) => {
         if (e.button !== 0) return
         onMouseDown(day, hour, half)
       }}
-      onMouseEnter={() => onMouseEnter(day, hour, half)}
+      onMouseEnter={() => {
+        onMouseEnter(day, hour, half)
+        if (entry?.description) setTooltipRect(cellRef.current?.getBoundingClientRect() ?? null)
+      }}
+      onMouseLeave={() => setTooltipRect(null)}
       onContextMenu={(e) => {
         e.preventDefault()
-        if (!cat) return
         onOpenWindowMenu({ day, hour, half, rect: e.currentTarget.getBoundingClientRect() })
       }}
       className={[
@@ -246,9 +253,7 @@ function Window({
 
       {entry?.description && (
         <>
-          <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden w-max max-w-[220px] -translate-x-1/2 whitespace-pre-wrap rounded-md bg-black/85 px-2 py-1 text-[11px] leading-snug text-white group-hover:block">
-            {entry.description}
-          </div>
+          {tooltipRect && <DescriptionTooltip rect={tooltipRect} text={entry.description} />}
           <button
             type="button"
             aria-label="Ver descrição"
@@ -264,5 +269,32 @@ function Window({
         </>
       )}
     </div>
+  )
+}
+
+const TOOLTIP_HALF_WIDTH = 110
+
+// Portals the description tooltip to <body> so it's never clipped by the
+// grid's own overflow-hidden/overflow-auto ancestors — previously the
+// tooltip was absolutely positioned inside the scrolling grid and got cut
+// off by the grid's own borders whenever it opened near an edge.
+function DescriptionTooltip({ rect, text }) {
+  const showBelow = rect.top < 90
+  const left = Math.min(
+    Math.max(rect.left + rect.width / 2, TOOLTIP_HALF_WIDTH + 8),
+    window.innerWidth - TOOLTIP_HALF_WIDTH - 8
+  )
+  return createPortal(
+    <div
+      className="pointer-events-none fixed z-[70] w-max max-w-[220px] whitespace-pre-wrap rounded-md bg-black/85 px-2 py-1 text-[11px] leading-snug text-white"
+      style={{
+        left,
+        top: showBelow ? rect.bottom + 6 : rect.top - 6,
+        transform: showBelow ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+      }}
+    >
+      {text}
+    </div>,
+    document.body
   )
 }
