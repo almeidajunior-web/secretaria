@@ -1,6 +1,7 @@
 import { AlertTriangle, GraduationCap, FileText, OctagonAlert } from 'lucide-react'
 import { fmt } from '../../lib/date'
 import { withAlpha } from '../../constants'
+import { fillColorForTheme } from '../../lib/color'
 
 const REFUSED_GRAY = '#9CA3AF'
 
@@ -9,8 +10,8 @@ const REFUSED_GRAY = '#9CA3AF'
 // the time, and extra details appear as the box grows. Past occurrences are
 // dimmed; classes show a cap above the title and an alarm when the absence
 // limit is reached.
-export default function EventCard({ occ, height, isPast, faltas = 0 }) {
-  const { style, textColor } = statusVisual(occ.status, occ.color)
+export default function EventCard({ occ, height, isPast, faltas = 0, isDark }) {
+  const { style, textColor } = statusVisual(occ.status, occ.color, isDark)
   const opacity = isPast ? 0.5 : occ.status === 'refused' ? 0.7 : 1
 
   const compact = height < 38
@@ -74,10 +75,13 @@ export default function EventCard({ occ, height, isPast, faltas = 0 }) {
   )
 }
 
-function statusVisual(status, color) {
+function statusVisual(status, color, isDark) {
   switch (status) {
     case 'confirmed':
-      return { style: { backgroundColor: color, color: '#ffffff' }, textColor: '#ffffff' }
+      return {
+        style: { backgroundColor: fillColorForTheme(color, isDark), color: '#ffffff' },
+        textColor: '#ffffff',
+      }
     case 'unconfirmed':
       return {
         style: { backgroundColor: withAlpha(color, 0.06), border: `1.5px solid ${color}`, color },
@@ -101,6 +105,9 @@ function statusVisual(status, color) {
         textColor: REFUSED_GRAY,
       }
     default:
-      return { style: { backgroundColor: color, color: '#ffffff' }, textColor: '#ffffff' }
+      return {
+        style: { backgroundColor: fillColorForTheme(color, isDark), color: '#ffffff' },
+        textColor: '#ffffff',
+      }
   }
 }

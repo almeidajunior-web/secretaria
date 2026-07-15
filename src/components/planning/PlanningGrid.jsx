@@ -4,6 +4,7 @@ import { StickyNote } from 'lucide-react'
 import { HOUR_HEIGHT, WEEKDAYS_SHORT_ORDERED } from '../../constants'
 import { weekdayOrder } from '../../lib/date'
 import { cellKey } from '../../lib/planningGrid'
+import { fillColorForTheme } from '../../lib/color'
 import { useNow } from '../../hooks/useNow'
 import { ERASER } from './CategoryPalette'
 
@@ -29,6 +30,7 @@ export default function PlanningGrid({
   splits,
   hourStart,
   hourEnd,
+  isDark,
   activeBrush,
   onPaintCell,
   onRequestClearWithConfirm,
@@ -140,6 +142,7 @@ export default function PlanningGrid({
                     height={HOUR_HEIGHT}
                     entry={grid[wholeKey]}
                     categoryById={categoryById}
+                    isDark={isDark}
                     activeBrush={activeBrush}
                     onMouseDown={handleMouseDown}
                     onMouseEnter={handleMouseEnter}
@@ -163,6 +166,7 @@ export default function PlanningGrid({
                     height={HOUR_HEIGHT / 2}
                     entry={grid[cellKey(day, h, 0)]}
                     categoryById={categoryById}
+                    isDark={isDark}
                     activeBrush={activeBrush}
                     onMouseDown={handleMouseDown}
                     onMouseEnter={handleMouseEnter}
@@ -178,6 +182,7 @@ export default function PlanningGrid({
                     height={HOUR_HEIGHT / 2}
                     entry={grid[cellKey(day, h, 30)]}
                     categoryById={categoryById}
+                    isDark={isDark}
                     activeBrush={activeBrush}
                     onMouseDown={handleMouseDown}
                     onMouseEnter={handleMouseEnter}
@@ -203,6 +208,7 @@ function Window({
   height,
   entry,
   categoryById,
+  isDark,
   activeBrush,
   onMouseDown,
   onMouseEnter,
@@ -238,7 +244,7 @@ function Window({
         activeBrush != null ? 'cursor-pointer' : 'cursor-default',
         cat ? '' : 'hover:bg-accent-soft/40',
       ].join(' ')}
-      style={{ height, backgroundColor: cat?.color }}
+      style={{ height, backgroundColor: fillColorForTheme(cat?.color, isDark) }}
     >
       {nowTop != null && (
         <div

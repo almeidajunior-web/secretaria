@@ -67,6 +67,7 @@ export default function Agenda({
   onDeleteTag,
   onNavigateToTasks,
   onNavigateToDues,
+  isDark,
 }) {
   // Persists across module navigation and reloads, like the other modules'
   // view/filter preferences.
@@ -232,6 +233,7 @@ export default function Agenda({
     onCreateRange: openCreate,
     onEventClick: (occ, rect) => setPopover({ occ, rect }),
     onMove: handleMove,
+    isDark,
   }
 
   return (

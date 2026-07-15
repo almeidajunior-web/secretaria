@@ -39,6 +39,7 @@ export default function Planejamento({
   reorderCategories,
   setHourRange,
   windowsOutsideRange,
+  isDark,
 }) {
   const [activeBrush, setActiveBrush] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -70,6 +71,7 @@ export default function Planejamento({
           splits={splits}
           hourStart={hourStart}
           hourEnd={hourEnd}
+          isDark={isDark}
           activeBrush={activeBrush}
           onPaintCell={paintCell}
           onRequestClearWithConfirm={(day, hour, half) => setEraseConfirm({ day, hour, half })}

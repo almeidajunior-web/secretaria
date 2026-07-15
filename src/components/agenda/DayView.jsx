@@ -6,7 +6,7 @@ import { useFaltas, HourGutter, GridLines, DayColumn } from './WeekView'
 
 // Single-day grid. Reuses the week grid's column, gutter and now-line so the
 // two views stay visually identical.
-export default function DayView({ currentDate, events, onCreateRange, onEventClick, onMove }) {
+export default function DayView({ currentDate, events, onCreateRange, onEventClick, onMove, isDark }) {
   const now = useNow()
   const faltasByEvent = useFaltas(events, now)
   const today = isSameDay(currentDate, now)
@@ -41,6 +41,7 @@ export default function DayView({ currentDate, events, onCreateRange, onEventCli
             onCreateRange={onCreateRange}
             onEventClick={onEventClick}
             onMove={onMove}
+            isDark={isDark}
           />
         </div>
       </div>

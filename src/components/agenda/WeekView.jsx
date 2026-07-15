@@ -33,6 +33,7 @@ export default function WeekView({
   onMove,
   onOpenTasksForDay,
   onOpenDues,
+  isDark,
 }) {
   const days = getWeekDays(currentDate)
   const now = useNow()
@@ -67,6 +68,7 @@ export default function WeekView({
               onCreateRange={onCreateRange}
               onEventClick={onEventClick}
               onMove={onMove}
+              isDark={isDark}
             />
           ))}
         </div>
@@ -188,6 +190,7 @@ export function DayColumn({
   onCreateRange,
   onEventClick,
   onMove,
+  isDark,
 }) {
   const colRef = useRef(null)
   const [createDrag, setCreateDrag] = useState(null) // { startMin, endMin }
@@ -329,6 +332,7 @@ export function DayColumn({
               height={effectiveHeight}
               isPast={o.end < now}
               faltas={faltasByEvent[o.eventId] || 0}
+              isDark={isDark}
             />
             {height >= 38 && (
               <div

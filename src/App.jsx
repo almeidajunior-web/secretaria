@@ -43,6 +43,7 @@ const MODULE_NAMES = Object.fromEntries(MODULE_DEFS.map((m) => [m.id, m.label]))
 // restructuring.
 export default function App() {
   const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
   const { hidden: privacyHidden, togglePrivacyMode } = usePrivacyMode()
   const eventsApi = useEvents()
   // Seed the tag list from tags already present on the events (first run only).
@@ -204,9 +205,10 @@ export default function App() {
               onDeleteTag={handleDeleteTag}
               onNavigateToTasks={handleOpenTasksForDate}
               onNavigateToDues={handleOpenDuesForDate}
+              isDark={isDark}
             />
           ) : activeModule === 'planning' ? (
-            <Planejamento {...planningApi} />
+            <Planejamento {...planningApi} isDark={isDark} />
           ) : activeModule === 'todos' ? (
             <Tarefas
               tasks={tasksApi.tasks}
