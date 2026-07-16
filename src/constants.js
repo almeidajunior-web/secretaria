@@ -14,6 +14,23 @@ export const EVENT_COLORS = [
   '#6B7280',
 ]
 
+// Softer alternative for each EVENT_COLORS entry, same order/hue family —
+// rendered as a second row in every color swatch picker (ColorSwatchPicker)
+// so users can opt into a gentler palette without changing what the vivid
+// row means anywhere else in the app.
+export const EVENT_COLORS_PASTEL = [
+  '#BFDBFE',
+  '#A5B4FC',
+  '#DDD6FE',
+  '#A7F3D0',
+  '#FDE68A',
+  '#FECACA',
+  '#FBCFE8',
+  '#A5F3FC',
+  '#D9F99D',
+  '#D1D5DB',
+]
+
 // Short weekday labels, week starting on Sunday (date-fns getDay() order).
 export const WEEKDAYS_SHORT = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
 

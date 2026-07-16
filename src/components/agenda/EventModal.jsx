@@ -13,6 +13,7 @@ import TagSelector from '../common/TagSelector'
 import RecurrenceField from '../common/RecurrenceField'
 import LinkedClassesField from './LinkedClassesField'
 import ConfirmDialog from '../common/ConfirmDialog'
+import ColorSwatchPicker from '../common/ColorSwatchPicker'
 
 // Create/edit form. `initial` is a full event object (blank for new events,
 // populated for edits). Title is required.
@@ -243,26 +244,7 @@ export default function EventModal({
           )}
 
           <Field label="Cor">
-            <div className="flex flex-wrap gap-2">
-              {EVENT_COLORS.map((c) => {
-                const selected = c === color
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    aria-label={`Cor ${c}`}
-                    onClick={() => setColor(c)}
-                    style={{
-                      backgroundColor: c,
-                      transform: selected ? 'scale(1.15)' : 'none',
-                      borderColor: selected ? 'var(--c-text)' : 'transparent',
-                      borderWidth: selected ? '2.5px' : '2px',
-                    }}
-                    className="h-6 w-6 rounded-full border"
-                  />
-                )
-              })}
-            </div>
+            <ColorSwatchPicker value={color} onSelect={setColor} size="md" gap="gap-2" />
           </Field>
 
           <Field label="Tags">

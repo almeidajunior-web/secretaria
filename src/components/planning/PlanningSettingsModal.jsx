@@ -4,6 +4,7 @@ import { EVENT_COLORS } from '../../constants'
 import { reorderIds } from '../../lib/reorderList'
 import ConfirmDialog from '../common/ConfirmDialog'
 import SettingsShell from '../common/SettingsShell'
+import ColorSwatchPicker from '../common/ColorSwatchPicker'
 
 const inputClass =
   'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
@@ -222,26 +223,7 @@ function CategoryRow({ category, onUpdate, onDeleteClick, onDropCategory }) {
           <Trash2 size={14} />
         </button>
       </div>
-      <div className="flex flex-wrap gap-1.5">
-        {EVENT_COLORS.map((c) => {
-          const selected = c === category.color
-          return (
-            <button
-              key={c}
-              type="button"
-              aria-label={`Cor ${c}`}
-              onClick={() => onUpdate({ color: c })}
-              style={{
-                backgroundColor: c,
-                transform: selected ? 'scale(1.15)' : 'none',
-                borderColor: selected ? 'var(--c-text)' : 'transparent',
-                borderWidth: selected ? '2.5px' : '2px',
-              }}
-              className="h-5 w-5 rounded-full border"
-            />
-          )
-        })}
-      </div>
+      <ColorSwatchPicker value={category.color} onSelect={(c) => onUpdate({ color: c })} />
     </div>
   )
 }

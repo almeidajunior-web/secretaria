@@ -3,6 +3,7 @@ import { Plus, X, Trash2, Check, GripVertical } from 'lucide-react'
 import { EVENT_COLORS } from '../../constants'
 import { reorderIds } from '../../lib/reorderList'
 import ConfirmDialog from './ConfirmDialog'
+import ColorSwatchPicker from './ColorSwatchPicker'
 
 const inputClass =
   'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
@@ -168,29 +169,10 @@ function EditableRow({ item, onUpdate, onDeleteClick, canDelete, onDrop, extra, 
           <Trash2 size={14} />
         </button>
       </div>
-      {(!hideColor || extra) && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {!hideColor &&
-            EVENT_COLORS.map((c) => {
-              const selected = c === item.color
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  aria-label={`Cor ${c}`}
-                  onClick={() => onUpdate({ color: c })}
-                  style={{
-                    backgroundColor: c,
-                    transform: selected ? 'scale(1.15)' : 'none',
-                    borderColor: selected ? 'var(--c-text)' : 'transparent',
-                    borderWidth: selected ? '2.5px' : '2px',
-                  }}
-                  className="h-5 w-5 rounded-full border"
-                />
-              )
-            })}
-          {extra}
-        </div>
+      {!hideColor ? (
+        <ColorSwatchPicker value={item.color} onSelect={(c) => onUpdate({ color: c })} extra={extra} />
+      ) : (
+        extra && <div className="flex flex-wrap items-center gap-1.5">{extra}</div>
       )}
     </div>
   )
