@@ -151,6 +151,9 @@ function EditableRow({ item, onUpdate, onDeleteClick, canDelete, onDrop, extra, 
         >
           <GripVertical size={14} />
         </span>
+        {!hideColor && (
+          <ColorSwatchPicker value={item.color} onSelect={(c) => onUpdate({ color: c })} />
+        )}
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
@@ -169,11 +172,7 @@ function EditableRow({ item, onUpdate, onDeleteClick, canDelete, onDrop, extra, 
           <Trash2 size={14} />
         </button>
       </div>
-      {!hideColor ? (
-        <ColorSwatchPicker value={item.color} onSelect={(c) => onUpdate({ color: c })} extra={extra} />
-      ) : (
-        extra && <div className="flex flex-wrap items-center gap-1.5">{extra}</div>
-      )}
+      {extra && <div className="flex flex-wrap items-center gap-1.5">{extra}</div>}
     </div>
   )
 }

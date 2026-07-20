@@ -244,7 +244,7 @@ export default function EventModal({
           )}
 
           <Field label="Cor">
-            <ColorSwatchPicker value={color} onSelect={setColor} size="md" gap="gap-2" />
+            <ColorSwatchPicker value={color} onSelect={setColor} size="md" />
           </Field>
 
           <Field label="Tags">

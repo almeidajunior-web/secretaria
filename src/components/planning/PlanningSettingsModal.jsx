@@ -190,7 +190,7 @@ function CategoryRow({ category, onUpdate, onDeleteClick, onDropCategory }) {
 
   return (
     <div
-      className="flex flex-col gap-2 rounded-lg border border-border p-2.5"
+      className="flex items-center gap-2 rounded-lg border border-border p-2.5"
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault()
@@ -198,32 +198,30 @@ function CategoryRow({ category, onUpdate, onDeleteClick, onDropCategory }) {
         if (draggedId) onDropCategory(draggedId)
       }}
     >
-      <div className="flex items-center gap-2">
-        <span
-          draggable
-          onDragStart={(e) => e.dataTransfer.setData('text/plain', category.id)}
-          aria-label="Arrastar para reordenar"
-          className="shrink-0 cursor-grab text-text-muted active:cursor-grabbing"
-        >
-          <GripVertical size={14} />
-        </span>
-        <input
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          onBlur={commitLabel}
-          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-          className={inputClass}
-        />
-        <button
-          type="button"
-          onClick={onDeleteClick}
-          aria-label={`Excluir categoria ${category.label}`}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted hover:bg-danger/15 hover:text-danger"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
+      <span
+        draggable
+        onDragStart={(e) => e.dataTransfer.setData('text/plain', category.id)}
+        aria-label="Arrastar para reordenar"
+        className="shrink-0 cursor-grab text-text-muted active:cursor-grabbing"
+      >
+        <GripVertical size={14} />
+      </span>
       <ColorSwatchPicker value={category.color} onSelect={(c) => onUpdate({ color: c })} />
+      <input
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        onBlur={commitLabel}
+        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+        className={inputClass}
+      />
+      <button
+        type="button"
+        onClick={onDeleteClick}
+        aria-label={`Excluir categoria ${category.label}`}
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted hover:bg-danger/15 hover:text-danger"
+      >
+        <Trash2 size={14} />
+      </button>
     </div>
   )
 }
