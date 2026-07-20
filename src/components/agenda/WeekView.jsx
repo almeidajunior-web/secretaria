@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
 import { getDay } from 'date-fns'
-import { CircleCheck, Receipt } from 'lucide-react'
 import {
   getWeekDays,
   eventRect,
@@ -8,7 +7,6 @@ import {
   minutesOfDay,
   dayAtHour,
   isSameDay,
-  fmt,
   layoutColumns,
   GRID_HEIGHT,
 } from '../../lib/date'
@@ -31,8 +29,6 @@ export default function WeekView({
   onCreateRange,
   onEventClick,
   onMove,
-  onOpenTasksForDay,
-  onOpenDues,
   isDark,
 }) {
   const days = getWeekDays(currentDate)
@@ -44,13 +40,7 @@ export default function WeekView({
       <div className="sticky top-0 z-20 flex border-b border-border bg-surface">
         <div className="w-[52px] shrink-0" />
         {days.map((day) => (
-          <DayHeader
-            key={day.toISOString()}
-            day={day}
-            now={now}
-            onOpenTasksForDay={onOpenTasksForDay}
-            onOpenDues={onOpenDues}
-          />
+          <DayHeader key={day.toISOString()} day={day} now={now} />
         ))}
       </div>
 
@@ -88,7 +78,7 @@ export function useFaltas(events, now) {
   }, [events, now])
 }
 
-function DayHeader({ day, now, onOpenTasksForDay, onOpenDues }) {
+function DayHeader({ day, now }) {
   const today = isSameDay(day, now)
   return (
     <div className="flex flex-1 flex-col items-center gap-1 border-l border-border py-2">
@@ -104,32 +94,7 @@ function DayHeader({ day, now, onOpenTasksForDay, onOpenDues }) {
       >
         {day.getDate()}
       </span>
-      <div className="flex gap-1">
-        <QuickLink
-          icon={CircleCheck}
-          label="Tarefas"
-          onClick={() => onOpenTasksForDay(fmt(day, 'yyyy-MM-dd'))}
-        />
-        <QuickLink
-          icon={Receipt}
-          label="Venc."
-          onClick={() => onOpenDues(fmt(day, 'yyyy-MM-dd'))}
-        />
-      </div>
     </div>
-  )
-}
-
-function QuickLink({ icon: Icon, label, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center gap-0.5 rounded border border-border px-1 py-0.5 text-[9px] text-text-muted hover:border-primary hover:text-primary"
-    >
-      <Icon size={9} />
-      {label}
-    </button>
   )
 }
 

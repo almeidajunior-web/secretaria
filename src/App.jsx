@@ -74,23 +74,8 @@ export default function App() {
   // the target module's date filter the moment it mounts. Manual sidebar
   // navigation always clears both first, so a stale date never leaks into
   // a later visit.
-  const [taskDateFilter, setTaskDateFilter] = useState(null)
-  const [billDateFilter, setBillDateFilter] = useState(null)
-
   const handleSelectModule = (id) => {
     setActiveModule(id)
-    setTaskDateFilter(null)
-    setBillDateFilter(null)
-  }
-
-  const handleOpenTasksForDate = (dateStr) => {
-    setTaskDateFilter(dateStr)
-    setActiveModule('todos')
-  }
-
-  const handleOpenDuesForDate = (dateStr) => {
-    setBillDateFilter(dateStr)
-    setActiveModule('vencimentos')
   }
 
   // Deleting a tag removes it from the managed list and from every event.
@@ -178,7 +163,6 @@ export default function App() {
     <div className="flex h-full flex-col bg-app-bg text-text">
       <Topbar
         theme={theme}
-        onToggleTheme={toggleTheme}
         privacyHidden={privacyHidden}
         onTogglePrivacy={togglePrivacyMode}
       />
@@ -203,8 +187,6 @@ export default function App() {
               allTags={tagsApi.tags}
               onCreateTag={tagsApi.addTag}
               onDeleteTag={handleDeleteTag}
-              onNavigateToTasks={handleOpenTasksForDate}
-              onNavigateToDues={handleOpenDuesForDate}
               isDark={isDark}
             />
           ) : activeModule === 'planning' ? (
@@ -232,7 +214,6 @@ export default function App() {
               setStatusDone={taskStatusesApi.setStatusDone}
               onDeleteStatus={handleDeleteTaskStatus}
               reorderStatuses={taskStatusesApi.reorderStatuses}
-              initialDateFilter={taskDateFilter}
             />
           ) : activeModule === 'compras' ? (
             <Compras
@@ -264,7 +245,6 @@ export default function App() {
               updateCategory={billCategoriesApi.updateCategory}
               onDeleteCategory={handleDeleteBillCategory}
               reorderCategories={billCategoriesApi.reorderCategories}
-              initialDateFilter={billDateFilter}
             />
           ) : activeModule === 'finance' ? (
             <Financas
@@ -317,6 +297,8 @@ export default function App() {
           hidden={modulesConfigApi.hidden}
           onReorder={modulesConfigApi.reorderModules}
           onToggleVisibility={modulesConfigApi.toggleModuleVisibility}
+          theme={theme}
+          onToggleTheme={toggleTheme}
           onClose={() => setModulesSettingsOpen(false)}
         />
       )}

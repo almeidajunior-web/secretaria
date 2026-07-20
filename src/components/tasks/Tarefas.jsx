@@ -36,10 +36,8 @@ function filterTasks(tasks, filters, { applyHideFinished, doneStatusIds }) {
 const DEFAULT_FILTERS = { priorityIds: [], tags: [], hideFinished: true, dueDate: null }
 const TASKS_FILTERS_KEY = 'secretaria:tasksFilters'
 
-// Loads persisted filters directly (bypassing usePersistentState) so the
-// lazy initializer below can fold in initialDateFilter on the very first
-// render — using the generic hook here would show the persisted dueDate for
-// one frame before the effect corrects it.
+// Merges persisted filters over the defaults so a stored shape missing a
+// newer key still resolves it.
 function loadPersistedTaskFilters() {
   try {
     const raw = localStorage.getItem(TASKS_FILTERS_KEY)
@@ -76,32 +74,18 @@ export default function Tarefas({
   setStatusDone,
   onDeleteStatus,
   reorderStatuses,
-  initialDateFilter,
 }) {
-  // View/sort/filter preferences persist across module navigation (and
-  // reloads) — only the transient dueDate cross-link and action state below
-  // (modals, selection) reset on remount.
+  // View/sort/filter preferences persist across module navigation and
+  // reloads; only the action state below (modals, selection) resets on
+  // remount.
   const [view, setView] = usePersistentState('secretaria:tasksViewMode', 'list')
   const [sortChain, setSortChain] = usePersistentState('secretaria:tasksSortChain', [
     { field: 'dueDate', direction: 'asc' },
   ])
-  const [filters, setFilters] = useState(() => {
-    const persisted = loadPersistedTaskFilters()
-    return initialDateFilter ? { ...persisted, dueDate: initialDateFilter } : persisted
-  })
+  const [filters, setFilters] = useState(loadPersistedTaskFilters)
   useEffect(() => {
     localStorage.setItem(TASKS_FILTERS_KEY, JSON.stringify(filters))
   }, [filters])
-  // Applies whenever the initialDateFilter prop changes — including on first
-  // mount. Tarefas usually mounts fresh when App.jsx switches the active
-  // module to 'todos', but clicking the sidebar's own "Tarefas" entry while
-  // already viewing the module is a same-value activeModule update, so React
-  // bails out and this component never remounts. Without this effect, a date
-  // filter picked up from Agenda's per-day quick-link would keep showing
-  // even after the user asks to see everything again via the sidebar.
-  useEffect(() => {
-    setFilters((f) => ({ ...f, dueDate: initialDateFilter || null }))
-  }, [initialDateFilter])
   const [modalTask, setModalTask] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)

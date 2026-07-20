@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { GripVertical, Eye, EyeOff, Download, Upload, LayoutGrid, Database } from 'lucide-react'
+import { GripVertical, Eye, EyeOff, Download, Upload, LayoutGrid, Database, SunMoon, Sun, Moon } from 'lucide-react'
 import { MODULE_DEFS } from '../../data/modules'
 import { reorderIds } from '../../lib/reorderList'
 import { downloadBackup, parseBackupFile, restoreBackupData } from '../../lib/backup'
@@ -10,7 +10,15 @@ import SettingsShell from '../common/SettingsShell'
 // and the manual backup export/import — each on its own tab in the shared
 // settings-sidebar shell. Hiding a module never touches its data; it's purely
 // a nav-visibility flag.
-export default function ModulesSettingsModal({ order, hidden, onReorder, onToggleVisibility, onClose }) {
+export default function ModulesSettingsModal({
+  order,
+  hidden,
+  onReorder,
+  onToggleVisibility,
+  theme,
+  onToggleTheme,
+  onClose,
+}) {
   const modules = order.map((id) => MODULE_DEFS.find((m) => m.id === id)).filter(Boolean)
   const fileInputRef = useRef(null)
   const [importError, setImportError] = useState('')
@@ -84,6 +92,40 @@ export default function ModulesSettingsModal({ order, hidden, onReorder, onToggl
     </div>
   )
 
+  const appearancePanel = () => (
+    <div>
+      <p className="mb-3 text-[11px] font-medium text-text-secondary">
+        Tema <span className="font-normal text-text-muted">(claro ou escuro)</span>
+      </p>
+      <div className="flex gap-2">
+        {[
+          { value: 'light', label: 'Claro', icon: Sun },
+          { value: 'dark', label: 'Escuro', icon: Moon },
+        ].map(({ value, label, icon: Icon }) => {
+          const active = theme === value
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                if (!active) onToggleTheme()
+              }}
+              className={[
+                'flex flex-1 items-center justify-center gap-2 rounded-lg border p-2.5 text-[13px]',
+                active
+                  ? 'border-primary bg-accent-soft font-medium text-primary'
+                  : 'border-border text-text-secondary hover:border-border-strong hover:bg-accent-soft/40',
+              ].join(' ')}
+            >
+              <Icon size={15} />
+              {label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+
   const backupPanel = () => (
     <div>
       <p className="mb-3 text-[11px] font-medium text-text-secondary">
@@ -123,6 +165,7 @@ export default function ModulesSettingsModal({ order, hidden, onReorder, onToggl
 
   const sections = [
     { id: 'modules', label: 'Módulos', icon: LayoutGrid, render: modulesPanel },
+    { id: 'appearance', label: 'Aparência', icon: SunMoon, render: appearancePanel },
     { id: 'backup', label: 'Backup', icon: Database, render: backupPanel },
   ]
 

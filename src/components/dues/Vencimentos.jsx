@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { Eye, EyeOff } from 'lucide-react'
 import { buildBillComparator } from '../../lib/billSort'
@@ -37,24 +37,12 @@ export default function Vencimentos({
   updateCategory,
   onDeleteCategory,
   reorderCategories,
-  initialDateFilter,
 }) {
-  // View/sort/filter preferences persist across module navigation (and
-  // reloads); dueDateFilter stays transient — it's a cross-module link from
-  // Agenda's per-day quick-link, not a preference to remember.
+  // View/sort/filter preferences persist across module navigation and reloads.
   const [sortChain, setSortChain] = usePersistentState('secretaria:billsSortChain', [
     { field: 'dueDate', direction: 'asc' },
   ])
   const [filters, setFilters] = usePersistentState('secretaria:billsFilters', DEFAULT_FILTERS)
-  const [dueDateFilter, setDueDateFilter] = useState(initialDateFilter || null)
-  // Re-applies whenever the prop itself changes — not just on mount. See
-  // Tarefas.jsx for why: clicking the sidebar's own "Vencimentos" entry
-  // while already viewing the module is a same-value activeModule update,
-  // so React bails out and this component never remounts, meaning the lazy
-  // useState initializer above never re-runs on its own.
-  useEffect(() => {
-    setDueDateFilter(initialDateFilter || null)
-  }, [initialDateFilter])
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
@@ -109,10 +97,7 @@ export default function Vencimentos({
     () => bills.filter((b) => !filters.categoryIds.length || filters.categoryIds.includes(b.categoryId)),
     [bills, filters.categoryIds]
   )
-  const visibleBills = useMemo(() => {
-    const base = filterBills(bills, filters)
-    return dueDateFilter ? base.filter((b) => b.dueDate === dueDateFilter) : base
-  }, [bills, filters, dueDateFilter])
+  const visibleBills = useMemo(() => filterBills(bills, filters), [bills, filters])
   const sortedBills = useMemo(() => [...visibleBills].sort(comparator), [visibleBills, comparator])
   const groups = useMemo(() => groupBillsByDueDate(sortedBills), [sortedBills])
 
@@ -189,8 +174,6 @@ export default function Vencimentos({
         totalAtrasado={totalAtrasado}
         valuesHidden={valuesHidden}
         onToggleValuesHidden={toggleValuesHidden}
-        dueDateFilter={dueDateFilter}
-        onClearDueDateFilter={() => setDueDateFilter(null)}
       />
 
       <div className="flex-1 overflow-hidden">
@@ -242,8 +225,6 @@ function SummaryBar({
   totalAtrasado,
   valuesHidden,
   onToggleValuesHidden,
-  dueDateFilter,
-  onClearDueDateFilter,
 }) {
   return (
     <div className="flex flex-wrap items-center gap-4 border-b border-border bg-app-bg px-4 py-1.5 text-[11px]">
@@ -271,15 +252,6 @@ function SummaryBar({
         <span className="font-semibold text-danger">
           Atrasado {valuesHidden ? MASK : formatCurrency(totalAtrasado)}
         </span>
-      )}
-      {dueDateFilter && (
-        <button
-          type="button"
-          onClick={onClearDueDateFilter}
-          className="ml-auto rounded-full border border-primary bg-accent-soft px-2.5 py-0.5 text-[11px] font-medium text-primary hover:opacity-80"
-        >
-          Filtrando por {dueDateFilter} — limpar
-        </button>
       )}
     </div>
   )

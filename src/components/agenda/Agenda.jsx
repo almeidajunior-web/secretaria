@@ -65,8 +65,6 @@ export default function Agenda({
   allTags,
   onCreateTag,
   onDeleteTag,
-  onNavigateToTasks,
-  onNavigateToDues,
   isDark,
 }) {
   // Persists across module navigation and reloads, like the other modules'
@@ -250,13 +248,7 @@ export default function Agenda({
       />
 
       <div className="flex-1 overflow-hidden overscroll-x-contain" onWheel={onSwipeWheel}>
-        {view === 'week' && (
-          <WeekView
-            {...viewProps}
-            onOpenTasksForDay={onNavigateToTasks}
-            onOpenDues={onNavigateToDues}
-          />
-        )}
+        {view === 'week' && <WeekView {...viewProps} />}
         {view === 'day' && <DayView {...viewProps} />}
         {view === 'month' && (
           <MonthView currentDate={currentDate} events={events} onSelectDay={selectDay} />

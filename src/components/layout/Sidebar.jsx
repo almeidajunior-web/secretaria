@@ -28,6 +28,18 @@ export default function Sidebar({
     .map((id) => MODULE_DEFS.find((m) => m.id === id))
     .filter((m) => m && !hiddenModules.includes(m.id))
 
+  const collapseButton = (
+    <button
+      type="button"
+      onClick={() => setCollapsed((v) => !v)}
+      aria-label={collapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}
+      title={collapsed ? 'Expandir' : 'Recolher'}
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-muted hover:bg-accent-soft/60 hover:text-primary"
+    >
+      {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+    </button>
+  )
+
   return (
     <aside
       className={[
@@ -35,23 +47,19 @@ export default function Sidebar({
         collapsed ? 'w-16 p-2' : 'w-[220px] p-3',
       ].join(' ')}
     >
-      <div className={collapsed ? 'flex justify-center' : 'flex justify-end'}>
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}
-          title={collapsed ? 'Expandir' : 'Recolher'}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-accent-soft/60 hover:text-primary"
-        >
-          {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-        </button>
-      </div>
-
       {collapsed ? (
-        <div className="my-2 border-t border-border" />
+        <>
+          <div className="flex justify-center">{collapseButton}</div>
+          <div className="my-2 border-t border-border" />
+        </>
       ) : (
         <>
-          <MiniCalendar currentDate={currentDate} onSelectDate={onSelectDate} />
+          {/* Month label, month nav and the collapse control share one line. */}
+          <MiniCalendar
+            currentDate={currentDate}
+            onSelectDate={onSelectDate}
+            headerTrailing={collapseButton}
+          />
           <div className="my-3 border-t border-border" />
           <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
             Módulos

@@ -5,23 +5,25 @@ import { getMonthGridDays, fmt, capitalize, isSameDay } from '../../lib/date'
 import { WEEKDAYS_LETTERS_ORDERED } from '../../constants'
 
 // Compact month picker in the sidebar. Browsing months is local; picking a day
-// updates the agenda's active date.
-export default function MiniCalendar({ currentDate, onSelectDate }) {
+// updates the agenda's active date. `headerTrailing` renders at the far right
+// of the header row (the sidebar drops its collapse button there so the month
+// label, month nav and collapse control share a single line).
+export default function MiniCalendar({ currentDate, onSelectDate, headerTrailing }) {
   const [viewMonth, setViewMonth] = useState(() => new Date(currentDate))
   const days = getMonthGridDays(viewMonth)
 
   return (
     <div className="select-none">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-text">
-          {capitalize(fmt(viewMonth, 'MMMM yyyy'))}
-        </span>
-        <div className="flex gap-1">
+      <div className="mb-2 flex items-center justify-between gap-1">
+        <div className="flex min-w-0 items-center gap-1">
+          <span className="truncate text-xs font-semibold text-text">
+            {capitalize(fmt(viewMonth, 'MMMM yyyy'))}
+          </span>
           <button
             type="button"
             aria-label="Mês anterior"
             onClick={() => setViewMonth((m) => subMonths(m, 1))}
-            className="flex h-5 w-5 items-center justify-center rounded text-text-muted hover:bg-accent-soft hover:text-primary"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-text-muted hover:bg-accent-soft hover:text-primary"
           >
             <ChevronLeft size={14} />
           </button>
@@ -29,11 +31,12 @@ export default function MiniCalendar({ currentDate, onSelectDate }) {
             type="button"
             aria-label="Próximo mês"
             onClick={() => setViewMonth((m) => addMonths(m, 1))}
-            className="flex h-5 w-5 items-center justify-center rounded text-text-muted hover:bg-accent-soft hover:text-primary"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-text-muted hover:bg-accent-soft hover:text-primary"
           >
             <ChevronRight size={14} />
           </button>
         </div>
+        {headerTrailing}
       </div>
 
       <div className="grid grid-cols-7 gap-y-1 text-center text-[10px] text-text-muted">
