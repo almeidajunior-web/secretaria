@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import TagPickerPopover from '../common/TagPickerPopover'
-import { creditCardEffectiveDate } from '../../lib/creditCard'
+import { vencimentoDaCompra } from '../../lib/creditCard'
 import { fmt, fromDateInput } from '../../lib/date'
 import { formatCurrency } from '../../lib/currency'
 import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
@@ -44,9 +44,9 @@ export default function FinanceEntryModal({
   const canSave = title.trim().length > 0 && date
   const isCredit = paymentMethodId === 'credito'
   const showInstallmentOption = isCredit && isExpense
-  const effectivePreview =
+  const dueDatePreview =
     isCredit && date && creditCardConfig?.closingDay && creditCardConfig?.dueDay
-      ? creditCardEffectiveDate(date, creditCardConfig.closingDay, creditCardConfig.dueDay)
+      ? vencimentoDaCompra(date, creditCardConfig.closingDay, creditCardConfig.dueDay)
       : null
 
   const handleTypeChange = (next) => {
@@ -168,9 +168,10 @@ export default function FinanceEntryModal({
             </Field>
           </div>
 
-          {effectivePreview && (
+          {dueDatePreview && (
             <p className="-mt-2 text-[11px] text-text-muted">
-              Desconta em <span className="font-medium text-text">{fmt(fromDateInput(effectivePreview), 'dd/MM/yyyy')}</span>
+              Entra na fatura que vence em{' '}
+              <span className="font-medium text-text">{fmt(fromDateInput(dueDatePreview), 'dd/MM/yyyy')}</span>
             </p>
           )}
 

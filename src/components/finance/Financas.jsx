@@ -3,7 +3,7 @@ import { format, subMonths } from 'date-fns'
 import { usePersistentState } from '../../hooks/usePersistentState'
 import { useFinanceValuesHidden } from '../../hooks/useFinanceValuesHidden'
 import { buildFinanceComparator } from '../../lib/financeSort'
-import { withEffectiveDate, currentInvoiceTotal, splitIntoInstallments } from '../../lib/creditCard'
+import { splitIntoInstallments, creditCardInvoices } from '../../lib/creditCard'
 import {
   monthTotals,
   percentChange,
@@ -88,6 +88,8 @@ export default function Financas({
   reorderTags,
   creditCardConfig,
   onUpdateCreditCardConfig,
+  paidInvoices,
+  onToggleInvoicePaid,
 }) {
   const [tab, setTab] = usePersistentState('secretaria:financeTab', 'resumo')
   const [sortChain, setSortChain] = usePersistentState('secretaria:financeSortChain', [
@@ -162,8 +164,11 @@ export default function Financas({
     () => Object.fromEntries(expenseCategories.map((c) => [c.id, c.color])),
     [expenseCategories]
   )
+  // Competência: the current-month snapshot counts entries by when they were
+  // incurred (e.date), so a credit-card purchase shows up in the month it was
+  // made — not the month its invoice is due.
   const currentMonthEntries = useMemo(
-    () => entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr)),
+    () => entries.filter((e) => e.date?.startsWith(monthStr)),
     [entries, monthStr]
   )
   const categoryData = useMemo(
@@ -171,22 +176,25 @@ export default function Financas({
     [currentMonthEntries, categoryLabelById, expenseCategoryColorById]
   )
   const trendData = useMemo(() => monthlyTrend(entries, 6), [entries])
-  const invoice = useMemo(
-    () => currentInvoiceTotal(entries, creditCardConfig, todayStr),
-    [entries, creditCardConfig, todayStr]
+  const invoices = useMemo(
+    () => creditCardInvoices(entries, creditCardConfig, todayStr, paidInvoices),
+    [entries, creditCardConfig, todayStr, paidInvoices]
   )
   const hasReserveAccount = accounts.some((a) => a.isReserve)
+  // Caixa: account balances count entries by when money actually moves
+  // (dataCaixa — the invoice due date for card entries), so a card purchase
+  // only leaves the balance once its invoice is due.
   const accountsSummary = useMemo(
     () => ({
-      balances: accounts.map((a) => ({ ...a, balance: accountBalance(entries, a, todayStr) })),
-      unassigned: unassignedBalance(entries, todayStr),
-      consolidated: consolidatedBalance(entries, accounts, todayStr),
+      balances: accounts.map((a) => ({ ...a, balance: accountBalance(entries, a, todayStr, creditCardConfig) })),
+      unassigned: unassignedBalance(entries, todayStr, creditCardConfig),
+      consolidated: consolidatedBalance(entries, accounts, todayStr, creditCardConfig),
       consolidatedExReserve: hasReserveAccount
-        ? consolidatedBalance(entries, accounts, todayStr, { excludeReserve: true })
+        ? consolidatedBalance(entries, accounts, todayStr, creditCardConfig, { excludeReserve: true })
         : null,
-      reserveMonths: reserveMonths(entries, accounts, todayStr),
+      reserveMonths: reserveMonths(entries, accounts, todayStr, creditCardConfig),
     }),
-    [entries, accounts, todayStr, hasReserveAccount]
+    [entries, accounts, todayStr, creditCardConfig, hasReserveAccount]
   )
   const indicators = useMemo(
     () => ({
@@ -211,20 +219,20 @@ export default function Financas({
   // a series has its future instance, ensureNextOccurrences is a no-op, so
   // this settles after at most one extra render instead of looping.
   useEffect(() => {
-    ensureNextOccurrences((entry) => withEffectiveDate(entry, creditCardConfig))
-  }, [entries, creditCardConfig, ensureNextOccurrences])
+    ensureNextOccurrences()
+  }, [entries, ensureNextOccurrences])
 
   const selectAllVisible = () => setSelectedIds(new Set(sortedEntries.map((e) => e.id)))
   const clearSelection = () => setSelectedIds(new Set())
 
   const entryById = useMemo(() => Object.fromEntries(entries.map((e) => [e.id, e])), [entries])
 
-  // Single centralized point for every entry mutation: merges the (possibly
-  // partial) patch onto the current entry, then recomputes effectiveDate —
-  // covers inline edits, bulk actions, add and duplicate alike.
+  // Single centralized point for every inline/bulk entry edit: merges the
+  // (possibly partial) patch onto the current entry. No derived date to keep
+  // in sync — the invoice due date is computed on demand from date + config.
   const applyEntryUpdate = (patch) => {
     const source = entryById[patch.id] || {}
-    updateEntry(withEffectiveDate({ ...source, ...patch }, creditCardConfig))
+    updateEntry({ ...source, ...patch })
   }
 
   const bulkSetPaymentMethod = (paymentMethodId) => {
@@ -255,15 +263,13 @@ export default function Financas({
       ...rest,
     }
     if (installmentCount && installmentCount >= 2 && base.paymentMethodId === 'credito') {
-      splitIntoInstallments(base, installmentCount).forEach((part) =>
-        addEntry(withEffectiveDate(part, creditCardConfig))
-      )
+      splitIntoInstallments(base, installmentCount).forEach((part) => addEntry(part))
     } else {
-      addEntry(withEffectiveDate(base, creditCardConfig))
+      addEntry(base)
     }
   }
 
-  const handleDuplicate = (id) => duplicateEntry(id, (entry) => withEffectiveDate(entry, creditCardConfig))
+  const handleDuplicate = (id) => duplicateEntry(id)
 
   const tableProps = {
     expenseCategories,
@@ -315,7 +321,8 @@ export default function Financas({
             essential={essential}
             categoryData={categoryData}
             trendData={trendData}
-            invoice={invoice}
+            invoices={invoices}
+            onToggleInvoicePaid={onToggleInvoicePaid}
             accountsSummary={accountsSummary}
             indicators={indicators}
             categoryTrendData={categoryTrendData}
@@ -334,7 +341,7 @@ export default function Financas({
         </div>
       ) : (
         <div className="flex-1 overflow-hidden">
-          <FinanceTable {...tableProps} entries={sortedEntries} onQuickAdd={handleQuickAdd} />
+          <FinanceTable {...tableProps} entries={sortedEntries} onQuickAdd={handleQuickAdd} groupInstallments />
         </div>
       )}
 

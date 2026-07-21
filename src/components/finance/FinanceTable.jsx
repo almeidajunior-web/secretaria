@@ -1,8 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
-import { TrendingUp, TrendingDown, Copy, Trash2, Star, ArrowUp, ArrowDown, ListFilter, Clock } from 'lucide-react'
+import { Fragment, useEffect, useRef, useState } from 'react'
+import {
+  TrendingUp,
+  TrendingDown,
+  Copy,
+  Trash2,
+  Star,
+  ArrowUp,
+  ArrowDown,
+  ListFilter,
+  Clock,
+  CreditCard,
+  ChevronRight,
+  ChevronDown,
+} from 'lucide-react'
 import { fmt, fromDateInput } from '../../lib/date'
-import { creditCardEffectiveDate } from '../../lib/creditCard'
+import { vencimentoDaCompra } from '../../lib/creditCard'
 import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
+import { formatCurrency } from '../../lib/currency'
 import DescriptionPopover from '../common/DescriptionPopover'
 import ChipSelect from '../common/ChipSelect'
 import InlineDate from '../common/InlineDate'
@@ -14,6 +28,41 @@ const TYPE_OPTIONS = [
 ]
 
 const RECURRENCE_CHIP_OPTIONS = RECURRENCE_OPTIONS.map((r) => ({ id: r.value, label: r.label }))
+
+// The invoice due date for a credit entry, or null for anything else.
+function invoiceDueDate(entry, creditCfg) {
+  if (entry.paymentMethodId !== 'credito' || !entry.date || !creditCfg?.closingDay || !creditCfg?.dueDay) {
+    return null
+  }
+  return vencimentoDaCompra(entry.date, creditCfg.closingDay, creditCfg.dueDay)
+}
+
+// Strips the "(i/N)" suffix installments carry, for the collapsed group title.
+function baseInstallmentTitle(title) {
+  return (title || '').replace(/\s*\(\d+\/\d+\)\s*$/, '')
+}
+
+// Turns a flat, already-sorted entry list into render units: installment
+// series (same installmentGroupId) collapse into one group; everything else is
+// a single row. Order follows the first-seen member of each series.
+function buildRenderUnits(entries) {
+  const units = []
+  const groupIndex = new Map()
+  for (const entry of entries) {
+    const gid = entry.installmentGroupId
+    if (!gid) {
+      units.push({ kind: 'single', key: entry.id, entry })
+      continue
+    }
+    if (groupIndex.has(gid)) {
+      units[groupIndex.get(gid)].items.push(entry)
+    } else {
+      groupIndex.set(gid, units.length)
+      units.push({ kind: 'group', key: gid, groupId: gid, items: [entry] })
+    }
+  }
+  return units
+}
 
 // Excel-style table: a sticky header whose column titles sort (asc→desc→off)
 // and whose categorical columns carry a funnel that opens a per-column
@@ -43,7 +92,20 @@ export default function FinanceTable({
   onQuickAdd,
   today,
   creditCardConfig,
+  groupInstallments = false,
 }) {
+  // Installment series collapse into one expandable row — but only in the full
+  // table and never while bulk-selecting (there you want each parcela's own
+  // checkbox). Grouped-open state is keyed by installmentGroupId.
+  const [expandedGroups, setExpandedGroups] = useState(() => new Set())
+  const toggleGroup = (gid) =>
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(gid)) next.delete(gid)
+      else next.add(gid)
+      return next
+    })
+  const grouping = groupInstallments && !selectMode
   const showAccounts = accounts.length > 0
   const allCategories = [...expenseCategories, ...incomeCategories]
   // Always-present columns: Tipo, Título, Valor, Categoria, Pagamento, Tags,
@@ -139,27 +201,69 @@ export default function FinanceTable({
               </td>
             </tr>
           )}
-          {entries.map((entry) => (
-            <EntryRow
-              key={entry.id}
-              entry={entry}
-              expenseCategories={expenseCategories}
-              incomeCategories={incomeCategories}
-              paymentMethods={paymentMethods}
-              accounts={accounts}
-              tags={tags}
-              showAccounts={showAccounts}
-              onUpdateEntry={onUpdateEntry}
-              onDeleteClick={() => onDeleteClick(entry.id)}
-              onDuplicate={() => onDuplicate(entry.id)}
-              onCreateTag={onCreateTag}
-              selectMode={selectMode}
-              selected={selectedIds?.has(entry.id)}
-              onToggleSelect={() => onToggleSelect(entry.id)}
-              today={today}
-              creditCardConfig={creditCardConfig}
-            />
-          ))}
+          {(grouping ? buildRenderUnits(entries) : entries.map((e) => ({ kind: 'single', key: e.id, entry: e }))).map(
+            (unit) => {
+              if (unit.kind === 'group') {
+                const expanded = expandedGroups.has(unit.groupId)
+                return (
+                  <Fragment key={unit.key}>
+                    <InstallmentGroupRow
+                      items={unit.items}
+                      colSpan={colSpanEmpty}
+                      expanded={expanded}
+                      onToggle={() => toggleGroup(unit.groupId)}
+                      today={today}
+                    />
+                    {expanded &&
+                      unit.items.map((entry) => (
+                        <EntryRow
+                          key={entry.id}
+                          entry={entry}
+                          nested
+                          expenseCategories={expenseCategories}
+                          incomeCategories={incomeCategories}
+                          paymentMethods={paymentMethods}
+                          accounts={accounts}
+                          tags={tags}
+                          showAccounts={showAccounts}
+                          onUpdateEntry={onUpdateEntry}
+                          onDeleteClick={() => onDeleteClick(entry.id)}
+                          onDuplicate={() => onDuplicate(entry.id)}
+                          onCreateTag={onCreateTag}
+                          selectMode={selectMode}
+                          selected={selectedIds?.has(entry.id)}
+                          onToggleSelect={() => onToggleSelect(entry.id)}
+                          today={today}
+                          creditCardConfig={creditCardConfig}
+                        />
+                      ))}
+                  </Fragment>
+                )
+              }
+              const entry = unit.entry
+              return (
+                <EntryRow
+                  key={unit.key}
+                  entry={entry}
+                  expenseCategories={expenseCategories}
+                  incomeCategories={incomeCategories}
+                  paymentMethods={paymentMethods}
+                  accounts={accounts}
+                  tags={tags}
+                  showAccounts={showAccounts}
+                  onUpdateEntry={onUpdateEntry}
+                  onDeleteClick={() => onDeleteClick(entry.id)}
+                  onDuplicate={() => onDuplicate(entry.id)}
+                  onCreateTag={onCreateTag}
+                  selectMode={selectMode}
+                  selected={selectedIds?.has(entry.id)}
+                  onToggleSelect={() => onToggleSelect(entry.id)}
+                  today={today}
+                  creditCardConfig={creditCardConfig}
+                />
+              )
+            }
+          )}
           {onQuickAdd && (
             <QuickAddRow
               expenseCategories={expenseCategories}
@@ -274,6 +378,7 @@ function HeaderCell({
 
 function EntryRow({
   entry,
+  nested = false,
   expenseCategories,
   incomeCategories,
   paymentMethods,
@@ -293,10 +398,11 @@ function EntryRow({
   const [title, setTitle] = useState(entry.title)
   const isIncome = entry.type === 'income'
   const categories = isIncome ? incomeCategories : expenseCategories
-  const effective = entry.effectiveDate || entry.date
-  const previsto = effective && today && effective > today
-  const isCredit = entry.paymentMethodId === 'credito'
-  const showsInvoiceHint = isCredit && effective && effective !== entry.date
+  // Competência: an entry is "previsto" only when it hasn't happened yet — its
+  // purchase date is still in the future (a coming recurring instance or a
+  // not-yet-reached installment). A card purchase already made is realizado.
+  const previsto = entry.date && today && entry.date > today
+  const dueDate = invoiceDueDate(entry, creditCardConfig)
   const tagIds = entry.tagIds || []
 
   useEffect(() => {
@@ -317,13 +423,19 @@ function EntryRow({
   const cell = 'px-2 py-1.5 align-middle'
 
   return (
-    <tr className={['border-b border-border hover:bg-accent-soft/30', previsto ? 'opacity-60' : ''].join(' ')}>
+    <tr
+      className={[
+        'border-b border-border hover:bg-accent-soft/30',
+        previsto ? 'opacity-60' : '',
+        nested ? 'bg-accent-soft/10' : '',
+      ].join(' ')}
+    >
       {selectMode && (
         <td className={cell}>
           <input type="checkbox" checked={!!selected} onChange={onToggleSelect} className="h-3.5 w-3.5" />
         </td>
       )}
-      <td className={cell}>
+      <td className={[cell, nested ? 'pl-5' : ''].join(' ')}>
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -333,7 +445,13 @@ function EntryRow({
           >
             {isIncome ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
           </button>
-          {previsto && <Clock size={12} className="text-text-muted" title={`Previsto para ${fmt(fromDateInput(effective), 'dd/MM')}`} />}
+          {previsto && (
+            <Clock
+              size={12}
+              className="text-text-muted"
+              title={`Previsto para ${fmt(fromDateInput(entry.date), 'dd/MM')}`}
+            />
+          )}
         </div>
       </td>
       <td className={cell}>
@@ -432,9 +550,13 @@ function EntryRow({
           muted
           placeholder="Data"
         />
-        {showsInvoiceHint && (
-          <p className="mt-0.5 text-[10px] text-text-muted">
-            desconta {fmt(fromDateInput(effective), 'dd/MM')}
+        {dueDate && (
+          <p
+            className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] text-text-muted"
+            title={`Entra na fatura que vence em ${fmt(fromDateInput(dueDate), 'dd/MM/yyyy')}`}
+          >
+            <CreditCard size={9} />
+            fatura {fmt(fromDateInput(dueDate), 'dd/MM')}
           </p>
         )}
       </td>
@@ -471,6 +593,50 @@ function EntryRow({
   )
 }
 
+// Collapsed summary for an installment series — one clickable row that expands
+// to reveal each parcela (rendered as normal, editable EntryRows below it).
+function InstallmentGroupRow({ items, colSpan, expanded, onToggle, today }) {
+  const first = items[0]
+  const isIncome = first.type === 'income'
+  const total = items.reduce((sum, e) => sum + (e.amount || 0), 0)
+  const totalParts = first.installment?.total ?? items.length
+  const realized = items.filter((e) => e.date && today && e.date <= today).length
+
+  return (
+    <tr className="border-b border-border bg-accent-soft/20 hover:bg-accent-soft/30">
+      <td colSpan={colSpan} className="px-2 py-1.5">
+        <button type="button" onClick={onToggle} className="flex w-full items-center gap-2 text-left">
+          {expanded ? (
+            <ChevronDown size={14} className="shrink-0 text-text-muted" />
+          ) : (
+            <ChevronRight size={14} className="shrink-0 text-text-muted" />
+          )}
+          {isIncome ? (
+            <TrendingUp size={15} className="shrink-0 text-success" />
+          ) : (
+            <TrendingDown size={15} className="shrink-0 text-danger" />
+          )}
+          <span className="truncate text-[13px] font-medium text-text">{baseInstallmentTitle(first.title)}</span>
+          <span className="shrink-0 rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-text-secondary">
+            {totalParts}x
+          </span>
+          <span className="shrink-0 text-[11px] text-text-muted">
+            {realized}/{items.length} lançadas
+          </span>
+          <span
+            className={[
+              'ml-auto shrink-0 text-[13px] font-semibold tabular-nums',
+              isIncome ? 'text-success' : 'text-danger',
+            ].join(' ')}
+          >
+            {formatCurrency(total)}
+          </span>
+        </button>
+      </td>
+    </tr>
+  )
+}
+
 function QuickAddRow({
   expenseCategories,
   incomeCategories,
@@ -498,9 +664,9 @@ function QuickAddRow({
   const isIncome = type === 'income'
   const categories = isIncome ? incomeCategories : expenseCategories
   const canAdd = title.trim() && date
-  const effectivePreview =
+  const dueDatePreview =
     paymentMethodId === 'credito' && date && creditCardConfig?.closingDay && creditCardConfig?.dueDay
-      ? creditCardEffectiveDate(date, creditCardConfig.closingDay, creditCardConfig.dueDay)
+      ? vencimentoDaCompra(date, creditCardConfig.closingDay, creditCardConfig.dueDay)
       : null
 
   const commit = () => {
@@ -625,9 +791,10 @@ function QuickAddRow({
       </td>
       <td className={cell}>
         <InlineDate value={date || null} onChange={(v) => setDate(v || '')} placeholder="Data" />
-        {effectivePreview && (
-          <p className="mt-0.5 text-[10px] text-text-muted">
-            desconta {fmt(fromDateInput(effectivePreview), 'dd/MM')}
+        {dueDatePreview && (
+          <p className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] text-text-muted">
+            <CreditCard size={9} />
+            fatura {fmt(fromDateInput(dueDatePreview), 'dd/MM')}
           </p>
         )}
       </td>

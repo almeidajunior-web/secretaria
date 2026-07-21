@@ -54,11 +54,9 @@ export function useFinanceEntries() {
     setEntries((prev) => prev.filter((e) => e.id !== id))
   }
 
-  // `transform` lets the caller recompute derived fields (effectiveDate) on
-  // the duplicated entry before it lands in state — see Financas.jsx. A
-  // duplicate is a one-off manual copy, not a new member of the source's
-  // recurring series, so recurrence/seriesId are deliberately dropped.
-  const duplicateEntry = (id, transform) => {
+  // A duplicate is a one-off manual copy, not a new member of the source's
+  // recurring/installment series, so those markers are deliberately dropped.
+  const duplicateEntry = (id) => {
     setEntries((prev) => {
       const source = prev.find((e) => e.id === id)
       if (!source) return prev
@@ -71,23 +69,21 @@ export function useFinanceEntries() {
         seriesId: undefined,
         installment: undefined,
         installmentGroupId: undefined,
+        effectiveDate: undefined,
       }
-      return [...prev, transform ? transform(duplicated) : duplicated]
+      return [...prev, duplicated]
     })
   }
 
   // Keeps exactly one future ("previsto") instance pending per recurring
   // series. For each series, looks at its chronologically-latest member; if
-  // that instance is no longer previsto (its effective date has arrived or
-  // passed) and nothing later already exists, spawns the next one via
-  // nextDueDate (billRecurrence.js). `transform` lets the caller recompute
-  // effectiveDate (credit-card cycle) on the spawned entry — see Financas.jsx.
-  // Idempotent and safe to call after every mutation: once a series has its
-  // one pending future instance, there's nothing left to spawn. Memoized
-  // (stable identity) so it can sit in a useEffect dependency list without
-  // re-firing the scan on unrelated re-renders — it only touches the stable
-  // functional form of setEntries.
-  const ensureNextOccurrences = useCallback((transform) => {
+  // that instance is no longer in the future (its date has arrived or passed)
+  // and nothing later already exists, spawns the next one via nextDueDate
+  // (billRecurrence.js). Idempotent and safe to call after every mutation:
+  // once a series has its one pending future instance, there's nothing left to
+  // spawn. Memoized (stable identity) so it can sit in a useEffect dependency
+  // list without re-firing the scan on unrelated re-renders.
+  const ensureNextOccurrences = useCallback(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd')
     setEntries((prev) => {
       // Group by series in a single pass, then spawn at most one per series.
@@ -101,12 +97,10 @@ export function useFinanceEntries() {
       const toSpawn = []
       for (const siblings of bySeriesId.values()) {
         const latest = siblings.reduce((a, b) => (a.date > b.date ? a : b))
-        const effective = latest.effectiveDate || latest.date
-        if (!effective || effective > todayStr) continue // still previsto, nothing to add yet
+        if (!latest.date || latest.date > todayStr) continue // still previsto, nothing to add yet
         const nextDate = nextDueDate(latest.date, latest.recurrence)
         if (!nextDate) continue
-        const spawned = { ...latest, id: genEntryId(), date: nextDate }
-        toSpawn.push(transform ? transform(spawned) : spawned)
+        toSpawn.push({ ...latest, id: genEntryId(), date: nextDate, effectiveDate: undefined })
       }
       return toSpawn.length ? [...prev, ...toSpawn] : prev
     })

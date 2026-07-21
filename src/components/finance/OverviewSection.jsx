@@ -1,4 +1,4 @@
-import { Eye, EyeOff, ArrowUp, ArrowDown, CreditCard, Landmark, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff, ArrowUp, ArrowDown, CreditCard, Landmark, ShieldCheck, Check } from 'lucide-react'
 import { formatCurrency } from '../../lib/currency'
 import { fmt, fromDateInput } from '../../lib/date'
 import CategoryBreakdownChart from './CategoryBreakdownChart'
@@ -17,7 +17,8 @@ export default function OverviewSection({
   essential,
   categoryData,
   trendData,
-  invoice,
+  invoices,
+  onToggleInvoicePaid,
   accountsSummary,
   indicators,
   categoryTrendData,
@@ -31,10 +32,10 @@ export default function OverviewSection({
           essential.ratio * 100
         )}%)`
       : null
-  // "Saldo do mês" already reflects the projected total (monthTotals keys off
-  // effectiveDate, so it includes this month's previstos); the realized figure
-  // as a subline is what makes it distinct from a raw projection — this is why
-  // there's no separate "Saldo projetado" tile.
+  // "Saldo do mês" already reflects the projected total (monthTotals counts
+  // every entry dated in the month, including this month's previstos); the
+  // realized figure as a subline is what makes it distinct from a raw
+  // projection — this is why there's no separate "Saldo projetado" tile.
   const saldoSubline = indicators
     ? `Realizado: ${valuesHidden ? 'R$ ••••' : formatCurrency(indicators.projection.realized)}`
     : null
@@ -78,21 +79,12 @@ export default function OverviewSection({
         />
       </div>
 
-      {invoice && (
-        <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-surface p-4">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-primary">
-            <CreditCard size={16} />
-          </span>
-          <div className="flex-1">
-            <p className="text-[11px] font-medium text-text-secondary">Fatura atual do cartão</p>
-            <span className="text-lg font-semibold text-text">
-              {valuesHidden ? 'R$ ••••' : formatCurrency(invoice.total)}
-            </span>
-          </div>
-          <p className="text-[11px] text-text-muted">
-            Fecha dia {invoice.closingDay} · vence em {fmt(fromDateInput(invoice.dueDate), 'dd/MM/yyyy')}
-          </p>
-        </div>
+      {invoices && invoices.length > 0 && (
+        <InvoicesPanel
+          invoices={invoices}
+          valuesHidden={valuesHidden}
+          onToggleInvoicePaid={onToggleInvoicePaid}
+        />
       )}
 
       {accountsSummary && accountsSummary.balances.length > 0 && (
@@ -255,6 +247,93 @@ export default function OverviewSection({
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+const INVOICE_STATUS = {
+  aberta: { label: 'Aberta', cls: 'bg-accent-soft text-primary' },
+  futura: { label: 'Futura', cls: 'border border-border-strong text-text-muted' },
+  fechada: { label: 'Fechada', cls: 'bg-amber-500/12 text-amber-600' },
+  vencida: { label: 'Vencida', cls: 'bg-danger/12 text-danger' },
+  paga: { label: 'Paga', cls: 'bg-success/12 text-success' },
+}
+
+// The credit-card invoices as first-class objects: the accumulating "aberta"
+// invoice up top, then the rest most-urgent-first (vencida, fechada, futura,
+// paga), each with a mark-as-paid toggle where it makes sense.
+function InvoicesPanel({ invoices, valuesHidden, onToggleInvoicePaid }) {
+  const money = (v) => (valuesHidden ? 'R$ ••••' : formatCurrency(v))
+  const open = invoices.find((i) => i.status === 'aberta')
+  const order = { vencida: 0, fechada: 1, futura: 2, paga: 3 }
+  const others = invoices
+    .filter((i) => i.status !== 'aberta')
+    .sort((a, b) => order[a.status] - order[b.status] || a.dueDate.localeCompare(b.dueDate))
+  const shown = others.slice(0, 5)
+  const hiddenCount = others.length - shown.length
+
+  return (
+    <div className="mb-4 rounded-xl border border-border bg-surface p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-primary">
+          <CreditCard size={13} />
+        </span>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">Cartão de crédito</p>
+      </div>
+
+      {open && (
+        <div className="mb-3 flex items-end justify-between gap-3 rounded-lg border border-border bg-app-bg px-3 py-2.5">
+          <div>
+            <p className="text-[11px] font-medium text-text-secondary">Fatura aberta</p>
+            <span className="text-lg font-semibold text-text">{money(open.total)}</span>
+          </div>
+          <p className="text-right text-[11px] leading-relaxed text-text-muted">
+            fecha {fmt(fromDateInput(open.closingDate), 'dd/MM')}
+            <br />
+            vence {fmt(fromDateInput(open.dueDate), 'dd/MM/yyyy')}
+          </p>
+        </div>
+      )}
+
+      {shown.length > 0 && (
+        <div className="flex flex-col divide-y divide-border">
+          {shown.map((inv) => {
+            const s = INVOICE_STATUS[inv.status]
+            const actionable = inv.status !== 'futura'
+            return (
+              <div key={inv.dueDate} className="flex items-center gap-2 py-2 text-[12px]">
+                <span className={['shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium', s.cls].join(' ')}>
+                  {s.label}
+                </span>
+                <span className="text-text-secondary">vence {fmt(fromDateInput(inv.dueDate), 'dd/MM/yyyy')}</span>
+                <span className="ml-auto font-medium tabular-nums text-text">{money(inv.total)}</span>
+                {actionable && (
+                  <button
+                    type="button"
+                    onClick={() => onToggleInvoicePaid(inv.dueDate)}
+                    aria-label={inv.paid ? 'Desmarcar como paga' : 'Marcar como paga'}
+                    className={[
+                      'flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium',
+                      inv.paid
+                        ? 'border-success/40 text-success'
+                        : 'border-border text-text-secondary hover:border-primary hover:text-primary',
+                    ].join(' ')}
+                  >
+                    {inv.paid ? (
+                      <>
+                        <Check size={11} /> Paga
+                      </>
+                    ) : (
+                      'Marcar paga'
+                    )}
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {hiddenCount > 0 && <p className="mt-2 text-[11px] text-text-muted">+{hiddenCount} outras faturas</p>}
     </div>
   )
 }

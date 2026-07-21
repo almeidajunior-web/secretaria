@@ -1,4 +1,4 @@
-import { addMonths, format, getDaysInMonth, setDate } from 'date-fns'
+import { addMonths, format, getDaysInMonth, setDate, subMonths } from 'date-fns'
 
 // Parses 'yyyy-MM-dd' as a local-midnight Date (avoids UTC parsing shift) —
 // same convention as billRecurrence.js#toDate.
@@ -11,42 +11,56 @@ function clampDay(date, day) {
   return setDate(date, Math.min(day, getDaysInMonth(date)))
 }
 
-// Single fixed card, closing/due day configured once (useFinanceCreditCard).
-// A purchase before the closing day lands in the invoice that closes this
-// month; on/after the closing day it's pushed into next month's invoice.
-// The due date always falls after its closing date: if the due-day number
-// is earlier in the month than the closing-day number, the due date rolls
-// into the month after the invoice closes.
-export function creditCardEffectiveDate(dateStr, closingDay, dueDay) {
+// The due date of the invoice a credit-card purchase made on `dateStr` lands
+// on. Single fixed card, closing/due day configured once (useFinanceCreditCard).
+// A purchase before the closing day is billed on the invoice that closes this
+// month; on/after the closing day it rolls to next month's invoice. The
+// invoice is then due on `dueDay`: if that number falls on/before the closing
+// day, the due date is in the month AFTER the invoice closes.
+//
+// This is a pure function of (date, config) and is NEVER stored — it's derived
+// on demand wherever a cash date is needed, so changing the card config can't
+// leave stale values behind.
+export function vencimentoDaCompra(dateStr, closingDay, dueDay) {
   const purchase = toDate(dateStr)
-  const closesThisMonth = purchase.getDate() < closingDay
-  const closingCycle = closesThisMonth ? purchase : addMonths(purchase, 1)
-  const dueMonth = dueDay > closingDay ? closingCycle : addMonths(closingCycle, 1)
+  const closingMonth = purchase.getDate() < closingDay ? purchase : addMonths(purchase, 1)
+  const dueMonth = dueDay > closingDay ? closingMonth : addMonths(closingMonth, 1)
   return format(clampDay(dueMonth, dueDay), 'yyyy-MM-dd')
 }
 
-// Recomputes `effectiveDate` for an entry — the date money actually leaves
-// the balance. Non-card entries settle the same day they're logged; card
-// entries follow the invoice-cycle math above. Called at every mutation
-// point (add, edit, duplicate) so effectiveDate never goes stale.
-export function withEffectiveDate(entry, creditCfg) {
-  if (!entry.date) return { ...entry, effectiveDate: null }
+// The closing date of the invoice that is due on `dueDateStr` — the inverse of
+// vencimentoDaCompra's month math, used to label/scope an invoice cycle.
+function closingDateForDue(dueDateStr, closingDay, dueDay) {
+  const due = toDate(dueDateStr)
+  const closingMonth = dueDay > closingDay ? due : subMonths(due, 1)
+  return format(clampDay(closingMonth, closingDay), 'yyyy-MM-dd')
+}
+
+// ── The two date bases ──────────────────────────────────────────────────────
+// Competência: when the expense/income was incurred — always the raw purchase
+// date. Every "what did I spend/earn" metric keys off this.
+export function dataCompetencia(entry) {
+  return entry.date || null
+}
+
+// Caixa: when money actually leaves/enters the balance. Same as the competência
+// date for everything except credit-card entries, which settle on their
+// invoice's due date. Account balances and the invoice view key off this.
+export function dataCaixa(entry, creditCfg) {
+  if (!entry.date) return null
   if (entry.paymentMethodId !== 'credito' || !creditCfg?.closingDay || !creditCfg?.dueDay) {
-    return { ...entry, effectiveDate: entry.date }
+    return entry.date
   }
-  return { ...entry, effectiveDate: creditCardEffectiveDate(entry.date, creditCfg.closingDay, creditCfg.dueDay) }
+  return vencimentoDaCompra(entry.date, creditCfg.closingDay, creditCfg.dueDay)
 }
 
 // Splits a single credit-card purchase into `count` monthly installment
 // entries: the amount is divided evenly in cents (any leftover cent goes to
 // the earliest installments, so the parts always sum back to the original
-// total), each installment's `date` is one month further than the last, and
-// the title gets a "(i/N)" suffix so the series reads clearly in the table.
-// recurrence is force-cleared — installments are a fixed-count series, not
-// an open-ended recurring bill, so the two mechanisms must never combine on
-// the same entries. effectiveDate is deliberately left for the caller to
-// (re)compute per part via withEffectiveDate, so each installment lands in
-// its own correct invoice cycle.
+// total), each installment's `date` is one month further than the last (so it
+// lands in — and is "incurred" in — its own month), and the title gets a
+// "(i/N)" suffix. recurrence is force-cleared — installments are a fixed-count
+// series, not an open-ended recurring bill.
 export function splitIntoInstallments(entry, count) {
   const cents = Math.round((entry.amount || 0) * 100)
   const base = Math.floor(cents / count)
@@ -64,21 +78,50 @@ export function splitIntoInstallments(entry, count) {
   }))
 }
 
-// The invoice currently accumulating (not yet closed): whatever a purchase
-// made today would be assigned to. Since every card entry's effectiveDate
-// already equals its invoice's due date, entries sharing that same due date
-// belong to the same invoice — no separate grouping id needed.
-export function currentInvoiceTotal(entries, creditCfg, todayStr) {
-  if (!creditCfg?.closingDay || !creditCfg?.dueDay) return null
+// Groups every credit-card entry into its invoice (keyed by due date) and
+// returns them oldest→newest as first-class objects the UI can render and act
+// on. Each invoice knows its cycle (closing/due dates), its line items, its net
+// total (a refund/chargeback posts as a credit and lowers it), and its status.
+// The cycle a purchase-made-today falls into is always represented, even with
+// no items yet, so the "open" invoice is always shown.
+//
+// status:
+//   aberta  — the cycle accumulating right now (a purchase made today lands here)
+//   futura  — a later cycle that hasn't opened yet (from future installments/recurring)
+//   fechada — closed, waiting to be paid (due date today or in the future)
+//   vencida — due date passed and not marked paid
+//   paga    — the user marked this invoice paid (dueDate ∈ paidSet)
+export function creditCardInvoices(entries, creditCfg, todayStr, paidSet = new Set()) {
+  if (!creditCfg?.closingDay || !creditCfg?.dueDay) return []
   const { closingDay, dueDay } = creditCfg
-  const dueDate = creditCardEffectiveDate(todayStr, closingDay, dueDay)
-  // Falls back to recomputing from `date` for entries stored before this
-  // field existed, same fallback convention as financeMetrics.
-  // Income on a card (a refund/chargeback) posts as a credit, so it lowers
-  // the invoice rather than adding to it.
-  const total = entries
-    .filter((e) => e.paymentMethodId === 'credito' && e.date)
-    .filter((e) => (e.effectiveDate || creditCardEffectiveDate(e.date, closingDay, dueDay)) === dueDate)
-    .reduce((sum, e) => sum + (e.type === 'income' ? -(e.amount || 0) : e.amount || 0), 0)
-  return { total, dueDate, closingDay, dueDay }
+
+  const byDue = new Map()
+  for (const e of entries) {
+    if (e.paymentMethodId !== 'credito' || !e.date) continue
+    const dueDate = vencimentoDaCompra(e.date, closingDay, dueDay)
+    if (!byDue.has(dueDate)) byDue.set(dueDate, [])
+    byDue.get(dueDate).push(e)
+  }
+  // Always surface the currently-accumulating cycle, even if empty.
+  const openDue = vencimentoDaCompra(todayStr, closingDay, dueDay)
+  if (!byDue.has(openDue)) byDue.set(openDue, [])
+
+  const invoices = [...byDue.entries()].map(([dueDate, items]) => {
+    const total = items.reduce(
+      (sum, e) => sum + (e.type === 'income' ? -(e.amount || 0) : e.amount || 0),
+      0
+    )
+    const closingDate = closingDateForDue(dueDate, closingDay, dueDay)
+    const paid = paidSet.has(dueDate)
+    let status
+    if (paid) status = 'paga'
+    else if (dueDate === openDue) status = 'aberta'
+    else if (closingDate > todayStr) status = 'futura'
+    else if (dueDate < todayStr) status = 'vencida'
+    else status = 'fechada'
+    return { dueDate, closingDate, closingDay, dueDay, items, total, status, paid }
+  })
+
+  invoices.sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+  return invoices
 }

@@ -203,36 +203,46 @@ npm run preview
 - Módulo independente de Vencimentos — nenhum lançamento é criado
   automaticamente a partir de uma conta paga lá, mantendo a mesma filosofia
   de módulos independentes do resto do app
-- **Cartão de crédito com fatura**: a forma de pagamento "Crédito" é fixa
-  (não pode ser renomeada nem excluída) e tem, nas Configurações, dois
-  campos de dia — **Fechamento** e **Vencimento** — configurados uma única
-  vez para o cartão. Toda compra no crédito ganha uma **data efetiva**
-  calculada automaticamente (`src/lib/creditCard.js`): antes do fechamento,
-  a compra entra na fatura do ciclo atual; no dia do fechamento ou depois,
-  vai para o mês seguinte; o dia de vencimento é ajustado ao último dia do
-  mês quando necessário
-- **Previsto x realizado**, derivado (sem status manual): quando a data
-  efetiva de um lançamento (a própria data, ou a data calculada da fatura
-  para o cartão) ainda está no futuro, a linha aparece com opacidade
-  reduzida e um ícone de relógio; passou, é tratado como realizado. No
-  modal e na linha rápida, escolher "Crédito" mostra ao vivo "desconta em
-  DD/MM/AAAA"; na tabela, a célula de data ganha uma segunda linha
-  discreta ("desconta DD/MM") quando a fatura empurra a cobrança para uma
-  data diferente da compra
-- Métricas do mês e o indicador de essenciais passaram a considerar a
-  **data efetiva** (com fallback para a data da compra) — uma compra no
-  crédito perto do fechamento aparece no
-  mês em que o dinheiro efetivamente sai, não no mês da compra
-- Card **"Fatura atual do cartão"** no Resumo: soma dos lançamentos do
-  cartão cujo ciclo ainda está aberto (isto é, o mesmo ciclo em que uma
-  compra feita hoje entraria), com as datas de fechamento e vencimento
+- **Duas bases de data (competência x caixa)** — este é o eixo do módulo
+  (`src/lib/creditCard.js`, helpers `dataCompetencia`/`dataCaixa`): as
+  métricas de "quanto gastei/recebi" (Despesas/Receitas do mês, categorias,
+  tendências, essenciais, comparações, indicadores) usam a **data da compra**
+  (competência), então uma compra no crédito aparece **no mês em que foi
+  feita**. As métricas de "quanto tem na conta" (saldo por conta,
+  consolidado, reserva) usam a **data de caixa** — para o crédito, a data de
+  vencimento da fatura — então a compra só sai do saldo quando a fatura vence
+- **Cartão de crédito**: a forma de pagamento "Crédito" é fixa (não pode ser
+  renomeada nem excluída) e tem, nas Configurações, dois campos de dia —
+  **Fechamento** e **Vencimento**. O vencimento da fatura de cada compra é
+  **derivado** de `(data, config)` na hora, nunca gravado (`vencimentoDaCompra`)
+  — então mudar os dias na config não deixa nada desatualizado. Antes do
+  fechamento, a compra entra na fatura do ciclo atual; no dia do fechamento
+  ou depois, vai para o mês seguinte; o dia de vencimento é ajustado ao
+  último dia do mês quando necessário
+- **Previsto x realizado**, derivado (sem status manual): uma linha só é
+  **previsto** (opacidade reduzida + ícone de relógio) quando a **data da
+  compra** ainda está no futuro — uma recorrência que vem ou uma parcela
+  ainda não chegada. Uma compra no crédito já feita é **realizada**, mesmo
+  antes da fatura vencer; a fatura em que ela cai aparece como um selo
+  discreto na célula de data ("💳 fatura DD/MM"), não como opacidade. No
+  modal/linha rápida, escolher "Crédito" mostra ao vivo "Entra na fatura que
+  vence em DD/MM/AAAA"
+- Painel **"Cartão de crédito"** no Resumo (`creditCardInvoices`): a fatura é
+  uma **entidade computada**. Mostra a fatura **aberta** (o ciclo
+  acumulando agora) em destaque e as demais por urgência — **vencida**,
+  **fechada**, **futura**, **paga** — cada uma com data de vencimento, total
+  e um botão **"Marcar paga"** (persistido em `financePaidInvoices`)
+- **Parcelamento agrupado**: uma compra em Nx (só no crédito) gera N
+  lançamentos mensais, cada um "incorrido" no seu mês; na tabela de
+  Lançamentos a série colapsa numa **linha única expansível** ("Notebook ·
+  3x · 1/3 lançadas · total"), que abre nas parcelas individuais editáveis
 - **Contas fixas recorrentes**: qualquer lançamento (receita ou despesa)
   pode receber uma recorrência (mensal, bimestral, trimestral, semestral,
   anual) pelo campo Recorrência no modal, na linha rápida ou pelo chip da
   coluna "Recorrência" na tabela — reaproveita as mesmas opções de
   Vencimentos (`src/lib/billRecurrence.js`). A partir do momento em que a
   instância mais recente de uma série deixa de ser previsto (sua data
-  efetiva chega), a próxima ocorrência é gerada sozinha, já como previsto
+  chega), a próxima ocorrência é gerada sozinha, já como previsto
   — sempre com exatamente uma ocorrência futura pendente por série, sem
   acumular lançamentos além disso. Módulo independente do sistema de
   recorrência de Vencimentos (contas fixas aqui não têm relação com

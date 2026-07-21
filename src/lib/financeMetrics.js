@@ -1,12 +1,20 @@
 import { format, subMonths, getDaysInMonth } from 'date-fns'
 import { fmt } from './date'
+import { dataCaixa } from './creditCard'
 
-// All pure functions, no React — the Overview section composes these over
-// the full entry list. `monthStr` is always 'yyyy-MM': the Overview is a
-// fixed current-calendar-month snapshot, independent of the Lançamentos
-// table (which shows every entry, narrowed by its own column filters).
+// All pure functions, no React — the Overview section composes these over the
+// full entry list. `monthStr` is always 'yyyy-MM': the Overview is a fixed
+// current-calendar-month snapshot, independent of the Lançamentos table.
+//
+// Two date bases (see creditCard.js): "what did I spend/earn" metrics key off
+// COMPETÊNCIA (`e.date` — when it happened), so a credit-card purchase counts
+// in the month it was made. "How much money is actually in my accounts"
+// metrics key off CAIXA (`dataCaixa` — when money moves; the invoice due date
+// for card entries), so a card purchase only leaves the balance once its
+// invoice is due.
+
 export function monthTotals(entries, monthStr) {
-  const monthEntries = entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr))
+  const monthEntries = entries.filter((e) => e.date?.startsWith(monthStr))
   const income = monthEntries
     .filter((e) => e.type === 'income')
     .reduce((sum, e) => sum + (e.amount || 0), 0)
@@ -27,9 +35,7 @@ export function percentChange(current, previous) {
 // Essential vs. total expense for a month: how much of the spending was on
 // things flagged essential, in absolute value and as a share of expenses.
 export function essentialTotals(entries, monthStr) {
-  const expenses = entries.filter(
-    (e) => e.type === 'expense' && (e.effectiveDate || e.date)?.startsWith(monthStr)
-  )
+  const expenses = entries.filter((e) => e.type === 'expense' && e.date?.startsWith(monthStr))
   const total = expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
   const essential = expenses.filter((e) => e.essential).reduce((sum, e) => sum + (e.amount || 0), 0)
   return { essential, total, ratio: total ? essential / total : 0 }
@@ -65,15 +71,15 @@ export function monthlyTrend(entries, monthsBack = 6) {
 }
 
 // Current balance of one account: its configured starting point plus every
-// realized (non-previsto) entry assigned to it. Previstos are excluded on
-// purpose — a future entry hasn't moved money yet, so it shouldn't count
-// toward what's actually sitting in the account today.
-export function accountBalance(entries, account, todayStr) {
+// realized (cash-date already arrived) entry assigned to it. Card entries only
+// count once their invoice is due — a purchase made today hasn't left the
+// account yet, even though it's already a this-month expense (competência).
+export function accountBalance(entries, account, todayStr, creditCfg) {
   const realized = entries
     .filter((e) => e.accountId === account.id)
     .filter((e) => {
-      const effective = e.effectiveDate || e.date
-      return effective && effective <= todayStr
+      const cash = dataCaixa(e, creditCfg)
+      return cash && cash <= todayStr
     })
     .reduce((sum, e) => sum + (e.type === 'income' ? e.amount || 0 : -(e.amount || 0)), 0)
   return (account.initialBalance || 0) + realized
@@ -81,28 +87,28 @@ export function accountBalance(entries, account, todayStr) {
 
 // Realized entries with no account attached still moved real money — they
 // count toward the consolidated total under a virtual "sem conta" bucket.
-export function unassignedBalance(entries, todayStr) {
+export function unassignedBalance(entries, todayStr, creditCfg) {
   return entries
     .filter((e) => !e.accountId)
     .filter((e) => {
-      const effective = e.effectiveDate || e.date
-      return effective && effective <= todayStr
+      const cash = dataCaixa(e, creditCfg)
+      return cash && cash <= todayStr
     })
     .reduce((sum, e) => sum + (e.type === 'income' ? e.amount || 0 : -(e.amount || 0)), 0)
 }
 
-// Sum of every account's balance (optionally skipping reserve accounts,
-// e.g. an emergency fund or investment you don't count as "spendable")
-// plus whatever realized money has no account attached.
-export function consolidatedBalance(entries, accounts, todayStr, { excludeReserve = false } = {}) {
+// Sum of every account's balance (optionally skipping reserve accounts, e.g.
+// an emergency fund or investment you don't count as "spendable") plus
+// whatever realized money has no account attached.
+export function consolidatedBalance(entries, accounts, todayStr, creditCfg, { excludeReserve = false } = {}) {
   const relevant = excludeReserve ? accounts.filter((a) => !a.isReserve) : accounts
-  const accountsTotal = relevant.reduce((sum, a) => sum + accountBalance(entries, a, todayStr), 0)
-  return accountsTotal + unassignedBalance(entries, todayStr)
+  const accountsTotal = relevant.reduce((sum, a) => sum + accountBalance(entries, a, todayStr, creditCfg), 0)
+  return accountsTotal + unassignedBalance(entries, todayStr, creditCfg)
 }
 
 // Trailing average monthly expense over the last `monthsBack` *completed*
-// months (current month is excluded — it's still partial and would skew
-// the average down).
+// months (current month is excluded — it's still partial and would skew the
+// average down).
 export function averageMonthlyExpense(entries, monthsBack = 3) {
   if (!monthsBack) return 0
   let total = 0
@@ -112,20 +118,23 @@ export function averageMonthlyExpense(entries, monthsBack = 3) {
   return total / monthsBack
 }
 
-// How many months of typical spending the emergency reserve would cover.
-// Null when there's no reserve account or no expense history to compare
-// against — the caller should hide the indicator rather than show "0 meses".
-export function reserveMonths(entries, accounts, todayStr, monthsBack = 3) {
+// How many months of typical spending the emergency reserve would cover. Null
+// when there's no reserve account or no expense history to compare against —
+// the caller should hide the indicator rather than show "0 meses".
+export function reserveMonths(entries, accounts, todayStr, creditCfg, monthsBack = 3) {
   const reserveAccounts = accounts.filter((a) => a.isReserve)
   if (!reserveAccounts.length) return null
   const avgExpense = averageMonthlyExpense(entries, monthsBack)
   if (!avgExpense) return null
-  const reserveTotal = reserveAccounts.reduce((sum, a) => sum + accountBalance(entries, a, todayStr), 0)
+  const reserveTotal = reserveAccounts.reduce(
+    (sum, a) => sum + accountBalance(entries, a, todayStr, creditCfg),
+    0
+  )
   return reserveTotal / avgExpense
 }
 
-// Share of this month's income left over after expenses. Null when there's
-// no income to compare against — a savings rate is meaningless without one.
+// Share of this month's income left over after expenses. Null when there's no
+// income to compare against — a savings rate is meaningless without one.
 export function savingsRate(entries, monthStr) {
   const { income, balance } = monthTotals(entries, monthStr)
   return income ? (balance / income) * 100 : null
@@ -138,20 +147,19 @@ export function incomeCommitmentRatio(entries, monthStr) {
   if (!income) return null
   const fixed = entries
     .filter((e) => e.type === 'expense' && e.recurrence && e.recurrence !== 'none')
-    .filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr))
+    .filter((e) => e.date?.startsWith(monthStr))
     .reduce((sum, e) => sum + (e.amount || 0), 0)
   return (fixed / income) * 100
 }
 
-// monthTotals already includes previstos (it keys off effectiveDate
-// regardless of whether that date has arrived yet), so it doubles as the
-// "projected end of month" figure; "realized" re-filters down to entries
-// whose effective date has actually passed, for a realized-vs-projected
-// contrast in the same indicator.
+// monthTotals includes future-dated entries within the month (a recurring
+// instance or installment dated later this month), so it doubles as the
+// "projected end of month" figure; "realized" re-filters to entries whose date
+// has actually passed, for a realized-vs-projected contrast in one indicator.
 export function projectedMonthBalance(entries, monthStr, todayStr) {
   const projected = monthTotals(entries, monthStr).balance
-  const monthEntries = entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr))
-  const realizedEntries = monthEntries.filter((e) => (e.effectiveDate || e.date) <= todayStr)
+  const monthEntries = entries.filter((e) => e.date?.startsWith(monthStr))
+  const realizedEntries = monthEntries.filter((e) => e.date <= todayStr)
   const realizedIncome = realizedEntries
     .filter((e) => e.type === 'income')
     .reduce((sum, e) => sum + (e.amount || 0), 0)
@@ -161,17 +169,14 @@ export function projectedMonthBalance(entries, monthStr, todayStr) {
   return { projected, realized: realizedIncome - realizedExpense }
 }
 
-// Month-to-date daily average expense (realized only) vs. the trailing
-// daily average across the last `monthsBack` completed months — flags
-// "spending faster than usual" at a glance.
+// Month-to-date daily average expense (realized only) vs. the trailing daily
+// average across the last `monthsBack` completed months — flags "spending
+// faster than usual" at a glance.
 export function averageDailySpend(entries, monthStr, todayStr, monthsBack = 3) {
   const dayOfMonth = Number(todayStr.slice(8, 10)) || 1
   const spentSoFar = entries
     .filter((e) => e.type === 'expense')
-    .filter((e) => {
-      const effective = e.effectiveDate || e.date
-      return effective?.startsWith(monthStr) && effective <= todayStr
-    })
+    .filter((e) => e.date?.startsWith(monthStr) && e.date <= todayStr)
     .reduce((sum, e) => sum + (e.amount || 0), 0)
   const current = spentSoFar / dayOfMonth
 
@@ -198,7 +203,7 @@ export function categoryMonthlyTrend(entries, type, monthsBack, categoryLabelByI
 
   const totalsByCategory = new Map()
   entries
-    .filter((e) => e.type === type && e.categoryId && monthStrs.includes((e.effectiveDate || e.date)?.slice(0, 7)))
+    .filter((e) => e.type === type && e.categoryId && monthStrs.includes(e.date?.slice(0, 7)))
     .forEach((e) => totalsByCategory.set(e.categoryId, (totalsByCategory.get(e.categoryId) || 0) + (e.amount || 0)))
 
   const topIds = [...totalsByCategory.entries()]
@@ -215,7 +220,7 @@ export function categoryMonthlyTrend(entries, type, monthsBack, categoryLabelByI
 
   const months = monthDates.map((date, i) => {
     const monthStr = monthStrs[i]
-    const monthEntries = entries.filter((e) => e.type === type && (e.effectiveDate || e.date)?.startsWith(monthStr))
+    const monthEntries = entries.filter((e) => e.type === type && e.date?.startsWith(monthStr))
     const byCategory = {}
     let knownTotal = 0
     topIds.forEach((id) => {
@@ -238,7 +243,7 @@ export function categoryMonthlyTrend(entries, type, monthsBack, categoryLabelByI
 // spending more than usual, negative means less.
 export function categoryComparison(entries, monthStr, monthsBack, categoryLabelById, colorById) {
   const current = categoryBreakdown(
-    entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(monthStr)),
+    entries.filter((e) => e.date?.startsWith(monthStr)),
     'expense',
     categoryLabelById,
     colorById
@@ -248,7 +253,7 @@ export function categoryComparison(entries, monthStr, monthsBack, categoryLabelB
   for (let i = 1; i <= monthsBack; i++) {
     const pastMonthStr = format(subMonths(new Date(), i), 'yyyy-MM')
     categoryBreakdown(
-      entries.filter((e) => (e.effectiveDate || e.date)?.startsWith(pastMonthStr)),
+      entries.filter((e) => e.date?.startsWith(pastMonthStr)),
       'expense',
       categoryLabelById,
       colorById

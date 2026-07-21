@@ -26,6 +26,7 @@ const KEYS = {
   financeAccounts: 'secretaria:financeAccounts',
   financeTags: 'secretaria:financeTags',
   financeCreditCard: 'secretaria:financeCreditCard',
+  financePaidInvoices: 'secretaria:financePaidInvoices',
   financeValuesHidden: 'secretaria:financeValuesHidden',
   schemaVersion: 'secretaria:schemaVersion',
 }
@@ -346,10 +347,10 @@ export function saveBillValuesHidden(hidden) {
 
 // Finance entries have no Date objects — date is a plain 'yyyy-MM-dd'
 // string, same convention as bills/tasks. Also drops any non-object item
-// (null, a stray primitive) instead of returning them as-is — every
-// consumer (financeMetrics.js, creditCard.js, the table) reads fields like
-// `e.effectiveDate` straight off each entry with no per-item guard, so one
-// malformed item used to crash the whole module.
+// (null, a stray primitive) instead of returning them as-is — every consumer
+// (financeMetrics.js, creditCard.js, the table) reads fields like `e.date`
+// straight off each entry with no per-item guard, so one malformed item used
+// to crash the whole module.
 export function loadFinanceEntries() {
   try {
     const raw = localStorage.getItem(KEYS.financeEntries)
@@ -457,6 +458,24 @@ export function loadFinanceCreditCard() {
 
 export function saveFinanceCreditCard(config) {
   localStorage.setItem(KEYS.financeCreditCard, JSON.stringify(config))
+}
+
+// Invoices marked paid, stored as an array of their due-date strings (the id
+// of a derived invoice). Loaded/saved as a plain array; the hook wraps it in
+// a Set for O(1) membership.
+export function loadFinancePaidInvoices() {
+  try {
+    const raw = localStorage.getItem(KEYS.financePaidInvoices)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((d) => typeof d === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export function saveFinancePaidInvoices(dueDates) {
+  localStorage.setItem(KEYS.financePaidInvoices, JSON.stringify(dueDates))
 }
 
 export function loadFinanceValuesHidden() {
