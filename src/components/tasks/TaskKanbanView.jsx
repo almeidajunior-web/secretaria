@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Repeat } from 'lucide-react'
 import { formatDueDate, isOverdue } from '../../lib/taskFormat'
+import { tintVars } from '../../lib/color'
 
 // Board with one column per status (user-editable — order/color/label come
 // from `statuses`, which also drives the Kanban column order). Cards are
@@ -38,7 +39,7 @@ export default function TaskKanbanView({ tasks, priorities, tags, statuses, done
             ].join(' ')}
           >
             <div className="flex items-center justify-between border-b border-border px-3 py-2">
-              <span className="text-[12px] font-semibold" style={{ color: status.color }}>
+              <span className="tint-ink text-[12px] font-semibold" style={tintVars(status.color)}>
                 {status.label}
               </span>
               <span className="text-[11px] text-text-muted">{columnTasks.length}</span>
@@ -76,18 +77,18 @@ function TaskCard({ task, priority, taskTags, doneStatusIds, onEdit }) {
       <div className="flex flex-wrap items-center gap-1.5">
         {priority && (
           <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-            style={{ backgroundColor: `${priority.color}22`, color: priority.color }}
+            className="tint-ink tint-soft inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+            style={tintVars(priority.color, 0.13)}
           >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: priority.color }} />
+            <span className="tint-fill h-1.5 w-1.5 rounded-full" />
             {priority.label}
           </span>
         )}
         {taskTags.map((t) => (
           <span
             key={t.id}
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium"
-            style={{ backgroundColor: `${t.color}22`, color: t.color }}
+            className="tint-ink tint-soft inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium"
+            style={tintVars(t.color, 0.13)}
           >
             {t.label}
           </span>

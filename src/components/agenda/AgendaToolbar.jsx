@@ -2,6 +2,8 @@ import { ChevronLeft, ChevronRight, List, GraduationCap, FileText } from 'lucide
 import { VIEWS } from '../../constants'
 
 // Period navigation, view switcher, list shortcuts, and the new-event button.
+// `leading` is a slot before the period arrows — the Agenda puts the "reopen
+// calendar" button there while its left rail is collapsed.
 export default function AgendaToolbar({
   view,
   onChangeView,
@@ -11,9 +13,11 @@ export default function AgendaToolbar({
   onToday,
   onNew,
   onOpenList,
+  leading,
 }) {
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-border bg-surface px-4 py-2.5">
+      {leading}
       <div className="flex items-center gap-1">
         <button
           type="button"

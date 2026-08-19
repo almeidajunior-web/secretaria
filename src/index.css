@@ -82,3 +82,27 @@ input[type='number']::-webkit-outer-spin-button {
 input[type='number'] {
   -moz-appearance: textfield;
 }
+
+/* Data-driven chip colors (tags, priorities, statuses, categories). The
+   component supplies both theme variants as custom properties via
+   tintVars() in lib/color.js; these classes pick one. Doing the choosing in
+   CSS instead of with an `isDark` prop keeps ChipSelect/TagPickerPopover —
+   shared by four modules — free of theme plumbing. */
+.tint-ink {
+  color: var(--tint);
+}
+.tint-fill {
+  background-color: var(--tint);
+}
+.tint-soft {
+  background-color: var(--tint-soft);
+}
+.dark .tint-ink {
+  color: var(--tint-dark);
+}
+.dark .tint-fill {
+  background-color: var(--tint-dark);
+}
+.dark .tint-soft {
+  background-color: var(--tint-soft-dark);
+}

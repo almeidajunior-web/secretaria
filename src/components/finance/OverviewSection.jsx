@@ -4,6 +4,7 @@ import { fmt, fromDateInput } from '../../lib/date'
 import CategoryBreakdownChart from './CategoryBreakdownChart'
 import TrendChart from './TrendChart'
 import CategoryTrendChart from './CategoryTrendChart'
+import { tintVars } from '../../lib/color'
 
 // Always the current calendar month, independent of whatever period the
 // table below is browsing — this is the fixed "how am I doing right now"
@@ -93,7 +94,7 @@ export default function OverviewSection({
           <div className="flex flex-col gap-2">
             {accountsSummary.balances.map((a) => (
               <div key={a.id} className="flex items-center gap-2 text-[12px]">
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: a.color }} />
+                <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(a.color)} />
                 <span className="flex-1 text-text-secondary">{a.label}</span>
                 {a.isReserve && (
                   <ShieldCheck size={12} className="shrink-0 text-primary" aria-label="Reserva de emergência" />
@@ -219,7 +220,7 @@ export default function OverviewSection({
           <div className="flex flex-col gap-2">
             {categoryComparisonData.map((c) => (
               <div key={c.categoryId} className="flex items-center gap-2 text-[12px]">
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: c.color }} />
+                <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(c.color)} />
                 <span className="flex-1 truncate text-text-secondary">{c.label}</span>
                 <span className="w-24 text-right tabular-nums text-text-muted">
                   {valuesHidden ? 'R$ ••••' : formatCurrency(c.average)}

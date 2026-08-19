@@ -21,6 +21,7 @@ import DescriptionPopover from '../common/DescriptionPopover'
 import ChipSelect from '../common/ChipSelect'
 import InlineDate from '../common/InlineDate'
 import TagPickerPopover from '../common/TagPickerPopover'
+import { tintVars } from '../../lib/color'
 
 const TYPE_OPTIONS = [
   { id: 'income', label: 'Receita' },
@@ -362,7 +363,7 @@ function HeaderCell({
                   >
                     <input type="checkbox" readOnly checked={checked} className="h-3 w-3" />
                     {!colorless && o.color && (
-                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: o.color }} />
+                      <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(o.color)} />
                     )}
                     <span className="truncate">{o.label}</span>
                   </button>

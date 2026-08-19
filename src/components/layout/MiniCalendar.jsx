@@ -1,16 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { addMonths, subMonths, isSameMonth, isToday } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getMonthGridDays, fmt, capitalize, isSameDay } from '../../lib/date'
 import { WEEKDAYS_LETTERS_ORDERED } from '../../constants'
 
-// Compact month picker in the sidebar. Browsing months is local; picking a day
-// updates the agenda's active date. `headerTrailing` renders at the far right
-// of the header row (the sidebar drops its collapse button there so the month
-// label, month nav and collapse control share a single line).
+// Compact month picker in the Agenda's left rail. Browsing months is local;
+// picking a day updates the agenda's active date. `headerTrailing` renders at
+// the far right of the header row (the rail drops its collapse button there so
+// the month label, month nav and collapse control share a single line).
 export default function MiniCalendar({ currentDate, onSelectDate, headerTrailing }) {
   const [viewMonth, setViewMonth] = useState(() => new Date(currentDate))
   const days = getMonthGridDays(viewMonth)
+
+  // Follow the agenda when it moves to another month. Browsing ahead here
+  // without picking a day still works — the effect only fires when the
+  // agenda's own month changes.
+  useEffect(() => {
+    setViewMonth((m) => (isSameMonth(m, currentDate) ? m : new Date(currentDate)))
+  }, [currentDate])
 
   return (
     <div className="select-none">

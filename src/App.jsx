@@ -26,7 +26,6 @@ import { useFinanceCreditCard } from './hooks/useFinanceCreditCard'
 import { useFinancePaidInvoices } from './hooks/useFinancePaidInvoices'
 import { MODULE_DEFS } from './data/modules'
 import Topbar from './components/layout/Topbar'
-import Sidebar from './components/layout/Sidebar'
 import ModulesSettingsModal from './components/layout/ModulesSettingsModal'
 import PrivacyOverlay from './components/layout/PrivacyOverlay'
 import ErrorBoundary from './components/common/ErrorBoundary'
@@ -39,9 +38,9 @@ import Financas from './components/finance/Financas'
 
 const MODULE_NAMES = Object.fromEntries(MODULE_DEFS.map((m) => [m.id, m.label]))
 
-// Application shell: top bar + sidebar + active module area. Module routing is
-// kept in local state so future modules can be dropped in without
-// restructuring.
+// Application shell: a top bar carrying both the brand and the module
+// navigation, over the active module's full-width area. Module routing is kept
+// in local state so future modules can be dropped in without restructuring.
 export default function App() {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
@@ -72,13 +71,6 @@ export default function App() {
   const [activeModule, setActiveModule] = useState('agenda')
   const [currentDate, setCurrentDate] = useState(() => new Date())
   const [modulesSettingsOpen, setModulesSettingsOpen] = useState(false)
-  // Set only by the Agenda's per-day "Tarefas"/"Venc." quick links — seeds
-  // the target module's date filter the moment it mounts. Manual sidebar
-  // navigation always clears both first, so a stale date never leaks into
-  // a later visit.
-  const handleSelectModule = (id) => {
-    setActiveModule(id)
-  }
 
   // Deleting a tag removes it from the managed list and from every event.
   const handleDeleteTag = (tag) => {
@@ -167,18 +159,16 @@ export default function App() {
         theme={theme}
         privacyHidden={privacyHidden}
         onTogglePrivacy={togglePrivacyMode}
+        activeModule={activeModule}
+        onSelectModule={setActiveModule}
+        moduleOrder={modulesConfigApi.order}
+        hiddenModules={modulesConfigApi.hidden}
+        badges={{ todos: overdueOrTodayCount, vencimentos: overdueOrTodayBillsCount }}
+        onOpenSettings={() => setModulesSettingsOpen(true)}
       />
+      {/* `relative` anchors PrivacyOverlay's `absolute inset-0`, which is why
+          this wrapper stays even with a single child. */}
       <div className="relative flex flex-1 overflow-hidden">
-        <Sidebar
-          activeModule={activeModule}
-          onSelectModule={handleSelectModule}
-          currentDate={currentDate}
-          onSelectDate={setCurrentDate}
-          badges={{ todos: overdueOrTodayCount, vencimentos: overdueOrTodayBillsCount }}
-          moduleOrder={modulesConfigApi.order}
-          hiddenModules={modulesConfigApi.hidden}
-          onOpenSettings={() => setModulesSettingsOpen(true)}
-        />
         <main className="flex-1 overflow-hidden">
           <ErrorBoundary resetKey={activeModule}>
           {activeModule === 'agenda' ? (

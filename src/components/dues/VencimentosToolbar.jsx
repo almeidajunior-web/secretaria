@@ -12,6 +12,7 @@ import {
   CircleCheck,
   Circle,
 } from 'lucide-react'
+import { tintVars } from '../../lib/color'
 
 const SORT_FIELDS = [
   { field: 'dueDate', label: 'Vencimento' },
@@ -280,7 +281,7 @@ function FilterPopover({ open, onOpenChange, filters, onToggleFilter, onClearFil
                       : 'border-border text-text-secondary hover:border-border-strong',
                   ].join(' ')}
                 >
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: c.color }} />
+                  <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(c.color)} />
                   {c.label}
                 </button>
               ))}

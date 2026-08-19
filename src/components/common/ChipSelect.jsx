@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { withAlpha } from '../../constants'
+import { tintVars } from '../../lib/color'
 
 // Single-select attribute picker rendered as a tag-style chip instead of a
 // native <select> box+arrow. Trigger: a rounded chip — tinted with the
@@ -33,15 +33,13 @@ export default function ChipSelect({
 
   const selected = options.find((o) => o.id === value) || null
 
-  const chipStyle =
-    selected && !colorless
-      ? { backgroundColor: withAlpha(selected.color, 0.15), color: selected.color }
-      : undefined
+  const tinted = selected && !colorless
+  const chipStyle = tinted ? tintVars(selected.color) : undefined
 
   const chipClass = selected
     ? colorless
       ? 'border border-border bg-app-bg text-text-secondary'
-      : 'border border-transparent'
+      : 'tint-ink tint-soft border border-transparent'
     : 'border border-dashed border-border-strong text-text-muted'
 
   const pick = (id) => {
@@ -99,7 +97,7 @@ export default function ChipSelect({
                 ].join(' ')}
               >
                 {!colorless && (
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: o.color }} />
+                  <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(o.color)} />
                 )}
                 <span className="truncate">{o.label}</span>
               </button>

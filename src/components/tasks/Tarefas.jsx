@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { usePersistentState } from '../../hooks/usePersistentState'
-import { buildTaskComparator, rankMap } from '../../lib/taskSort'
+import {
+  DEFAULT_SORT_CHAIN,
+  buildTaskComparator,
+  rankMap,
+  sanitizeSortChain,
+} from '../../lib/taskSort'
 import TarefasToolbar from './TarefasToolbar'
 import TaskListView from './TaskListView'
 import TaskKanbanView from './TaskKanbanView'
 import TaskModal from './TaskModal'
 import TaskSettingsModal from './TaskSettingsModal'
 import ConfirmDialog from '../common/ConfirmDialog'
+import { tintVars } from '../../lib/color'
 
 function blankTask(statuses) {
   return {
@@ -79,9 +85,11 @@ export default function Tarefas({
   // reloads; only the action state below (modals, selection) resets on
   // remount.
   const [view, setView] = usePersistentState('secretaria:tasksViewMode', 'list')
-  const [sortChain, setSortChain] = usePersistentState('secretaria:tasksSortChain', [
-    { field: 'dueDate', direction: 'asc' },
-  ])
+  const [sortChain, setSortChain] = usePersistentState(
+    'secretaria:tasksSortChain',
+    DEFAULT_SORT_CHAIN,
+    sanitizeSortChain
+  )
   const [filters, setFilters] = useState(loadPersistedTaskFilters)
   useEffect(() => {
     localStorage.setItem(TASKS_FILTERS_KEY, JSON.stringify(filters))
@@ -136,10 +144,9 @@ export default function Tarefas({
   }
 
   const priorityRank = useMemo(() => rankMap(priorities), [priorities])
-  const statusRank = useMemo(() => rankMap(statuses), [statuses])
   const comparator = useMemo(
-    () => buildTaskComparator(sortChain, priorityRank, statusRank),
-    [sortChain, priorityRank, statusRank]
+    () => buildTaskComparator(sortChain, priorityRank),
+    [sortChain, priorityRank]
   )
 
   const visibleTasks = useMemo(
@@ -340,7 +347,7 @@ function TaskSummaryBar({ tasks, statuses, doneStatusIds }) {
     <div className="flex flex-wrap items-center gap-3 border-b border-border bg-app-bg px-4 py-1.5 text-[11px]">
       {statuses.map((s) => (
         <span key={s.id} className="flex items-center gap-1.5 text-text-secondary">
-          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: s.color }} />
+          <span className="tint-fill h-1.5 w-1.5 rounded-full" style={tintVars(s.color)} />
           {s.label} <span className="font-semibold text-text">{tasks.filter((t) => t.status === s.id).length}</span>
         </span>
       ))}

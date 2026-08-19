@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUp, ArrowDown, Filter, Settings, Eye, EyeOff, ListChecks, Trash2, X } from 'lucide-react'
 import TagPickerPopover from '../common/TagPickerPopover'
+import { tintVars } from '../../lib/color'
 
 const SORT_FIELDS = [
   { field: 'dueDate', label: 'Prazo' },
   { field: 'priority', label: 'Prioridade' },
-  { field: 'status', label: 'Status' },
 ]
 
 // View toggle, hierarchical sort chips, filter popover and the "Nova Tarefa"
@@ -357,8 +357,8 @@ function FilterPopover({
                 onClick={() => onToggleFilter('priorityIds', p.id)}
               >
                 <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: p.color }}
+                  className="tint-fill h-2 w-2 shrink-0 rounded-full"
+                  style={tintVars(p.color)}
                 />
                 {p.label}
               </FilterChip>
@@ -376,8 +376,8 @@ function FilterPopover({
                 onClick={() => onToggleFilter('tags', t.id)}
               >
                 <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: t.color }}
+                  className="tint-fill h-2 w-2 shrink-0 rounded-full"
+                  style={tintVars(t.color)}
                 />
                 {t.label}
               </FilterChip>

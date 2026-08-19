@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { StickyNote } from 'lucide-react'
-import { HOUR_HEIGHT, WEEKDAYS_SHORT_ORDERED } from '../../constants'
+import { PLANNING_HOUR_HEIGHT, WEEKDAYS_SHORT_ORDERED } from '../../constants'
 import { weekdayOrder } from '../../lib/date'
 import { cellKey } from '../../lib/planningGrid'
 import { fillColorForTheme } from '../../lib/color'
@@ -96,7 +96,7 @@ export default function PlanningGrid({
   for (let h = hourStart; h <= hourEnd; h++) hours.push(h)
 
   return (
-    <div className="thin-scroll flex-1 overflow-auto p-4">
+    <div className="thin-scroll flex-1 overflow-auto p-3">
       {activeBrush == null && (
         <p className="mb-2 text-[11px] text-text-muted">
           Selecione uma categoria acima para pintar a grade. Clique com o botão direito numa
@@ -107,14 +107,14 @@ export default function PlanningGrid({
         className="select-none overflow-hidden rounded-md border-l border-t border-border"
         style={{
           display: 'grid',
-          gridTemplateColumns: `52px repeat(7, minmax(64px, 1fr))`,
+          gridTemplateColumns: `44px repeat(7, minmax(56px, 1fr))`,
         }}
       >
         <div className="border-b border-r border-border" />
         {WEEKDAYS_SHORT_ORDERED.map((d) => (
           <div
             key={d}
-            className="border-b border-r border-border py-1.5 text-center text-[11px] font-semibold text-text-secondary"
+            className="border-b border-r border-border py-1 text-center text-[11px] font-semibold text-text-secondary"
           >
             {d}
           </div>
@@ -124,7 +124,7 @@ export default function PlanningGrid({
           <Fragment key={h}>
             <div
               className="flex items-start justify-end border-b border-r border-border pr-1.5 pt-0.5 text-[10px] text-text-muted"
-              style={{ height: HOUR_HEIGHT }}
+              style={{ height: PLANNING_HOUR_HEIGHT }}
             >
               {String(h).padStart(2, '0')}H
             </div>
@@ -139,7 +139,7 @@ export default function PlanningGrid({
                     day={day}
                     hour={h}
                     half={undefined}
-                    height={HOUR_HEIGHT}
+                    height={PLANNING_HOUR_HEIGHT}
                     entry={grid[wholeKey]}
                     categoryById={categoryById}
                     isDark={isDark}
@@ -157,13 +157,13 @@ export default function PlanningGrid({
                 <div
                   key={day}
                   className="flex flex-col border-b border-r border-border"
-                  style={{ height: HOUR_HEIGHT }}
+                  style={{ height: PLANNING_HOUR_HEIGHT }}
                 >
                   <Window
                     day={day}
                     hour={h}
                     half={0}
-                    height={HOUR_HEIGHT / 2}
+                    height={PLANNING_HOUR_HEIGHT / 2}
                     entry={grid[cellKey(day, h, 0)]}
                     categoryById={categoryById}
                     isDark={isDark}
@@ -179,7 +179,7 @@ export default function PlanningGrid({
                     day={day}
                     hour={h}
                     half={30}
-                    height={HOUR_HEIGHT / 2}
+                    height={PLANNING_HOUR_HEIGHT / 2}
                     entry={grid[cellKey(day, h, 30)]}
                     categoryById={categoryById}
                     isDark={isDark}

@@ -77,6 +77,12 @@ export const HOUR_START = 6
 export const HOUR_END = 23
 export const HOUR_HEIGHT = 48 // px per hour slot
 
+// Planejamento paints solid blocks rather than event cards with text inside,
+// and shows every hour of the range at once — so it reads fine on a shorter
+// row than the Agenda needs. Kept separate from HOUR_HEIGHT precisely so
+// shrinking one grid never shrinks the other.
+export const PLANNING_HOUR_HEIGHT = 42
+
 export const CLASSIFICATIONS = [
   { value: 'event', label: 'Evento' },
   { value: 'aula', label: 'Aula' },

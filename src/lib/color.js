@@ -1,7 +1,11 @@
-// HSL helpers backing the dark-mode fill treatment for large, opaque color
-// blocks (Planejamento grid cells, Agenda confirmed-status event cards).
-// Separate from constants.js/withAlpha, which stays the simple hex->rgba
-// primitive used by the existing low-alpha tag/tint convention elsewhere.
+// HSL helpers backing the dark-mode treatment of data-driven colors: large
+// opaque blocks (Planejamento grid cells, Agenda confirmed-status event
+// cards) via fillColorForTheme, and small colored text/dots (tag, priority,
+// status and category chips) via darkInkColor/tintVars.
+// Builds on constants.js/withAlpha, which stays the simple hex->rgba
+// primitive behind the app's low-alpha tint convention.
+
+import { withAlpha } from '../constants'
 
 // #rrggbb -> [h(0-360), s(0-100), l(0-100)]
 export function hexToHsl(hex) {
@@ -70,4 +74,46 @@ export function fillColorForTheme(hex, isDark) {
   const s2 = Math.min(Math.max(s, DARK_FILL_S_FLOOR), DARK_FILL_S_CAP)
   const l2 = Math.min(Math.max(l, DARK_FILL_L_FLOOR), DARK_FILL_L_CEIL)
   return hslToHex(h, s2, l2)
+}
+
+const DARK_INK_S_CAP = 70 // same intent as the fill cap, a touch looser: small
+// glyphs carry less area, so a vivid hue reads as accent rather than as noise
+const DARK_INK_S_FLOOR = 25 // the default gray (#6B7280, S 9%) needs chroma or
+// it lands on the same blue-gray as --c-text-secondary and stops reading as a
+// deliberate tag color
+const DARK_INK_L_FLOOR = 66 // text needs a higher floor than the fill's 50: a
+// small glyph at L50 sits near 3:1 against --c-surface (#1e293b), under the
+// 4.5:1 reading bar, while L66 clears it
+const DARK_INK_L_CEIL = 80 // keeps a very light custom pick from washing out
+
+// Returns the color to paint a data color as TEXT (or as a small dot) with in
+// dark mode. Same clamp as fillColorForTheme, different floors — see the
+// constants above for why text can't reuse the fill's numbers.
+export function darkInkColor(hex) {
+  if (!hex) return hex
+  const [h, s, l] = hexToHsl(hex)
+  const s2 = Math.min(Math.max(s, DARK_INK_S_FLOOR), DARK_INK_S_CAP)
+  const l2 = Math.min(Math.max(l, DARK_INK_L_FLOOR), DARK_INK_L_CEIL)
+  return hslToHex(h, s2, l2)
+}
+
+// Inline style carrying BOTH theme variants of a data color, consumed by the
+// .tint-ink / .tint-fill / .tint-soft classes in index.css, which pick one
+// under the `dark` class already on <html>.
+//
+// Why CSS picks instead of an `isDark` prop: fillColorForTheme's two consumers
+// live in modules that already receive `isDark`, but these chips render from
+// ChipSelect and TagPickerPopover — shared leaves used by Tarefas, Compras,
+// Vencimentos and Finanças, and Tarefas doesn't take `isDark` at all. Emitting
+// both variants keeps the math here without threading a prop through four
+// module trees.
+export function tintVars(hex, softAlpha = 0.15) {
+  if (!hex) return undefined
+  const dark = darkInkColor(hex)
+  return {
+    '--tint': hex,
+    '--tint-soft': withAlpha(hex, softAlpha),
+    '--tint-dark': dark,
+    '--tint-soft-dark': withAlpha(dark, softAlpha),
+  }
 }

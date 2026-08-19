@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Plus, Tag as TagIcon } from 'lucide-react'
 import { EVENT_COLORS } from '../../constants'
+import { tintVars } from '../../lib/color'
 
 // Compact tag multi-select: click the trigger to open a checklist popover
 // with an inline "create new tag" affordance. Used by TaskModal, the list
@@ -51,7 +52,7 @@ export default function TagPickerPopover({ tags, selectedIds, onToggle, onCreate
         {selected.length > 0 ? (
           selected.map((t) => (
             <span key={t.id} className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.color }} />
+              <span className="tint-fill h-1.5 w-1.5 rounded-full" style={tintVars(t.color)} />
               {t.label}
             </span>
           ))
@@ -84,8 +85,8 @@ export default function TagPickerPopover({ tags, selectedIds, onToggle, onCreate
                   ].join(' ')}
                 >
                   <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: t.color }}
+                    className="tint-fill h-2 w-2 shrink-0 rounded-full"
+                    style={tintVars(t.color)}
                   />
                   {t.label}
                 </button>

@@ -28,9 +28,18 @@ npm run build
 npm run preview
 ```
 
-## Barra lateral e navegação entre módulos
+## Topbar e navegação entre módulos
 
-- A engrenagem **Configurações** no rodapé da barra lateral abre um gerenciador
+- A navegação entre módulos fica no **topbar**, em linha ao lado da marca — a
+  barra lateral fixa de 220px foi removida para que todos os módulos usem a
+  largura inteira da tela. Em janelas estreitas a faixa de navegação rola
+  horizontalmente em vez de espremer os itens
+- O mini-calendário sobrevive apenas **dentro da Agenda**, numa calha própria
+  no canto superior esquerdo do módulo, com um botão para recolher/expandir
+  (a preferência persiste). Recolhido, o botão de reabrir aparece no início da
+  barra de ferramentas da Agenda. O calendário acompanha o mês exibido na
+  grade quando você navega pelas setas
+- A engrenagem **Configurações** no canto direito do topbar abre um gerenciador
   para reordenar os módulos (arraste), ocultar/exibir cada um, e fazer backup
   manual de todos os dados
 - Todos os modais de **Configurações** (o global e o de cada módulo) usam um
@@ -43,7 +52,7 @@ npm run preview
   antes de substituir os dados atuais e recarrega a página. Protege contra
   perda de dados por limpar o navegador, já que tudo é salvo só localmente
   (localStorage)
-- Ocultar um módulo só afeta a navegação por ele na barra lateral — os dados
+- Ocultar um módulo só afeta a navegação por ele no topbar — os dados
   continuam intactos e qualquer link direto para ele (ex.: os atalhos de
   "Tarefas"/"Venc." na Agenda) continua abrindo o módulo normalmente
 - Badge de contagem (ex.: tarefas atrasadas + previstas para hoje, ao lado de
@@ -56,12 +65,31 @@ npm run preview
   exatamente como foi deixado. Só estados de ação temporários (modo de
   seleção em massa, modais abertos) reiniciam ao trocar de módulo
 
+## Cores e contraste no tema escuro
+
+- As cores de tags, prioridades, status e categorias são escolhidas numa paleta
+  compartilhada, e algumas delas (azul-marinho, cinza) somem contra o fundo
+  escuro quando usadas como texto de uma pílula pequena
+- No tema escuro essas cores passam por um ajuste automático em HSL antes de
+  virarem texto ou ponto colorido: sobe um piso de luminosidade e a saturação
+  fica limitada nos dois extremos. O matiz não muda, então a cor continua sendo
+  reconhecível como "aquela" cor — só legível (`darkInkColor`/`tintVars` em
+  `src/lib/color.js`, aplicadas pelas classes `.tint-ink`/`.tint-fill`/
+  `.tint-soft` em `index.css`)
+- No tema claro nada muda: a cor é renderizada exatamente como está cadastrada
+- Os **seletores de cor** ficam de fora do ajuste de propósito — ali a amostra
+  existe para você escolher uma cor e precisa mostrar a cor verdadeira
+- Blocos grandes e opacos (células do Planejamento, eventos confirmados da
+  Agenda) seguem com o tratamento irmão `fillColorForTheme`, que usa um piso
+  de luminosidade mais baixo por pintarem área, não texto
+
 ## Privacidade
 
-- Botão de "olho" no topbar, ao lado do alternador de tema claro/escuro,
-  ativa um **modo privado** global: a área de sidebar + módulo ativo recebe
-  um desfoque (blur) com um aviso "Modo privado ativado", e todo o conteúdo
-  por baixo fica temporariamente impossível de clicar
+- Botão de "olho" no topbar, ao lado da engrenagem de Configurações, ativa um
+  **modo privado** global: a área do módulo ativo recebe um desfoque (blur)
+  com um aviso "Modo privado ativado", e todo o conteúdo por baixo fica
+  temporariamente impossível de clicar. O topbar continua acessível, para você
+  poder desativar o modo e navegar
 - Não apaga, altera nem oculta dados de verdade — é só uma camada visual por
   cima; ao desativar, tudo volta exatamente como estava
 - O próprio Topbar (o botão de olho e o de tema) continua sempre acessível
@@ -86,7 +114,7 @@ npm run preview
   para diferenciar do lançamento de gastos/receitas do futuro módulo
   Finanças) — cada um abre o módulo correspondente (Tarefas/Vencimentos) já
   filtrado para aquele dia
-- Mini-calendário na barra lateral e navegação entre módulos
+- Mini-calendário na calha esquerda do módulo, sincronizado com o mês exibido
 - Tema claro/noturno persistente
 
 ## Funcionalidades do módulo Planejamento
@@ -104,6 +132,10 @@ npm run preview
   texto livre a essa janela
 - Faixa de horário da grade (início/fim) configurável nas Configurações
 - Linha do "agora" no mesmo estilo visual da Agenda
+- A grade usa uma altura de linha própria (`PLANNING_HOUR_HEIGHT`), menor que a
+  da Agenda: aqui as células são blocos de cor, não cartões com texto dentro, e
+  todas as horas aparecem de uma vez. As duas constantes são separadas
+  justamente para que encolher uma grade nunca encolha a outra
 
 ## Funcionalidades do módulo Compras
 
@@ -158,7 +190,7 @@ npm run preview
 - Modo de seleção em massa: atribua Classificação, marque como paga/
   pendente ou exclua várias contas de uma vez; exclusão sempre imediata,
   sem confirmação
-- Badge na barra lateral com o total de contas atrasadas + vencendo hoje
+- Badge no topbar com o total de contas atrasadas + vencendo hoje
 
 ## Funcionalidades do módulo Finanças
 
@@ -286,9 +318,11 @@ npm run preview
   (nome, cor e ordem — arraste para reordenar); Status tem ainda um sinalizador
   "conta como concluída" por item, usado pela recorrência e pelo filtro de
   ocultar finalizadas
-- Ordenação hierárquica: clique em "Prazo", "Prioridade" ou "Status" na
-  barra de ferramentas para empilhar critérios (1º clique define o
-  principal, 2º clique em outro campo adiciona um critério secundário)
+- Ordenação hierárquica: clique em "Prazo" ou "Prioridade" na barra de
+  ferramentas para empilhar critérios (1º clique define o principal, 2º clique
+  em outro campo adiciona um critério secundário). Não há ordenação por status:
+  no Kanban a coluna já é o status, e na Lista o agrupamento por prazo é o
+  eixo útil — uma preferência salva antes da remoção é saneada na leitura
 - Lista agrupada por prazo (Atrasadas, Hoje, Amanhã, Próximos 7 dias, Mais
   tarde, Sem prazo), com as atrasadas sempre no topo; datas vencidas
   aparecem em vermelho, tarefas previstas para hoje mantêm o estilo padrão
@@ -297,7 +331,7 @@ npm run preview
   clicar fora dos campos, como no ClickUp); botão de relógio na linha adia
   rapidamente o prazo em +1 dia ou +1 semana
 - Linha de resumo no topo com a contagem por status e o total de atrasadas,
-  e badge no ícone do módulo na barra lateral com o total de tarefas
+  e badge no item do módulo no topbar com o total de tarefas
   atrasadas + previstas para hoje
 - Filtro por data (além de prioridade e tags) — o mesmo filtro usado pelo
   atalho "Tarefas" da Agenda para abrir a lista já restrita a um dia
@@ -353,7 +387,7 @@ src/
               # usePersistentState (preferências de visualização por
               # módulo)...
   components/
-    layout/   # Sidebar, Topbar, MiniCalendar, ModulesSettingsModal,
+    layout/   # Topbar (marca + navegação), MiniCalendar, ModulesSettingsModal,
               # PrivacyOverlay (modo privado global)
     common/   # componentes compartilhados entre módulos (TagSelector,
               # RecurrenceField, ConfirmDialog, EditableListSection,

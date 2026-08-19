@@ -4,10 +4,9 @@ import { MODULE_DEFS } from '../data/modules'
 
 const DEFAULT_ORDER = MODULE_DEFS.map((m) => m.id)
 
-// Sidebar module order + hidden set. Hiding a module only removes it from
-// the sidebar nav — its data and any direct link/callback into it (e.g. the
-// Agenda "Tarefas"/"Venc." quick links) keep working, since App.jsx's module
-// switch isn't gated by this at all.
+// Topbar module order + hidden set. Hiding a module only removes it from the
+// nav — its data and any direct link/callback into it keep working, since
+// App.jsx's module switch isn't gated by this at all.
 export function useModulesConfig() {
   const [config, setConfig] = useState(() => {
     const stored = loadModulesConfig()

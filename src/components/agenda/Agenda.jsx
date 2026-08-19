@@ -10,6 +10,7 @@ import {
   subYears,
   isSameDay,
 } from 'date-fns'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { fmt, capitalize, roundToHalfHour } from '../../lib/date'
 import { EVENT_COLORS } from '../../constants'
 import { useSwipeNavigation } from '../../hooks/useSwipeNavigation'
@@ -24,6 +25,7 @@ import EventModal from './EventModal'
 import RecurrenceScopeDialog from './RecurrenceScopeDialog'
 import ProvasList from './ProvasList'
 import EventListModal from './EventListModal'
+import MiniCalendar from '../layout/MiniCalendar'
 import ConfirmDialog from '../common/ConfirmDialog'
 import UndoToast from '../common/UndoToast'
 
@@ -70,6 +72,12 @@ export default function Agenda({
   // Persists across module navigation and reloads, like the other modules'
   // view/filter preferences.
   const [view, setView] = usePersistentState('secretaria:agendaViewMode', 'week')
+  // The mini calendar belongs to the Agenda alone now that module navigation
+  // lives in the topbar; collapsing it hands the grid the full width.
+  const [calendarCollapsed, setCalendarCollapsed] = usePersistentState(
+    'secretaria:agendaCalendarCollapsed',
+    false
+  )
   const [modal, setModal] = useState(null) // { event, occ? }
   const [popover, setPopover] = useState(null) // { occ, rect }
   const [scopeAction, setScopeAction] = useState(null) // { kind, occ, ... }
@@ -234,93 +242,118 @@ export default function Agenda({
     isDark,
   }
 
+  const collapseToggle = (
+    <button
+      type="button"
+      onClick={() => setCalendarCollapsed((v) => !v)}
+      aria-label={calendarCollapsed ? 'Mostrar calendário' : 'Ocultar calendário'}
+      title={calendarCollapsed ? 'Mostrar calendário' : 'Ocultar calendário'}
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-muted hover:bg-accent-soft/60 hover:text-primary"
+    >
+      {calendarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+    </button>
+  )
+
   return (
-    <div className="flex h-full flex-col">
-      <AgendaToolbar
-        view={view}
-        onChangeView={setView}
-        title={title}
-        onPrev={handlePrev}
-        onNext={handleNext}
-        onToday={handleToday}
-        onNew={() => openCreate()}
-        onOpenList={setOpenList}
-      />
+    <div className="flex h-full">
+      {!calendarCollapsed && (
+        <aside className="w-[200px] shrink-0 border-r border-border bg-sidebar p-3">
+          <MiniCalendar
+            currentDate={currentDate}
+            onSelectDate={onChangeDate}
+            headerTrailing={collapseToggle}
+          />
+        </aside>
+      )}
 
-      <div className="flex-1 overflow-hidden overscroll-x-contain" onWheel={onSwipeWheel}>
-        {view === 'week' && <WeekView {...viewProps} />}
-        {view === 'day' && <DayView {...viewProps} />}
-        {view === 'month' && (
-          <MonthView currentDate={currentDate} events={events} onSelectDay={selectDay} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <AgendaToolbar
+          view={view}
+          onChangeView={setView}
+          title={title}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          onToday={handleToday}
+          onNew={() => openCreate()}
+          onOpenList={setOpenList}
+          leading={calendarCollapsed ? collapseToggle : null}
+        />
+
+        <div className="flex-1 overflow-hidden overscroll-x-contain" onWheel={onSwipeWheel}>
+          {view === 'week' && <WeekView {...viewProps} />}
+          {view === 'day' && <DayView {...viewProps} />}
+          {view === 'month' && (
+            <MonthView currentDate={currentDate} events={events} onSelectDay={selectDay} />
+          )}
+          {view === 'year' && <YearView currentDate={currentDate} onSelectDay={selectDay} />}
+        </div>
+
+        {popover && (
+          <EventPopover
+            occ={popover.occ}
+            events={events}
+            rect={popover.rect}
+            onClose={() => setPopover(null)}
+            onEdit={openEdit}
+            onDuplicate={handleDuplicate}
+            onDelete={handleDelete}
+            onSetStatus={setOccurrenceStatus}
+          />
         )}
-        {view === 'year' && <YearView currentDate={currentDate} onSelectDay={selectDay} />}
+
+        {modal && (
+          <EventModal
+            initial={modal.event}
+            events={events}
+            allTags={allTags}
+            onCreateTag={onCreateTag}
+            onDeleteTag={onDeleteTag}
+            onSave={handleSave}
+            onClose={() => setModal(null)}
+          />
+        )}
+
+        {scopeAction && (
+          <RecurrenceScopeDialog
+            kind={scopeAction.kind}
+            onChoose={applyScope}
+            onCancel={() => setScopeAction(null)}
+          />
+        )}
+
+        {pendingDelete && (
+          <ConfirmDialog
+            title={`Excluir "${pendingDelete.event.title}"?`}
+            message="O evento será removido da agenda."
+            confirmLabel="Excluir"
+            onConfirm={confirmDelete}
+            onCancel={() => setPendingDelete(null)}
+          />
+        )}
+
+        {openList === 'prova' && (
+          <ProvasList
+            events={events}
+            onEdit={openEditEvent}
+            onDelete={deleteFromList}
+            onClose={() => setOpenList(null)}
+          />
+        )}
+
+        {(openList === 'event' || openList === 'aula') && (
+          <EventListModal
+            mode={openList}
+            events={events}
+            onEdit={openEditEvent}
+            onDelete={deleteFromList}
+            onClose={() => setOpenList(null)}
+          />
+        )}
+
+        {undo && (
+          <UndoToast message={undo.message} onUndo={undo.onUndo} onDismiss={() => setUndo(null)} />
+        )}
       </div>
-
-      {popover && (
-        <EventPopover
-          occ={popover.occ}
-          events={events}
-          rect={popover.rect}
-          onClose={() => setPopover(null)}
-          onEdit={openEdit}
-          onDuplicate={handleDuplicate}
-          onDelete={handleDelete}
-          onSetStatus={setOccurrenceStatus}
-        />
-      )}
-
-      {modal && (
-        <EventModal
-          initial={modal.event}
-          events={events}
-          allTags={allTags}
-          onCreateTag={onCreateTag}
-          onDeleteTag={onDeleteTag}
-          onSave={handleSave}
-          onClose={() => setModal(null)}
-        />
-      )}
-
-      {scopeAction && (
-        <RecurrenceScopeDialog
-          kind={scopeAction.kind}
-          onChoose={applyScope}
-          onCancel={() => setScopeAction(null)}
-        />
-      )}
-
-      {pendingDelete && (
-        <ConfirmDialog
-          title={`Excluir "${pendingDelete.event.title}"?`}
-          message="O evento será removido da agenda."
-          confirmLabel="Excluir"
-          onConfirm={confirmDelete}
-          onCancel={() => setPendingDelete(null)}
-        />
-      )}
-
-      {openList === 'prova' && (
-        <ProvasList
-          events={events}
-          onEdit={openEditEvent}
-          onDelete={deleteFromList}
-          onClose={() => setOpenList(null)}
-        />
-      )}
-
-      {(openList === 'event' || openList === 'aula') && (
-        <EventListModal
-          mode={openList}
-          events={events}
-          onEdit={openEditEvent}
-          onDelete={deleteFromList}
-          onClose={() => setOpenList(null)}
-        />
-      )}
-
-      {undo && (
-        <UndoToast message={undo.message} onUndo={undo.onUndo} onDismiss={() => setUndo(null)} />
-      )}
     </div>
   )
 }

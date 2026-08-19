@@ -13,6 +13,7 @@ import {
   CircleCheck,
   Circle,
 } from 'lucide-react'
+import { tintVars } from '../../lib/color'
 
 const SORT_FIELDS = [
   { field: 'category', label: 'Classificação' },
@@ -320,7 +321,7 @@ function FilterPopover({
                 active={filters.categoryIds.includes(c.id)}
                 onClick={() => onToggleFilter('categoryIds', c.id)}
               >
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: c.color }} />
+                <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(c.color)} />
                 {c.label}
               </FilterChip>
             ))}
@@ -333,7 +334,7 @@ function FilterPopover({
                 active={filters.priorityIds.includes(p.id)}
                 onClick={() => onToggleFilter('priorityIds', p.id)}
               >
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />
+                <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(p.color)} />
                 {p.label}
               </FilterChip>
             ))}
