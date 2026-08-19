@@ -36,8 +36,8 @@ export default function WeekView({
   const faltasByEvent = useFaltas(events, now)
 
   return (
-    <div className="thin-scroll h-full overflow-auto bg-surface">
-      <div className="sticky top-0 z-20 flex border-b border-border bg-surface">
+    <div className="thin-scroll h-full overflow-auto">
+      <div className="glass sticky top-0 z-20 flex border-b">
         <div className="w-[52px] shrink-0" />
         {days.map((day) => (
           <DayHeader key={day.toISOString()} day={day} now={now} />

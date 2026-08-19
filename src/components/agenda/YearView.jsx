@@ -6,7 +6,7 @@ import { MONTHS, WEEKDAYS_LETTERS_ORDERED } from '../../constants'
 // clicking any day drills into its day view.
 export default function YearView({ currentDate, onSelectDay }) {
   return (
-    <div className="thin-scroll h-full overflow-auto bg-surface p-4">
+    <div className="thin-scroll h-full overflow-auto p-4">
       <div className="grid grid-cols-4 gap-4">
         {MONTHS.map((name, idx) => (
           <MiniMonth

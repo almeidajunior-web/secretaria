@@ -1,7 +1,7 @@
 import { AlertTriangle, GraduationCap, FileText, OctagonAlert } from 'lucide-react'
 import { fmt } from '../../lib/date'
 import { withAlpha } from '../../constants'
-import { fillColorForTheme } from '../../lib/color'
+import { darkInkColor, fillColorForTheme } from '../../lib/color'
 
 const REFUSED_GRAY = '#9CA3AF'
 
@@ -76,6 +76,13 @@ export default function EventCard({ occ, height, isPast, faltas = 0, isDark }) {
 }
 
 function statusVisual(status, color, isDark) {
+  // Outlined statuses draw the border and the title in the event's own color.
+  // Over the dark ground a navy or gray pick is unreadable, so it goes through
+  // the same lift the chips use; the fill also needs more than 6% alpha now
+  // that it sits on a gradient rather than a flat panel.
+  const ink = isDark ? darkInkColor(color) : color
+  const wash = isDark ? 0.16 : 0.06
+
   switch (status) {
     case 'confirmed':
       return {
@@ -84,13 +91,13 @@ function statusVisual(status, color, isDark) {
       }
     case 'unconfirmed':
       return {
-        style: { backgroundColor: withAlpha(color, 0.06), border: `1.5px solid ${color}`, color },
-        textColor: color,
+        style: { backgroundColor: withAlpha(ink, wash), border: `1.5px solid ${ink}`, color: ink },
+        textColor: ink,
       }
     case 'provisional':
       return {
-        style: { backgroundColor: withAlpha(color, 0.06), border: `1.5px dashed ${color}`, color },
-        textColor: color,
+        style: { backgroundColor: withAlpha(ink, wash), border: `1.5px dashed ${ink}`, color: ink },
+        textColor: ink,
       }
     case 'refused':
       return {

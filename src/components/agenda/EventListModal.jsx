@@ -93,7 +93,7 @@ export default function EventListModal({ mode, events, onEdit, onDelete, onClose
         </p>
       ) : (
         <table className="w-full text-left text-[13px]">
-          <thead className="sticky top-0 bg-app-bg text-[11px] uppercase tracking-wide text-text-muted">
+          <thead className="sticky top-0 bg-inset text-[11px] uppercase tracking-wide text-text-muted">
             <tr>
               <th className="px-5 py-2 font-semibold">Título</th>
               <th className="px-3 py-2 font-semibold">Horário / Duração</th>

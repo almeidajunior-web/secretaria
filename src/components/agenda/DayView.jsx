@@ -12,8 +12,8 @@ export default function DayView({ currentDate, events, onCreateRange, onEventCli
   const today = isSameDay(currentDate, now)
 
   return (
-    <div className="thin-scroll h-full overflow-auto bg-surface">
-      <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-surface px-4 py-2">
+    <div className="thin-scroll h-full overflow-auto">
+      <div className="glass sticky top-0 z-20 flex items-center gap-3 border-b px-4 py-2">
         <div className="w-[44px] shrink-0" />
         <span className="text-[10px] font-medium uppercase text-text-muted">
           {WEEKDAYS_SHORT[getDay(currentDate)]}

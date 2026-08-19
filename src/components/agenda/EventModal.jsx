@@ -175,7 +175,7 @@ export default function EventModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-primary-deep/60 backdrop-blur-sm p-4"
       onClick={requestClose}
     >
       <div
@@ -301,7 +301,7 @@ export default function EventModal({
           </Field>
 
           {isClass && (
-            <div className="flex flex-col gap-3 rounded-lg border border-border bg-app-bg p-3">
+            <div className="flex flex-col gap-3 rounded-lg border border-border bg-inset p-3">
               {kind === 'aula' ? (
                 <>
                   <Field label="Limite de faltas">

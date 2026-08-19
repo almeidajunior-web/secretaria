@@ -65,6 +65,42 @@ npm run preview
   exatamente como foi deixado. Só estados de ação temporários (modo de
   seleção em massa, modais abertos) reiniciam ao trocar de módulo
 
+## Identidade visual
+
+- O app tem um **chão em degradê azul** (`.app-ground`, aplicado na raiz em
+  `App.jsx`) que vale para todos os módulos. Superfícies acima dele são
+  transparentes por padrão, então a cor do fundo atravessa a interface inteira
+- **Vidro fosco** (`.glass` / `.glass-strong` em `index.css`) nas superfícies em
+  forma de cartão: topbar, barras de ferramentas, barras de resumo, cabeçalhos
+  fixos, tiles do Overview, colunas e cartões do Kanban, painel de faturas.
+  Linhas de tabela/lista e as grades da Agenda/Planejamento ficam planas sobre o
+  chão — mantêm a densidade legível e não pagam o custo de dezenas de camadas
+  com `backdrop-filter` na rolagem
+- **Modais, popovers e tooltips continuam opacos** de propósito: flutuam sobre
+  conteúdo arbitrário, e empilhar desfoque sobre desfoque fica ilegível
+- **Glow** (`.num-glow`) só nas figuras de destaque — totais do mês, indicadores,
+  fatura aberta. Botões e outros controles ficam sólidos. É automaticamente
+  desligado no tema claro: sombra colorida sobre fundo claro vira borrão, não
+  brilho
+- **Degradê sob as linhas** do gráfico Receita×Despesa, com os `stop-color`
+  lendo os mesmos tokens que o traço usa, para o preenchimento nunca destoar da
+  linha
+- O azul é o **ambiente**; verde e vermelho seguem significando receita e
+  despesa. Cor de destaque e cor semântica são coisas separadas
+
+### Como os tokens funcionam
+
+As variáveis em `index.css` guardam **canais RGB separados por espaço**
+(`--c-surface: 16 27 51`), e o `tailwind.config.js` as envolve em
+`rgb(var(--c-x) / <alpha-value>)`. Isso é o que permite `bg-accent-soft/30`,
+`hover:bg-danger/15` e afins funcionarem — com um hex dentro da variável o
+Tailwind não consegue injetar opacidade e descarta a classe silenciosamente.
+
+Níveis de superfície, do fundo para a frente: `app-ground` (o chão) →
+`bg-inset` (poços rebaixados: switchers, campos agrupados) → `.glass` (cromo) →
+`.glass-strong` (cartões) → `bg-surface` (flutuantes opacos e campos de
+formulário).
+
 ## Cores e contraste no tema escuro
 
 - As cores de tags, prioridades, status e categorias são escolhidas numa paleta
@@ -77,6 +113,8 @@ npm run preview
   `src/lib/color.js`, aplicadas pelas classes `.tint-ink`/`.tint-fill`/
   `.tint-soft` em `index.css`)
 - No tema claro nada muda: a cor é renderizada exatamente como está cadastrada
+  (com isso, uma cor cinza-clara escolhida por você pode ficar em ~4,5:1 no
+  claro — é o preço de mostrar a cor verdadeira, e foi uma escolha consciente)
 - Os **seletores de cor** ficam de fora do ajuste de propósito — ali a amostra
   existe para você escolher uma cor e precisa mostrar a cor verdadeira
 - Blocos grandes e opacos (células do Planejamento, eventos confirmados da

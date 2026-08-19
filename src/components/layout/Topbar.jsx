@@ -32,7 +32,7 @@ export default function Topbar({
     .filter((m) => m && !hiddenModules.includes(m.id))
 
   return (
-    <header className="flex h-[52px] shrink-0 items-center gap-4 border-b border-border bg-surface px-4">
+    <header className="flex h-[52px] shrink-0 items-center gap-4 glass border-b px-4">
       <div className="flex shrink-0 items-center gap-2">
         <Logo size={22} theme={theme} />
         <div className="flex items-baseline gap-0 text-lg tracking-tight">

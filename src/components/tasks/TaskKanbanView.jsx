@@ -34,7 +34,7 @@ export default function TaskKanbanView({ tasks, priorities, tags, statuses, done
               setDragOverStatus(null)
             }}
             className={[
-              'flex w-64 shrink-0 flex-col rounded-lg border bg-app-bg',
+              'glass flex w-64 shrink-0 flex-col rounded-lg border',
               dragOverStatus === status.id ? 'border-primary' : 'border-border',
             ].join(' ')}
           >
@@ -71,7 +71,7 @@ function TaskCard({ task, priority, taskTags, doneStatusIds, onEdit }) {
       draggable
       onDragStart={(e) => e.dataTransfer.setData('text/plain', task.id)}
       onClick={onEdit}
-      className="cursor-grab rounded-lg border border-border bg-surface p-2.5 shadow-sm hover:border-primary active:cursor-grabbing"
+      className="glass-strong cursor-grab rounded-lg border p-2.5 hover:border-primary active:cursor-grabbing"
     >
       <p className="mb-1.5 text-[13px] text-text">{task.title}</p>
       <div className="flex flex-wrap items-center gap-1.5">

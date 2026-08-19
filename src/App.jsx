@@ -154,7 +154,7 @@ export default function App() {
   ).length
 
   return (
-    <div className="flex h-full flex-col bg-app-bg text-text">
+    <div className="app-ground flex h-full flex-col text-text">
       <Topbar
         theme={theme}
         privacyHidden={privacyHidden}

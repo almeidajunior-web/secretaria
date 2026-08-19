@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatCurrency } from '../../lib/currency'
+import { tintVars } from '../../lib/color'
 
 const WIDTH = 600
 const HEIGHT = 220
@@ -63,7 +64,7 @@ export default function CategoryTrendChart({ data, valuesHidden }) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-secondary">
         {series.map((s) => (
           <span key={s.categoryId} className="flex items-center gap-1.5">
-            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
+            <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(s.color)} />
             {s.label}
           </span>
         ))}
@@ -122,7 +123,8 @@ export default function CategoryTrendChart({ data, valuesHidden }) {
                       y={y}
                       width={barWidth}
                       height={segHeight}
-                      fill={s.color}
+                      className="tint-svg"
+                      style={tintVars(s.color)}
                       opacity={hoverIndex == null || hoverIndex === i ? 1 : 0.35}
                       rx={isTop ? 3 : 0}
                     />
@@ -155,7 +157,7 @@ export default function CategoryTrendChart({ data, valuesHidden }) {
               if (value <= 0) return null
               return (
                 <p key={s.categoryId} className="flex items-center gap-1.5 text-text-secondary">
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
+                  <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(s.color)} />
                   {s.label}: {mask(value)}
                 </p>
               )

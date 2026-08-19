@@ -5,38 +5,67 @@
 @tailwind utilities;
 
 :root {
-  --c-primary: #2563eb;
-  --c-primary-hover: #1d4ed8;
-  --c-primary-deep: #1e3a8a;
-  --c-accent-soft: #eef2fe;
-  --c-surface: #ffffff;
-  --c-app-bg: #fafbfc;
-  --c-sidebar: #ffffff;
-  --c-border: #e5e7eb;
-  --c-border-strong: #d1d5db;
-  --c-text: #111827;
-  --c-text-secondary: #6b7280;
-  --c-text-muted: #9ca3af;
-  --c-success: #16a34a;
-  --c-danger: #dc2626;
+  /* Colors are space-separated RGB channels, not hex, so Tailwind can inject
+     an alpha through `rgb(var(--c-x) / <alpha-value>)`. With a hex inside the
+     var, every `/NN` modifier silently compiled to nothing. */
+  --c-primary: 44 85 196;
+  --c-primary-hover: 30 66 168;
+  --c-primary-deep: 18 48 110;
+  --c-accent-soft: 228 236 251;
+  --c-surface: 255 255 255;
+  --c-inset: 236 241 250;
+  --c-app-bg: 242 246 253;
+  --c-border: 217 226 244;
+  --c-border-strong: 190 205 234;
+  --c-text: 16 27 48;
+  --c-text-secondary: 70 85 113;
+  --c-text-muted: 98 113 137;
+  --c-success: 22 163 74;
+  --c-danger: 220 38 38;
+
+  /* Not colors — consumed directly by the utility classes below, never by
+     Tailwind, so they stay in their final CSS form. */
+  --c-app-gradient:
+    radial-gradient(560px 280px at 12% -15%, rgba(74, 124, 255, 0.16), transparent 62%),
+    radial-gradient(460px 260px at 105% 112%, rgba(56, 102, 210, 0.12), transparent 62%),
+    linear-gradient(168deg, #edf2fd 0%, #f4f7fd 60%, #f7f9fe 100%);
+  --c-glass-bg: rgba(255, 255, 255, 0.62);
+  --c-glass-strong-bg: rgba(255, 255, 255, 0.74);
+  --c-glass-border: rgba(45, 90, 200, 0.14);
+  --c-elevate: 0 6px 16px -10px rgba(45, 90, 200, 0.42);
+  /* Light mode gets no glow on purpose: a colored shadow over a light ground
+     reads as a grey smudge, not as light. */
+  --c-glow: none;
 }
 
+
 .dark {
-  --c-primary: #3b82f6;
-  --c-primary-hover: #60a5fa;
-  --c-primary-deep: #bfdbfe;
-  --c-accent-soft: #1e2a44;
-  --c-surface: #1e293b;
-  --c-app-bg: #0b1220;
-  --c-sidebar: #111b2e;
-  --c-border: #2a3a52;
-  --c-border-strong: #3a4d68;
-  --c-text: #e5eaf2;
-  --c-text-secondary: #94a3b8;
-  --c-text-muted: #64748b;
-  --c-success: #22c55e;
-  --c-danger: #ef4444;
+  --c-primary: 92 141 255;
+  --c-primary-hover: 123 164 255;
+  --c-primary-deep: 189 210 255;
+  --c-accent-soft: 23 34 61;
+  --c-surface: 16 27 51;
+  --c-inset: 11 19 40;
+  --c-app-bg: 7 13 30;
+  --c-border: 29 45 81;
+  --c-border-strong: 43 64 112;
+  --c-text: 231 237 250;
+  --c-text-secondary: 146 163 195;
+  --c-text-muted: 108 127 164;
+  --c-success: 63 217 140;
+  --c-danger: 255 107 127;
+
+  --c-app-gradient:
+    radial-gradient(560px 280px at 12% -15%, rgba(74, 124, 255, 0.24), transparent 62%),
+    radial-gradient(460px 260px at 105% 112%, rgba(38, 78, 190, 0.2), transparent 62%),
+    linear-gradient(168deg, #0b1631 0%, #070d1e 62%, #060a16 100%);
+  --c-glass-bg: rgba(24, 38, 71, 0.44);
+  --c-glass-strong-bg: rgba(24, 38, 71, 0.58);
+  --c-glass-border: rgba(110, 160, 255, 0.16);
+  --c-elevate: 0 20px 40px -26px rgba(45, 90, 220, 0.55);
+  --c-glow: 0 0 18px rgba(96, 150, 255, 0.42);
 }
+
 
 html,
 body,
@@ -49,8 +78,8 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 13px;
   font-weight: 400;
-  background-color: var(--c-app-bg);
-  color: var(--c-text);
+  background-color: rgb(var(--c-app-bg));
+  color: rgb(var(--c-text));
   -webkit-font-smoothing: antialiased;
 }
 
@@ -59,13 +88,47 @@ body {
     color 150ms ease;
 }
 
+/* The app's ground. Lives on the App root rather than on body so the gradient
+   is anchored to the shell, and every module surface above it can simply stay
+   transparent. */
+.app-ground {
+  background-color: rgb(var(--c-app-bg));
+  background-image: var(--c-app-gradient);
+}
+
+/* Frosted panels. The three properties are inseparable — a translucent
+   background without the blur just looks washed out — so they ship as one
+   class instead of three utilities that can drift apart.
+   Deliberately NOT applied to the `surface` token: that token also fills every
+   <input> and every floating popover, and neither should be see-through. */
+.glass {
+  background-color: var(--c-glass-bg);
+  border-color: var(--c-glass-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.glass-strong {
+  background-color: var(--c-glass-strong-bg);
+  border-color: var(--c-glass-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--c-elevate);
+}
+
+/* Emphasis figures only (month totals, open invoice). Reserved for numbers so
+   the glow reads as "this is the headline", never as decoration on a control —
+   buttons stay solid. No-op in light mode via --c-glow: none. */
+.num-glow {
+  text-shadow: var(--c-glow);
+}
+
 /* Thin scrollbars for the agenda grid */
 .thin-scroll::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 .thin-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--c-border-strong);
+  background-color: rgb(var(--c-border-strong));
   border-radius: 8px;
 }
 .thin-scroll::-webkit-scrollbar-track {
@@ -105,4 +168,13 @@ input[type='number'] {
 }
 .dark .tint-soft {
   background-color: var(--tint-soft-dark);
+}
+/* SVG sibling of .tint-fill — chart marks paint through `fill`, not
+   `background-color`, so the stacked-bar segments need their own rule to get
+   the same dark-mode lift the chips get. */
+.tint-svg {
+  fill: var(--tint);
+}
+.dark .tint-svg {
+  fill: var(--tint-dark);
 }

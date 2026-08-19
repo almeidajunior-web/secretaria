@@ -1,4 +1,5 @@
 import { formatCurrency } from '../../lib/currency'
+import { tintVars } from '../../lib/color'
 
 // Ranked horizontal bar list — scales better than a pie/donut past a
 // handful of categories, and reads the exact value directly instead of
@@ -27,7 +28,7 @@ export default function CategoryBreakdownChart({ data, valuesHidden }) {
             >
               {d.label}
             </span>
-            <div className="h-5 flex-1 rounded-sm bg-app-bg">
+            <div className="h-5 flex-1 rounded-sm bg-inset">
               <div
                 className="h-5 transition-[filter] group-hover:brightness-110"
                 style={{

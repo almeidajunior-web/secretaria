@@ -74,7 +74,7 @@ export default function FinanceEntryModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-primary-deep/60 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
@@ -84,7 +84,7 @@ export default function FinanceEntryModal({
         <h2 className="mb-4 text-base font-semibold text-text">Novo lançamento</h2>
 
         <div className="flex flex-col gap-4">
-          <div className="flex items-center rounded-lg border border-border bg-app-bg p-0.5">
+          <div className="flex items-center rounded-lg border border-border bg-inset p-0.5">
             {[
               { value: 'expense', label: 'Despesa' },
               { value: 'income', label: 'Receita' },

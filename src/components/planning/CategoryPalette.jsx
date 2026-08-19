@@ -14,7 +14,7 @@ export default function CategoryPalette({ categories, grid, activeBrush, onSelec
   const hours = categoryHours(grid)
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2">
+    <div className="flex flex-wrap items-center gap-2 glass border-b px-4 py-2">
       {categories.map((cat) => {
         const selected = activeBrush === cat.id
         const catHours = hours[cat.id] || 0
@@ -44,7 +44,7 @@ export default function CategoryPalette({ categories, grid, activeBrush, onSelec
               className="h-4 w-4 shrink-0 rounded-full border"
               style={{
                 backgroundColor: cat.color,
-                borderColor: selected ? 'var(--c-text)' : 'transparent',
+                borderColor: selected ? 'rgb(var(--c-text))' : 'transparent',
                 transform: selected ? 'scale(1.1)' : 'none',
               }}
             />

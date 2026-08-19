@@ -39,7 +39,7 @@ export default function ColorSwatchPicker({ value, onSelect, size = 'sm' }) {
         style={{
           backgroundColor: c,
           transform: selected ? 'scale(1.15)' : 'none',
-          borderColor: selected ? 'var(--c-text)' : 'transparent',
+          borderColor: selected ? 'rgb(var(--c-text))' : 'transparent',
           borderWidth: selected ? '2.5px' : '2px',
         }}
         className="h-5 w-5 rounded-full border"

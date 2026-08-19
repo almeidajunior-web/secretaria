@@ -41,7 +41,7 @@ export default function OverviewSection({
     ? `Realizado: ${valuesHidden ? 'R$ ••••' : formatCurrency(indicators.projection.realized)}`
     : null
   return (
-    <div className="border-b border-border bg-app-bg px-4 py-4">
+    <div className="border-b border-border px-4 py-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-[13px] font-semibold text-text">Overview</h2>
         <button
@@ -89,7 +89,7 @@ export default function OverviewSection({
       )}
 
       {accountsSummary && accountsSummary.balances.length > 0 && (
-        <div className="mb-4 rounded-xl border border-border bg-surface p-4">
+        <div className="mb-4 glass-strong rounded-xl border p-4">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">Contas</p>
           <div className="flex flex-col gap-2">
             {accountsSummary.balances.map((a) => (
@@ -183,13 +183,13 @@ export default function OverviewSection({
       )}
 
       <div className="mb-4 grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-border bg-surface p-4">
+        <div className="glass-strong rounded-xl border p-4">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
             Despesas por categoria
           </p>
           <CategoryBreakdownChart data={categoryData} valuesHidden={valuesHidden} />
         </div>
-        <div className="rounded-xl border border-border bg-surface p-4">
+        <div className="glass-strong rounded-xl border p-4">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
             Receita x despesa (6 meses)
           </p>
@@ -198,7 +198,7 @@ export default function OverviewSection({
       </div>
 
       {categoryTrendData && categoryTrendData.series.length > 0 && (
-        <div className="mb-4 rounded-xl border border-border bg-surface p-4">
+        <div className="mb-4 glass-strong rounded-xl border p-4">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
             Evolução mensal por categoria
           </p>
@@ -207,7 +207,7 @@ export default function OverviewSection({
       )}
 
       {categoryComparisonData && categoryComparisonData.length > 0 && (
-        <div className="rounded-xl border border-border bg-surface p-4">
+        <div className="glass-strong rounded-xl border p-4">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
             Comparação com a média (3 meses)
           </p>
@@ -274,7 +274,7 @@ function InvoicesPanel({ invoices, valuesHidden, onToggleInvoicePaid }) {
   const hiddenCount = others.length - shown.length
 
   return (
-    <div className="mb-4 rounded-xl border border-border bg-surface p-4">
+    <div className="mb-4 glass-strong rounded-xl border p-4">
       <div className="mb-3 flex items-center gap-2">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-primary">
           <CreditCard size={13} />
@@ -283,10 +283,10 @@ function InvoicesPanel({ invoices, valuesHidden, onToggleInvoicePaid }) {
       </div>
 
       {open && (
-        <div className="mb-3 flex items-end justify-between gap-3 rounded-lg border border-border bg-app-bg px-3 py-2.5">
+        <div className="mb-3 flex items-end justify-between gap-3 rounded-lg border border-border bg-inset px-3 py-2.5">
           <div>
             <p className="text-[11px] font-medium text-text-secondary">Fatura aberta</p>
-            <span className="text-lg font-semibold text-text">{money(open.total)}</span>
+            <span className="num-glow text-lg font-semibold text-text">{money(open.total)}</span>
           </div>
           <p className="text-right text-[11px] leading-relaxed text-text-muted">
             fecha {fmt(fromDateInput(open.closingDate), 'dd/MM')}
@@ -341,9 +341,9 @@ function InvoicesPanel({ invoices, valuesHidden, onToggleInvoicePaid }) {
 
 function IndicatorTile({ label, value, colorClass, subline }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-3">
+    <div className="glass-strong rounded-xl border p-3">
       <p className="text-[10px] font-medium text-text-secondary">{label}</p>
-      <p className={`mt-1 text-base font-semibold ${colorClass}`}>{value}</p>
+      <p className={`num-glow mt-1 text-base font-semibold ${colorClass}`}>{value}</p>
       {subline && <p className="mt-0.5 text-[10px] text-text-muted">{subline}</p>}
     </div>
   )
@@ -358,10 +358,10 @@ function deltaColorClass(change, upIsGood) {
 
 function StatTile({ label, value, change, upIsGood, hidden, subline }) {
   return (
-    <div className="flex-1 rounded-xl border border-border bg-surface p-4">
+    <div className="flex-1 glass-strong rounded-xl border p-4">
       <p className="text-[11px] font-medium text-text-secondary">{label}</p>
       <div className="mt-1 flex items-baseline gap-2">
-        <span className="text-xl font-semibold text-text">
+        <span className="num-glow text-xl font-semibold text-text">
           {hidden ? 'R$ ••••' : formatCurrency(value)}
         </span>
         {change == null ? (

@@ -344,7 +344,7 @@ function TaskSummaryBar({ tasks, statuses, doneStatusIds }) {
   ).length
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-border bg-app-bg px-4 py-1.5 text-[11px]">
+    <div className="flex flex-wrap items-center gap-3 glass border-b px-4 py-1.5 text-[11px]">
       {statuses.map((s) => (
         <span key={s.id} className="flex items-center gap-1.5 text-text-secondary">
           <span className="tint-fill h-1.5 w-1.5 rounded-full" style={tintVars(s.color)} />

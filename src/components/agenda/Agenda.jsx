@@ -257,7 +257,7 @@ export default function Agenda({
   return (
     <div className="flex h-full">
       {!calendarCollapsed && (
-        <aside className="w-[200px] shrink-0 border-r border-border bg-sidebar p-3">
+        <aside className="glass w-[200px] shrink-0 border-r p-3">
           <MiniCalendar
             currentDate={currentDate}
             onSelectDate={onChangeDate}

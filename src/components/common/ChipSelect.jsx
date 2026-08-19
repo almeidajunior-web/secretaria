@@ -38,7 +38,7 @@ export default function ChipSelect({
 
   const chipClass = selected
     ? colorless
-      ? 'border border-border bg-app-bg text-text-secondary'
+      ? 'border border-border bg-inset text-text-secondary'
       : 'tint-ink tint-soft border border-transparent'
     : 'border border-dashed border-border-strong text-text-muted'
 

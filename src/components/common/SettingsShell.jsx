@@ -14,14 +14,14 @@ export default function SettingsShell({ title = 'Configurações', sections, onC
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-primary-deep/60 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
         className="flex h-[560px] max-h-[85vh] w-[700px] max-w-full overflow-hidden rounded-xl border border-border bg-surface"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex w-[190px] shrink-0 flex-col border-r border-border bg-app-bg p-3">
+        <div className="flex w-[190px] shrink-0 flex-col border-r border-border bg-inset p-3">
           <p className="mb-3 px-1.5 text-[13px] font-semibold text-text">{title}</p>
           <nav className="flex flex-col gap-0.5">
             {sections.map((s) => {

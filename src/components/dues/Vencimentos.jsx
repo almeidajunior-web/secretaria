@@ -227,7 +227,7 @@ function SummaryBar({
   onToggleValuesHidden,
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-4 border-b border-border bg-app-bg px-4 py-1.5 text-[11px]">
+    <div className="flex flex-wrap items-center gap-4 glass border-b px-4 py-1.5 text-[11px]">
       <button
         type="button"
         onClick={onToggleValuesHidden}

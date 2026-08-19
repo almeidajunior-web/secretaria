@@ -49,6 +49,13 @@ export default function TrendChart({ data, valuesHidden }) {
   const linePath = (key) =>
     data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i)} ${yFor(d[key])}`).join(' ')
 
+  // Same trace as the line, dropped to the baseline and closed — the gradient
+  // fill below each series. Needs at least two points to enclose an area.
+  const areaPath = (key) =>
+    data.length < 2
+      ? ''
+      : `${linePath(key)} L ${xFor(data.length - 1)} ${yFor(0)} L ${xFor(0)} ${yFor(0)} Z`
+
   const handleMove = (e) => {
     const svg = svgRef.current
     if (!svg || data.length === 0) return
@@ -78,6 +85,19 @@ export default function TrendChart({ data, valuesHidden }) {
           onMouseMove={handleMove}
           onMouseLeave={() => setHoverIndex(null)}
         >
+          <defs>
+            {/* Stops read the same token the stroke uses, so the fill can
+                never drift from its line. */}
+            <linearGradient id="trend-income" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgb(var(--c-success))" stopOpacity="0.38" />
+              <stop offset="100%" stopColor="rgb(var(--c-success))" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="trend-expense" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgb(var(--c-danger))" stopOpacity="0.30" />
+              <stop offset="100%" stopColor="rgb(var(--c-danger))" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
           {/* gridlines + y ticks */}
           {ticks.map((t) => (
             <g key={t}>
@@ -124,6 +144,14 @@ export default function TrendChart({ data, valuesHidden }) {
               className="stroke-border-strong"
               strokeWidth={1}
             />
+          )}
+
+          {/* gradient areas, under the strokes */}
+          {data.length > 1 && (
+            <>
+              <path d={areaPath('expense')} fill="url(#trend-expense)" stroke="none" />
+              <path d={areaPath('income')} fill="url(#trend-income)" stroke="none" />
+            </>
           )}
 
           {/* lines */}

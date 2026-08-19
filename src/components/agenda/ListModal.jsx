@@ -13,7 +13,7 @@ export default function ListModal({ title, onClose, controls, children }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-primary-deep/60 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
@@ -46,7 +46,7 @@ export default function ListModal({ title, onClose, controls, children }) {
 
 export function Segmented({ options, value, onChange }) {
   return (
-    <div className="flex items-center rounded-lg border border-border bg-app-bg p-0.5">
+    <div className="flex items-center rounded-lg border border-border bg-inset p-0.5">
       {options.map((o) => {
         const active = o.value === value
         return (

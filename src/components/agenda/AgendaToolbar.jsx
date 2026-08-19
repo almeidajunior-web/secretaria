@@ -16,7 +16,7 @@ export default function AgendaToolbar({
   leading,
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-3 border-b border-border bg-surface px-4 py-2.5">
+    <div className="flex shrink-0 items-center gap-3 glass border-b px-4 py-2.5">
       {leading}
       <div className="flex items-center gap-1">
         <button
@@ -48,7 +48,7 @@ export default function AgendaToolbar({
       <h2 className="text-[15px] font-semibold text-text">{title}</h2>
 
       <div className="ml-auto flex items-center gap-3">
-        <div className="flex items-center rounded-lg border border-border bg-app-bg p-0.5">
+        <div className="flex items-center rounded-lg border border-border bg-inset p-0.5">
           {VIEWS.map((v) => {
             const active = v.value === view
             return (

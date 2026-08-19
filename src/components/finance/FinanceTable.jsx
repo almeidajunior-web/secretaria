@@ -116,7 +116,7 @@ export default function FinanceTable({
   return (
     <div className="thin-scroll h-full overflow-auto">
       <table className="w-full border-collapse text-[12px]">
-        <thead className="sticky top-0 z-[2] bg-app-bg">
+        <thead className="glass sticky top-0 z-[2]">
           <tr className="border-b border-border text-left text-[11px] text-text-muted">
             {selectMode && <th className="w-8 px-2 py-2" />}
             <th className="px-2 py-2">

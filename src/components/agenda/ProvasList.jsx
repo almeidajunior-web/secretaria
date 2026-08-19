@@ -80,7 +80,7 @@ export default function ProvasList({ events, onEdit, onDelete, onClose }) {
         </p>
       ) : (
         <table className="w-full text-left text-[13px]">
-          <thead className="sticky top-0 bg-app-bg text-[11px] uppercase tracking-wide text-text-muted">
+          <thead className="sticky top-0 bg-inset text-[11px] uppercase tracking-wide text-text-muted">
             <tr>
               <th className="px-5 py-2 font-semibold">Título</th>
               <th className="px-3 py-2 font-semibold">Disciplina</th>
@@ -93,7 +93,7 @@ export default function ProvasList({ events, onEdit, onDelete, onClose }) {
             {groupBy
               ? groups.map((g) => (
                   <Fragment key={g.discipline}>
-                    <tr className="bg-app-bg/60">
+                    <tr className="bg-inset/60">
                       <td
                         colSpan={5}
                         className="px-5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-secondary"

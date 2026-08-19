@@ -35,7 +35,7 @@ export default function VencimentosListView({
         <div className="flex flex-col">
           {groups.map((group) => (
             <div key={group.key}>
-              <div className="sticky top-0 z-[1] bg-app-bg px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+              <div className="glass sticky top-0 z-[1] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
                 {group.label} <span className="font-normal normal-case">({group.bills.length})</span>
               </div>
               {group.bills.map((bill) => (

@@ -10,7 +10,7 @@ export default function MonthView({ currentDate, events, onSelectDay }) {
   const now = new Date()
 
   return (
-    <div className="flex h-full flex-col bg-surface">
+    <div className="flex h-full flex-col">
       <div className="grid grid-cols-7 border-b border-border">
         {WEEKDAYS_SHORT_ORDERED.map((d) => (
           <div

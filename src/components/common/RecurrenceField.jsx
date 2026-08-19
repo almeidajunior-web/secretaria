@@ -30,7 +30,7 @@ export default function RecurrenceField({
       </select>
 
       {value === 'custom' && (
-        <div className="mt-1 flex flex-col gap-3 rounded-lg border border-border bg-app-bg p-3">
+        <div className="mt-1 flex flex-col gap-3 rounded-lg border border-border bg-inset p-3">
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] font-medium text-text-secondary">
               Repetir nos dias

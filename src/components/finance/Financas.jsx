@@ -334,7 +334,7 @@ export default function Financas({
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
               Lançamentos recentes
             </p>
-            <div className="rounded-xl border border-border bg-surface">
+            <div className="glass-strong rounded-xl border">
               <FinanceTable {...tableProps} entries={sortedEntries.slice(0, 8)} />
             </div>
           </div>
