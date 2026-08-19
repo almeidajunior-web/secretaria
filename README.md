@@ -107,11 +107,16 @@ formulário).
   compartilhada, e algumas delas (azul-marinho, cinza) somem contra o fundo
   escuro quando usadas como texto de uma pílula pequena
 - No tema escuro essas cores passam por um ajuste automático em HSL antes de
-  virarem texto ou ponto colorido: sobe um piso de luminosidade e a saturação
-  fica limitada nos dois extremos. O matiz não muda, então a cor continua sendo
-  reconhecível como "aquela" cor — só legível (`darkInkColor`/`tintVars` em
+  virarem texto ou ponto colorido (`darkInkColor`/`tintVars` em
   `src/lib/color.js`, aplicadas pelas classes `.tint-ink`/`.tint-fill`/
-  `.tint-soft` em `index.css`)
+  `.tint-soft` em `index.css`). O matiz nunca muda, então a cor continua sendo
+  reconhecível como "aquela" cor
+- O ajuste **mira uma razão de contraste, não uma luminosidade fixa**: a
+  luminosidade sobe só até a cor passar da barra de leitura, e para. Um piso
+  fixo teria que ser calibrado para o pior matiz da paleta, e todos os outros
+  o ultrapassariam — era o que deixava as dez cores no mesmo tom e com cara de
+  pastel único. Há um piso moderado por baixo (L52) apenas para nenhuma cor
+  afundar: num fundo escuro, uma cor escura recua em vez de brilhar
 - No tema claro nada muda: a cor é renderizada exatamente como está cadastrada
   (com isso, uma cor cinza-clara escolhida por você pode ficar em ~4,5:1 no
   claro — é o preço de mostrar a cor verdadeira, e foi uma escolha consciente)

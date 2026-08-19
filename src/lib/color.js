@@ -47,7 +47,9 @@ export function hslToHex(h, s, l) {
   return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`.toUpperCase()
 }
 
-const DARK_FILL_S_CAP = 68 // reins in saturated defaults (red/purple/olive/etc sit at 71-95%)
+const DARK_FILL_S_CAP = 78 // reins in saturated defaults (red/purple/olive/etc sit at
+// 71-95%) without flattening them — large blocks were explicitly asked to read
+// calmer than the raw palette, so this stays a real cap, just a looser one
 const DARK_FILL_S_FLOOR = 20 // gives near-gray colors (default gray sits at 9%) enough chroma
 // to read as an intentional color instead of blending with the app's own
 // neutral chrome (--c-border/--c-text-muted are also low-saturation blue-grays)
@@ -76,25 +78,74 @@ export function fillColorForTheme(hex, isDark) {
   return hslToHex(h, s2, l2)
 }
 
-const DARK_INK_S_CAP = 70 // same intent as the fill cap, a touch looser: small
-// glyphs carry less area, so a vivid hue reads as accent rather than as noise
-const DARK_INK_S_FLOOR = 25 // the default gray (#6B7280, S 9%) needs chroma or
+// Relative luminance (WCAG) of an [r,g,b] triple, and the contrast ratio
+// between two of them. Needed because the ink treatment below targets a
+// contrast number instead of a fixed lightness.
+function relLuminance([r, g, b]) {
+  const f = (v) => {
+    const c = v / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+}
+
+function contrast(a, b) {
+  const [hi, lo] = [relLuminance(a), relLuminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '')
+  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16))
+}
+
+// The lightest surface a chip actually lands on in dark mode: its own
+// low-alpha tint composited over the glass card, which itself sits on the
+// gradient ground. Measured rather than guessed, and deliberately a little
+// lighter than any real backdrop so the result holds on all of them.
+const DARK_INK_REF_BG = [30, 42, 70]
+const DARK_INK_TARGET = 4.6 // a hair over the 4.5:1 reading bar
+
+const DARK_INK_S_FLOOR = 32 // the default gray (#6B7280, S 9%) needs chroma or
 // it lands on the same blue-gray as --c-text-secondary and stops reading as a
 // deliberate tag color
-const DARK_INK_L_FLOOR = 66 // text needs a higher floor than the fill's 50: a
-// small glyph at L50 sits near 3:1 against --c-surface (#1e293b), under the
-// 4.5:1 reading bar, while L66 clears it
-const DARK_INK_L_CEIL = 80 // keeps a very light custom pick from washing out
+const DARK_INK_S_CAP = 90 // only reins in a genuinely neon custom pick; the
+// stock palette (S 64-95) now keeps essentially all of its chroma
+const DARK_INK_L_FLOOR = 52 // contrast alone would let green/cyan/olive settle
+// around L35: legible, but a dark color on a dark ground reads as recessed
+// rather than lit. This floor is what makes them look alive; it never lowers a
+// color, so it cannot break the contrast the search below guarantees
+const DARK_INK_L_CEIL = 82 // stops the search before a hue washes out to white
 
 // Returns the color to paint a data color as TEXT (or as a small dot) with in
-// dark mode. Same clamp as fillColorForTheme, different floors — see the
-// constants above for why text can't reuse the fill's numbers.
+// dark mode.
+//
+// Lightness is raised only until the color clears the reading bar, then the
+// search stops. A fixed floor (this used to sit at L66) has to be set for the
+// worst hue in the palette, so every other hue overshoots it: green landed at
+// 10.9:1 and olive at 11.5:1 against a 4.5:1 target, and all ten colors came
+// out at the same lightness — which is precisely what made them read as one
+// washed-out pastel family instead of ten distinct colors. Targeting the
+// contrast number instead lets a green stay green and only lifts navy, the
+// one color that genuinely cannot be read as-is.
+const inkCache = new Map()
+
 export function darkInkColor(hex) {
   if (!hex) return hex
+  const cached = inkCache.get(hex)
+  if (cached) return cached
+
   const [h, s, l] = hexToHsl(hex)
   const s2 = Math.min(Math.max(s, DARK_INK_S_FLOOR), DARK_INK_S_CAP)
-  const l2 = Math.min(Math.max(l, DARK_INK_L_FLOOR), DARK_INK_L_CEIL)
-  return hslToHex(h, s2, l2)
+  let l2 = Math.max(l, DARK_INK_L_FLOOR)
+  let out = hslToHex(h, s2, l2)
+  while (l2 < DARK_INK_L_CEIL && contrast(hexToRgb(out), DARK_INK_REF_BG) < DARK_INK_TARGET) {
+    l2 += 1
+    out = hslToHex(h, s2, l2)
+  }
+
+  inkCache.set(hex, out)
+  return out
 }
 
 // Inline style carrying BOTH theme variants of a data color, consumed by the
