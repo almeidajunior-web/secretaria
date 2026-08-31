@@ -163,6 +163,7 @@ export default function App() {
         onSelectModule={setActiveModule}
         moduleOrder={modulesConfigApi.order}
         hiddenModules={modulesConfigApi.hidden}
+        moduleGroups={modulesConfigApi.groups}
         badges={{ todos: overdueOrTodayCount, vencimentos: overdueOrTodayBillsCount }}
         onOpenSettings={() => setModulesSettingsOpen(true)}
       />
@@ -180,6 +181,11 @@ export default function App() {
               onCreateTag={tagsApi.addTag}
               onDeleteTag={handleDeleteTag}
               isDark={isDark}
+              tasks={tasksApi.tasks}
+              doneStatusIds={doneStatusIds}
+              taskPriorities={taskPrioritiesApi.priorities}
+              bills={billsApi.bills}
+              billCategories={billCategoriesApi.categories}
             />
           ) : activeModule === 'planning' ? (
             <Planejamento {...planningApi} isDark={isDark} />
@@ -289,8 +295,13 @@ export default function App() {
         <ModulesSettingsModal
           order={modulesConfigApi.order}
           hidden={modulesConfigApi.hidden}
-          onReorder={modulesConfigApi.reorderModules}
+          groups={modulesConfigApi.groups}
           onToggleVisibility={modulesConfigApi.toggleModuleVisibility}
+          onMoveModule={modulesConfigApi.moveModule}
+          onMoveGroup={modulesConfigApi.moveGroup}
+          onCreateGroup={modulesConfigApi.createGroup}
+          onUpdateGroup={modulesConfigApi.updateGroup}
+          onDeleteGroup={modulesConfigApi.deleteGroup}
           theme={theme}
           onToggleTheme={toggleTheme}
           onClose={() => setModulesSettingsOpen(false)}

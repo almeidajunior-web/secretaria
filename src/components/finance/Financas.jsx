@@ -123,6 +123,8 @@ export default function Financas({
     })
   }
 
+  const clearFilters = () => setFilters(DEFAULT_FILTERS)
+
   const toggleSelectMode = () => {
     setSelectMode((v) => !v)
     setSelectedIds(new Set())
@@ -297,8 +299,14 @@ export default function Financas({
       <FinanceToolbar
         tab={tab}
         onChangeTab={setTab}
+        expenseCategories={expenseCategories}
+        incomeCategories={incomeCategories}
         paymentMethods={paymentMethods}
         accounts={accounts}
+        tags={tags}
+        filters={filters}
+        onToggleFilter={toggleFilter}
+        onClearFilters={clearFilters}
         onManageClick={() => setSettingsOpen(true)}
         selectMode={selectMode}
         onToggleSelectMode={toggleSelectMode}

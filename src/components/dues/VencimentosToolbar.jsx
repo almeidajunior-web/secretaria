@@ -17,7 +17,6 @@ import { tintVars } from '../../lib/color'
 const SORT_FIELDS = [
   { field: 'dueDate', label: 'Vencimento' },
   { field: 'amount', label: 'Valor' },
-  { field: 'category', label: 'Classificação' },
 ]
 
 // Sort chips, filter popover and the "Ocultar pagas" switch. Unlike
@@ -62,7 +61,7 @@ export default function VencimentosToolbar({
   }
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-3 glass border-b px-4 py-2.5">
+    <div className="relative z-30 flex shrink-0 flex-wrap items-center gap-3 glass border-b px-4 py-2.5">
       <div className="flex items-center gap-1.5">
         <span className="text-[11px] text-text-muted">Ordenar:</span>
         {SORT_FIELDS.map(({ field, label }) => {

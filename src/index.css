@@ -62,7 +62,12 @@
   --c-glass-bg: rgba(24, 38, 71, 0.44);
   --c-glass-strong-bg: rgba(24, 38, 71, 0.58);
   --c-glass-border: rgba(110, 160, 255, 0.16);
-  --c-elevate: 0 20px 40px -26px rgba(45, 90, 220, 0.55);
+  /* No shadow in dark mode: .glass-strong's only consumers are the Tarefas
+     Kanban card and the Finanças "caixinhas" (OverviewSection + the Resumo
+     card), and the drop shadow read as heavy/muddy against the gradient
+     ground. Light mode keeps its shadow (:root, above) — this override is
+     scoped to .dark on purpose. */
+  --c-elevate: none;
   --c-glow: 0 0 18px rgba(96, 150, 255, 0.42);
 }
 

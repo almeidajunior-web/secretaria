@@ -81,7 +81,7 @@ export const HOUR_HEIGHT = 48 // px per hour slot
 // and shows every hour of the range at once — so it reads fine on a shorter
 // row than the Agenda needs. Kept separate from HOUR_HEIGHT precisely so
 // shrinking one grid never shrinks the other.
-export const PLANNING_HOUR_HEIGHT = 42
+export const PLANNING_HOUR_HEIGHT = 34
 
 export const CLASSIFICATIONS = [
   { value: 'event', label: 'Evento' },

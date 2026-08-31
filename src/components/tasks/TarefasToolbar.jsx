@@ -64,7 +64,7 @@ export default function TarefasToolbar({
   }
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-3 glass border-b px-4 py-2.5">
+    <div className="relative z-30 flex shrink-0 flex-wrap items-center gap-3 glass border-b px-4 py-2.5">
       <div className="flex items-center rounded-lg border border-border bg-inset p-0.5">
         {[
           { value: 'list', label: 'Lista' },

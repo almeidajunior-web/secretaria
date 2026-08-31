@@ -26,6 +26,7 @@ import RecurrenceScopeDialog from './RecurrenceScopeDialog'
 import ProvasList from './ProvasList'
 import EventListModal from './EventListModal'
 import MiniCalendar from '../layout/MiniCalendar'
+import DaySummary from './DaySummary'
 import ConfirmDialog from '../common/ConfirmDialog'
 import UndoToast from '../common/UndoToast'
 
@@ -68,6 +69,11 @@ export default function Agenda({
   onCreateTag,
   onDeleteTag,
   isDark,
+  tasks,
+  doneStatusIds,
+  taskPriorities,
+  bills,
+  billCategories,
 }) {
   // Persists across module navigation and reloads, like the other modules'
   // view/filter preferences.
@@ -257,12 +263,22 @@ export default function Agenda({
   return (
     <div className="flex h-full">
       {!calendarCollapsed && (
-        <aside className="glass w-[200px] shrink-0 border-r p-3">
+        <aside className="glass flex w-[200px] shrink-0 flex-col border-r p-3">
           <MiniCalendar
             currentDate={currentDate}
             onSelectDate={onChangeDate}
             headerTrailing={collapseToggle}
           />
+          <div className="mt-3 min-h-0 flex-1 overflow-auto border-t border-border pt-3">
+            <DaySummary
+              date={currentDate}
+              tasks={tasks}
+              doneStatusIds={doneStatusIds}
+              priorities={taskPriorities}
+              bills={bills}
+              categories={billCategories}
+            />
+          </div>
         </aside>
       )}
 

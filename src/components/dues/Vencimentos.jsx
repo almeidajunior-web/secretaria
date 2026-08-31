@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { Eye, EyeOff } from 'lucide-react'
-import { buildBillComparator } from '../../lib/billSort'
+import { DEFAULT_SORT_CHAIN, buildBillComparator, sanitizeSortChain } from '../../lib/billSort'
 import { groupBillsByDueDate } from '../../lib/billGroups'
 import { formatCurrency } from '../../lib/currency'
 import { useBillValuesHidden } from '../../hooks/useBillValuesHidden'
@@ -39,9 +39,11 @@ export default function Vencimentos({
   reorderCategories,
 }) {
   // View/sort/filter preferences persist across module navigation and reloads.
-  const [sortChain, setSortChain] = usePersistentState('secretaria:billsSortChain', [
-    { field: 'dueDate', direction: 'asc' },
-  ])
+  const [sortChain, setSortChain] = usePersistentState(
+    'secretaria:billsSortChain',
+    DEFAULT_SORT_CHAIN,
+    sanitizeSortChain
+  )
   const [filters, setFilters] = usePersistentState('secretaria:billsFilters', DEFAULT_FILTERS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -84,14 +86,7 @@ export default function Vencimentos({
     })
   }
 
-  const categoryLabelById = useMemo(
-    () => Object.fromEntries(categories.map((c) => [c.id, c.label])),
-    [categories]
-  )
-  const comparator = useMemo(
-    () => buildBillComparator(sortChain, categoryLabelById),
-    [sortChain, categoryLabelById]
-  )
+  const comparator = useMemo(() => buildBillComparator(sortChain), [sortChain])
 
   const categoryFilteredBills = useMemo(
     () => bills.filter((b) => !filters.categoryIds.length || filters.categoryIds.includes(b.categoryId)),

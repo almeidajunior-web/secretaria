@@ -229,6 +229,14 @@ export function loadModulesConfig() {
     return {
       order: Array.isArray(parsed.order) ? parsed.order : [],
       hidden: Array.isArray(parsed.hidden) ? parsed.hidden : [],
+      // Groups: user-defined topbar drawers. Absent entirely on any config
+      // saved before this feature shipped — defaulting to [] there means
+      // every existing module stays loose in the topbar exactly as before.
+      groups: Array.isArray(parsed.groups)
+        ? parsed.groups.filter(
+            (g) => g && typeof g.id === 'string' && Array.isArray(g.moduleIds)
+          )
+        : [],
     }
   } catch {
     return null

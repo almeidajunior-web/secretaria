@@ -54,7 +54,7 @@ export default function OverviewSection({
         </button>
       </div>
 
-      <div className="mb-4 flex gap-3">
+      <div className="mb-4 flex gap-2.5">
         <StatTile
           label="Receitas do mês"
           value={currentTotals.income}
@@ -144,7 +144,7 @@ export default function OverviewSection({
       )}
 
       {indicators && (
-        <div className="mb-4 grid grid-cols-3 gap-3">
+        <div className="mb-4 grid grid-cols-3 gap-2.5">
           <IndicatorTile
             label="Taxa de poupança"
             value={indicators.savingsRate == null ? '—' : `${indicators.savingsRate.toFixed(0)}%`}
@@ -341,10 +341,10 @@ function InvoicesPanel({ invoices, valuesHidden, onToggleInvoicePaid }) {
 
 function IndicatorTile({ label, value, colorClass, subline }) {
   return (
-    <div className="glass-strong rounded-xl border p-3">
-      <p className="text-[10px] font-medium text-text-secondary">{label}</p>
-      <p className={`num-glow mt-1 text-base font-semibold ${colorClass}`}>{value}</p>
-      {subline && <p className="mt-0.5 text-[10px] text-text-muted">{subline}</p>}
+    <div className="glass-strong rounded-xl border p-2.5">
+      <p className="text-[9px] font-medium text-text-secondary">{label}</p>
+      <p className={`num-glow mt-1 text-[13px] font-semibold ${colorClass}`}>{value}</p>
+      {subline && <p className="mt-0.5 text-[9px] text-text-muted">{subline}</p>}
     </div>
   )
 }
@@ -358,23 +358,23 @@ function deltaColorClass(change, upIsGood) {
 
 function StatTile({ label, value, change, upIsGood, hidden, subline }) {
   return (
-    <div className="flex-1 glass-strong rounded-xl border p-4">
-      <p className="text-[11px] font-medium text-text-secondary">{label}</p>
-      <div className="mt-1 flex items-baseline gap-2">
-        <span className="num-glow text-xl font-semibold text-text">
+    <div className="flex-1 glass-strong rounded-xl border p-3">
+      <p className="text-[10px] font-medium text-text-secondary">{label}</p>
+      <div className="mt-1 flex items-baseline gap-1.5">
+        <span className="num-glow text-base font-semibold text-text">
           {hidden ? 'R$ ••••' : formatCurrency(value)}
         </span>
         {change == null ? (
-          <span className="text-[11px] text-text-muted">novo</span>
+          <span className="text-[10px] text-text-muted">novo</span>
         ) : (
-          <span className={`flex items-center gap-0.5 text-[11px] font-medium ${deltaColorClass(change, upIsGood)}`}>
-            {change > 0 ? <ArrowUp size={11} /> : change < 0 ? <ArrowDown size={11} /> : null}
+          <span className={`flex items-center gap-0.5 text-[10px] font-medium ${deltaColorClass(change, upIsGood)}`}>
+            {change > 0 ? <ArrowUp size={10} /> : change < 0 ? <ArrowDown size={10} /> : null}
             {Math.abs(change).toFixed(0)}%
           </span>
         )}
       </div>
-      <p className="mt-0.5 text-[10px] text-text-muted">vs. mês anterior</p>
-      {subline && <p className="mt-1 text-[10px] text-text-muted">{subline}</p>}
+      <p className="mt-0.5 text-[9px] text-text-muted">vs. mês anterior</p>
+      {subline && <p className="mt-1 text-[9px] text-text-muted">{subline}</p>}
     </div>
   )
 }
