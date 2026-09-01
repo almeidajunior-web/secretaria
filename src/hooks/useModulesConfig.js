@@ -18,8 +18,11 @@ const groupIdOf = (entry) => entry.slice('group:'.length)
 function repairConfig(stored) {
   const order = stored?.order?.length ? [...stored.order] : [...DEFAULT_ORDER]
   const hidden = stored?.hidden || []
+  // Rebuilt field by field rather than spread, so a stray key from an older
+  // shape (groups used to carry a `color`) doesn't survive the round trip.
   const groups = (stored?.groups || []).map((g) => ({
-    ...g,
+    id: g.id,
+    label: g.label,
     moduleIds: g.moduleIds.filter((id) => ALL_MODULE_IDS.has(id)),
   }))
 
@@ -112,11 +115,11 @@ export function useModulesConfig() {
       return { ...prev, order }
     })
 
-  const createGroup = (label, color) => {
+  const createGroup = (label) => {
     const id = `group_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
     setConfig((prev) => ({
       ...prev,
-      groups: [...prev.groups, { id, label, color, moduleIds: [] }],
+      groups: [...prev.groups, { id, label, moduleIds: [] }],
       order: [...prev.order, groupSentinel(id)],
     }))
     return id

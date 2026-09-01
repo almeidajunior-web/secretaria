@@ -15,10 +15,8 @@ import {
   Moon,
 } from 'lucide-react'
 import { MODULE_DEFS } from '../../data/modules'
-import { EVENT_COLORS } from '../../constants'
 import { downloadBackup, parseBackupFile, restoreBackupData } from '../../lib/backup'
 import ConfirmDialog from '../common/ConfirmDialog'
-import ColorSwatchPicker from '../common/ColorSwatchPicker'
 import SettingsShell from '../common/SettingsShell'
 
 const inputClass =
@@ -199,7 +197,7 @@ function ModulesPanel({
 
   const confirmCreateGroup = () => {
     const l = newGroupLabel.trim()
-    if (l) onCreateGroup(l, EVENT_COLORS[groups.length % EVENT_COLORS.length])
+    if (l) onCreateGroup(l)
     setNewGroupLabel('')
     setCreatingGroup(false)
   }
@@ -238,7 +236,6 @@ function ModulesPanel({
                 onDropBefore={(e) => dropAtTopLevel(e, entry)}
                 onToggleVisibility={onToggleVisibility}
                 onRename={(label) => onUpdateGroup(group.id, { label })}
-                onRecolor={(color) => onUpdateGroup(group.id, { color })}
                 onDeleteClick={() => setPendingDeleteGroup(group)}
                 onMoveModuleIn={(moduleId, beforeModuleId) =>
                   onMoveModule(moduleId, group.id, beforeModuleId)
@@ -364,7 +361,6 @@ function GroupBox({
   onDropBefore,
   onToggleVisibility,
   onRename,
-  onRecolor,
   onDeleteClick,
   onMoveModuleIn,
 }) {
@@ -402,7 +398,6 @@ function GroupBox({
         >
           <GripVertical size={14} />
         </span>
-        <ColorSwatchPicker value={group.color} onSelect={onRecolor} />
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}

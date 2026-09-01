@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronDown, Eye, EyeOff, Settings } from 'lucide-react'
+import { ChevronDown, Eye, EyeOff, Folder, Settings } from 'lucide-react'
 import { MODULE_DEFS } from '../../data/modules'
-import { tintVars } from '../../lib/color'
 import Logo from './Logo'
 
 const moduleById = Object.fromEntries(MODULE_DEFS.map((m) => [m.id, m]))
@@ -17,7 +16,7 @@ const moduleById = Object.fromEntries(MODULE_DEFS.map((m) => [m.id, m]))
 // today count — rendered as a subtle outlined counter after the label.
 // `moduleOrder` (from useModulesConfig) is the literal top-level sequence —
 // each entry is either a bare module id or a `'group:<id>'` sentinel — and
-// `moduleGroups` supplies each group's own label/color/members. A module the
+// `moduleGroups` supplies each group's own label and members. A module the
 // user never grouped renders exactly as before; grouping is opt-in, edited
 // from the Configurações modal the gear button opens.
 export default function Topbar({
@@ -202,7 +201,7 @@ function GroupNavItem({ group, members, activeModule, badges, onSelect }) {
             : 'text-text-secondary hover:bg-accent-soft/60 hover:text-text',
         ].join(' ')}
       >
-        <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(group.color)} />
+        <Folder size={16} className={active ? 'text-primary' : 'text-text-muted'} />
         {group.label}
         <NavBadge count={badgeTotal} />
         <ChevronDown size={13} className={active ? 'text-primary' : 'text-text-muted'} />

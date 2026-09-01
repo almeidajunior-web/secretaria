@@ -107,7 +107,7 @@ export default function PlanningGrid({
         className="select-none overflow-hidden rounded-md border-l border-t border-border"
         style={{
           display: 'grid',
-          gridTemplateColumns: `35px repeat(7, minmax(45px, 1fr))`,
+          gridTemplateColumns: `44px repeat(7, minmax(56px, 1fr))`,
         }}
       >
         <div className="border-b border-r border-border" />
@@ -123,7 +123,7 @@ export default function PlanningGrid({
         {hours.map((h) => (
           <Fragment key={h}>
             <div
-              className="flex items-start justify-end border-b border-r border-border pr-1 pt-0.5 text-[9px] text-text-muted"
+              className="flex items-start justify-end border-b border-r border-border pr-1.5 pt-0.5 text-[10px] text-text-muted"
               style={{ height: PLANNING_HOUR_HEIGHT }}
             >
               {String(h).padStart(2, '0')}H

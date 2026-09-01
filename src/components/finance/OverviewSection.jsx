@@ -54,7 +54,7 @@ export default function OverviewSection({
         </button>
       </div>
 
-      <div className="mb-4 flex gap-2.5">
+      <div className="mb-4 flex gap-3">
         <StatTile
           label="Receitas do mês"
           value={currentTotals.income}
@@ -144,7 +144,7 @@ export default function OverviewSection({
       )}
 
       {indicators && (
-        <div className="mb-4 grid grid-cols-3 gap-2.5">
+        <div className="mb-4 grid grid-cols-3 gap-3">
           <IndicatorTile
             label="Taxa de poupança"
             value={indicators.savingsRate == null ? '—' : `${indicators.savingsRate.toFixed(0)}%`}
@@ -341,9 +341,9 @@ function InvoicesPanel({ invoices, valuesHidden, onToggleInvoicePaid }) {
 
 function IndicatorTile({ label, value, colorClass, subline }) {
   return (
-    <div className="glass-strong rounded-xl border p-2.5">
+    <div className="glass-strong rounded-xl border px-3 py-2">
       <p className="text-[9px] font-medium text-text-secondary">{label}</p>
-      <p className={`num-glow mt-1 text-[13px] font-semibold ${colorClass}`}>{value}</p>
+      <p className={`num-glow mt-0.5 text-[13px] font-semibold ${colorClass}`}>{value}</p>
       {subline && <p className="mt-0.5 text-[9px] text-text-muted">{subline}</p>}
     </div>
   )
@@ -358,9 +358,9 @@ function deltaColorClass(change, upIsGood) {
 
 function StatTile({ label, value, change, upIsGood, hidden, subline }) {
   return (
-    <div className="flex-1 glass-strong rounded-xl border p-3">
+    <div className="flex-1 glass-strong rounded-xl border px-4 py-2.5">
       <p className="text-[10px] font-medium text-text-secondary">{label}</p>
-      <div className="mt-1 flex items-baseline gap-1.5">
+      <div className="mt-0.5 flex items-baseline gap-1.5">
         <span className="num-glow text-base font-semibold text-text">
           {hidden ? 'R$ ••••' : formatCurrency(value)}
         </span>
