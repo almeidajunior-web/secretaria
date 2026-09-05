@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Circle, CircleCheck, Plus, Trash2 } from 'lucide-react'
 import DescriptionPopover from '../common/DescriptionPopover'
+import AmountInput from '../common/AmountInput'
 import ChipSelect from '../common/ChipSelect'
 import InlineDate from '../common/InlineDate'
 import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
@@ -124,13 +125,13 @@ function BillRow({
 
       <div className="flex shrink-0 items-center gap-0.5">
         <span className="text-[11px] text-text-muted">R$</span>
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          value={bill.amount ?? ''}
-          onChange={(e) => onUpdateBill({ ...bill, amount: e.target.value === '' ? 0 : Number(e.target.value) })}
-          className="w-[90px] rounded-md border border-border bg-transparent px-1.5 py-1 text-[11px] outline-none"
+        <AmountInput
+          value={bill.amount ?? null}
+          onCommit={(n) => onUpdateBill({ ...bill, amount: n })}
+          className={[
+            'w-[90px] rounded-md border border-transparent bg-transparent px-1 py-0.5 text-right text-[12px] font-medium tabular-nums outline-none hover:border-border focus:border-primary',
+            bill.paid ? 'text-text-muted' : 'text-text',
+          ].join(' ')}
         />
       </div>
 
@@ -172,22 +173,24 @@ function BillRow({
 
 function QuickAddRow({ categories, onQuickAdd }) {
   const [title, setTitle] = useState('')
-  const [amount, setAmount] = useState('')
+  const [amount, setAmount] = useState(null)
   const [dueDate, setDueDate] = useState('')
   const [categoryId, setCategoryId] = useState('')
 
   const canAdd = title.trim() && dueDate
 
-  const commit = () => {
+  // `amountOverride` lets Enter inside the masked value field commit the row
+  // with what was just typed, without waiting for that state to land.
+  const commit = (amountOverride) => {
     if (!canAdd) return
     onQuickAdd({
       title: title.trim(),
-      amount: amount === '' ? 0 : Number(amount),
+      amount: (amountOverride !== undefined ? amountOverride : amount) ?? 0,
       dueDate,
       categoryId: categoryId || null,
     })
     setTitle('')
-    setAmount('')
+    setAmount(null)
     setDueDate('')
     setCategoryId('')
   }
@@ -204,15 +207,11 @@ function QuickAddRow({ categories, onQuickAdd }) {
       />
       <div className="flex shrink-0 items-center gap-0.5">
         <span className="text-[11px] text-text-muted">R$</span>
-        <input
-          type="number"
-          step="0.01"
-          min="0"
+        <AmountInput
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && commit()}
-          placeholder="0,00"
-          className="w-[90px] rounded-md border border-border-strong bg-surface px-1.5 py-1 text-[11px] text-text outline-none focus:border-primary"
+          onCommit={setAmount}
+          onEnter={(n) => commit(n)}
+          className="w-[90px] rounded-md border border-border-strong bg-surface px-1.5 py-1 text-right text-[11px] tabular-nums text-text outline-none focus:border-primary"
         />
       </div>
       <ChipSelect
@@ -229,7 +228,7 @@ function QuickAddRow({ categories, onQuickAdd }) {
       />
       <button
         type="button"
-        onClick={commit}
+        onClick={() => commit()}
         disabled={!canAdd}
         className="rounded-md bg-primary px-3 py-1 text-[11px] font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
       >

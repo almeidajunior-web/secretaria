@@ -13,7 +13,6 @@ export default function ShoppingItemModal({ categories, priorities, onSave, onCl
   const [title, setTitle] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [priorityId, setPriorityId] = useState('')
-  const [description, setDescription] = useState('')
 
   const canSave = title.trim().length > 0
 
@@ -23,7 +22,6 @@ export default function ShoppingItemModal({ categories, priorities, onSave, onCl
       title: title.trim(),
       categoryId: categoryId || null,
       priorityId: priorityId || null,
-      description: description.trim(),
     })
   }
 
@@ -80,16 +78,6 @@ export default function ShoppingItemModal({ categories, priorities, onSave, onCl
               </select>
             </Field>
           </div>
-
-          <Field label="Descrição (opcional)">
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descrição breve…"
-              rows={2}
-              className={`${inputClass} resize-none`}
-            />
-          </Field>
         </div>
 
         <div className="mt-5 flex justify-end gap-2">

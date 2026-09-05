@@ -108,6 +108,10 @@ export default function PlanningGrid({
         style={{
           display: 'grid',
           gridTemplateColumns: `44px repeat(7, minmax(56px, 1fr))`,
+          // The grid would otherwise stretch to whatever width the module
+          // has; capping it is what actually narrows the day columns, since
+          // they're 1fr and the minmax floor never binds on a wide screen.
+          maxWidth: '80%',
         }}
       >
         <div className="border-b border-r border-border" />

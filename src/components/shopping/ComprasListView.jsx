@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Circle, CircleCheck, Plus, Trash2 } from 'lucide-react'
-import DescriptionPopover from '../common/DescriptionPopover'
 import ChipSelect from '../common/ChipSelect'
 
 // Flat or grouped (by Classificação) item list, every field editable
 // directly in the row — no modal in this module at all, everything is
-// either inline or a small popover (Descrição). A quick-add row at the
-// bottom creates new items without any extra step.
+// inline. A quick-add row at the bottom creates new items without any
+// extra step.
 export default function ComprasListView({
   groups,
   categories,
@@ -119,7 +118,6 @@ function ItemRow({
         ].join(' ')}
       />
 
-      <DescriptionPopover item={item} onUpdateItem={onUpdateItem} />
 
       <ChipSelect
         value={item.categoryId || null}

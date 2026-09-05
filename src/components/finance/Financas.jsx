@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { format, subMonths } from 'date-fns'
 import { usePersistentState } from '../../hooks/usePersistentState'
 import { useFinanceValuesHidden } from '../../hooks/useFinanceValuesHidden'
-import { buildFinanceComparator } from '../../lib/financeSort'
+import { buildFinanceComparator, compareByRecordOrder } from '../../lib/financeSort'
 import { splitIntoInstallments, creditCardInvoices } from '../../lib/creditCard'
 import {
   monthTotals,
@@ -143,13 +143,30 @@ export default function Financas({
     () => Object.fromEntries([...expenseCategories, ...incomeCategories].map((c) => [c.id, c.label])),
     [expenseCategories, incomeCategories]
   )
+  // Index into the stored collection, which useFinanceEntries only ever
+  // appends to — so this is the order the lançamentos were recorded in, and
+  // it's what breaks ties between two entries on the same day.
+  const entryOrderById = useMemo(() => {
+    const m = new Map()
+    entries.forEach((e, i) => m.set(e.id, i))
+    return m
+  }, [entries])
+
   const comparator = useMemo(
-    () => buildFinanceComparator(sortChain, categoryLabelById),
-    [sortChain, categoryLabelById]
+    () => buildFinanceComparator(sortChain, categoryLabelById, entryOrderById),
+    [sortChain, categoryLabelById, entryOrderById]
   )
 
   const visibleEntries = useMemo(() => filterEntries(entries, filters), [entries, filters])
   const sortedEntries = useMemo(() => [...visibleEntries].sort(comparator), [visibleEntries, comparator])
+
+  // "Lançamentos recentes" means the newest ones, so it takes the tail of the
+  // canonical record order rather than the head of whatever sort the user
+  // happens to have applied to the table.
+  const recentEntries = useMemo(
+    () => [...visibleEntries].sort(compareByRecordOrder(entryOrderById)).slice(-10),
+    [visibleEntries, entryOrderById]
+  )
 
   // Overview always reflects the true current month, independent of
   // whatever period/filters the table below is browsing.
@@ -343,7 +360,7 @@ export default function Financas({
               Lançamentos recentes
             </p>
             <div className="glass-strong rounded-xl border">
-              <FinanceTable {...tableProps} entries={sortedEntries.slice(0, 8)} />
+              <FinanceTable {...tableProps} entries={recentEntries} />
             </div>
           </div>
         </div>

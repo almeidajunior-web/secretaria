@@ -11,7 +11,7 @@ const inputClass =
 // bill with no due date doesn't fit this module's whole premise.
 export default function BillModal({ categories, onSave, onClose }) {
   const [title, setTitle] = useState('')
-  const [amount, setAmount] = useState('')
+  const [amount, setAmount] = useState(null)
   const [dueDate, setDueDate] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [recurrence, setRecurrence] = useState('none')
@@ -23,7 +23,7 @@ export default function BillModal({ categories, onSave, onClose }) {
     if (!canSave) return
     onSave({
       title: title.trim(),
-      amount: amount === '' ? 0 : Number(amount),
+      amount: amount ?? 0,
       dueDate,
       categoryId: categoryId || null,
       recurrence,
@@ -58,13 +58,9 @@ export default function BillModal({ categories, onSave, onClose }) {
             <Field label="Valor">
               <div className="flex items-center gap-1.5">
                 <span className="text-[13px] text-text-muted">R$</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <AmountInput
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0,00"
+                  onCommit={setAmount}
                   className={inputClass}
                 />
               </div>

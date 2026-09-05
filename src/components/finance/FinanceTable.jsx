@@ -17,6 +17,7 @@ import { fmt, fromDateInput } from '../../lib/date'
 import { vencimentoDaCompra } from '../../lib/creditCard'
 import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
 import { formatCurrency } from '../../lib/currency'
+import AmountInput from '../common/AmountInput'
 import DescriptionPopover from '../common/DescriptionPopover'
 import ChipSelect from '../common/ChipSelect'
 import InlineDate from '../common/InlineDate'
@@ -478,12 +479,9 @@ function EntryRow({
       <td className={`${cell} text-right`}>
         <div className="flex items-center justify-end gap-0.5">
           <span className={['text-[11px]', isIncome ? 'text-success' : 'text-danger'].join(' ')}>R$</span>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={entry.amount ?? ''}
-            onChange={(e) => onUpdateEntry({ ...entry, amount: e.target.value === '' ? 0 : Number(e.target.value) })}
+          <AmountInput
+            value={entry.amount ?? null}
+            onCommit={(n) => onUpdateEntry({ ...entry, amount: n })}
             className={[
               'w-[82px] rounded-md border border-transparent bg-transparent px-1 py-0.5 text-right text-[12px] font-medium tabular-nums outline-none hover:border-border focus:border-primary',
               isIncome ? 'text-success' : 'text-danger',
@@ -652,7 +650,8 @@ function QuickAddRow({
 }) {
   const [type, setType] = useState('expense')
   const [title, setTitle] = useState('')
-  const [amount, setAmount] = useState('')
+  const [amount, setAmount] = useState(null)
+  const [description, setDescription] = useState('')
   const [date, setDate] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [paymentMethodId, setPaymentMethodId] = useState('')
@@ -661,6 +660,9 @@ function QuickAddRow({
   // Defaults to essential; the user unchecks it for the exceptions.
   const [essential, setEssential] = useState(true)
   const [recurrence, setRecurrence] = useState('none')
+  // Remounts the description popover after each add, so it doesn't keep the
+  // previous entry's draft in its own internal state.
+  const [formKey, setFormKey] = useState(0)
 
   const isIncome = type === 'income'
   const categories = isIncome ? incomeCategories : expenseCategories
@@ -670,12 +672,13 @@ function QuickAddRow({
       ? vencimentoDaCompra(date, creditCardConfig.closingDay, creditCardConfig.dueDay)
       : null
 
-  const commit = () => {
+  const commit = (amountOverride) => {
     if (!canAdd) return
     onQuickAdd({
       type,
       title: title.trim(),
-      amount: amount === '' ? 0 : Number(amount),
+      amount: (amountOverride !== undefined ? amountOverride : amount) ?? 0,
+      description: description.trim(),
       date,
       categoryId: categoryId || null,
       paymentMethodId: paymentMethodId || null,
@@ -685,7 +688,8 @@ function QuickAddRow({
       recurrence,
     })
     setTitle('')
-    setAmount('')
+    setAmount(null)
+    setDescription('')
     setDate('')
     setCategoryId('')
     setPaymentMethodId('')
@@ -693,12 +697,17 @@ function QuickAddRow({
     setTagIds([])
     setEssential(true)
     setRecurrence('none')
+    setFormKey((k) => k + 1)
   }
 
-  const cell = 'px-2 py-1.5 align-middle'
+  // Pinned to the bottom of the scroll area so it stays reachable however far
+  // down the list you are — the background has to be opaque (not the old
+  // accent/20) now that rows scroll underneath it. Its popovers open upward
+  // for the same reason: downward they'd be clipped by the scroll container.
+  const cell = 'sticky bottom-0 z-[2] border-t border-border-strong bg-accent-soft px-2 py-1.5 align-middle'
 
   return (
-    <tr className="border-t border-border bg-accent-soft/20">
+    <tr>
       {selectMode && <td className={cell} />}
       <td className={cell}>
         <button
@@ -714,26 +723,30 @@ function QuickAddRow({
         </button>
       </td>
       <td className={cell}>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && commit()}
-          placeholder="Novo lançamento…"
-          className="w-full min-w-[120px] bg-transparent text-[13px] text-text outline-none placeholder:text-text-muted"
-        />
+        <div className="flex items-center gap-1">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && commit()}
+            placeholder="Novo lançamento…"
+            className="w-full min-w-[120px] bg-transparent text-[13px] text-text outline-none placeholder:text-text-muted"
+          />
+          <DescriptionPopover
+            key={formKey}
+            item={{ description }}
+            onUpdateItem={(next) => setDescription(next.description)}
+            dropUp
+          />
+        </div>
       </td>
       <td className={`${cell} text-right`}>
         <div className="flex items-center justify-end gap-0.5">
           <span className="text-[11px] text-text-muted">R$</span>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
+          <AmountInput
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && commit()}
-            placeholder="0,00"
-            className="w-[82px] rounded-md border border-border-strong bg-surface px-1 py-0.5 text-right text-[12px] text-text outline-none focus:border-primary"
+            onCommit={setAmount}
+            onEnter={(n) => commit(n)}
+            className="w-[82px] rounded-md border border-border-strong bg-surface px-1 py-0.5 text-right text-[12px] tabular-nums text-text outline-none focus:border-primary"
           />
         </div>
       </td>
@@ -744,6 +757,7 @@ function QuickAddRow({
           onChange={(id) => setCategoryId(id || '')}
           nullLabel="Categoria"
           clearLabel="Sem categoria"
+          dropUp
         />
       </td>
       <td className={cell}>
@@ -754,6 +768,7 @@ function QuickAddRow({
           nullLabel="Pagamento"
           clearLabel="Sem forma"
           colorless
+          dropUp
         />
       </td>
       {showAccounts && (
@@ -764,6 +779,7 @@ function QuickAddRow({
             onChange={(id) => setAccountId(id || '')}
             nullLabel="Conta"
             clearLabel="Sem conta"
+            dropUp
           />
         </td>
       )}
@@ -774,6 +790,7 @@ function QuickAddRow({
           onToggle={(id) => setTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))}
           onCreate={onCreateTag}
           triggerClassName="flex flex-wrap items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-text-secondary hover:bg-accent-soft/50"
+          dropUp
         />
       </td>
       <td className={`${cell} text-center`}>
@@ -806,12 +823,13 @@ function QuickAddRow({
           onChange={(id) => setRecurrence(id || 'none')}
           allowNull={false}
           colorless
+          dropUp
         />
       </td>
       <td className={`${cell} text-right`}>
         <button
           type="button"
-          onClick={commit}
+          onClick={() => commit()}
           disabled={!canAdd}
           className="rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >

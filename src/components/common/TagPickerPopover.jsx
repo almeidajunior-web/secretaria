@@ -7,7 +7,14 @@ import { tintVars } from '../../lib/color'
 // with an inline "create new tag" affordance. Used by TaskModal, the list
 // row's inline editor, and the quick-add row. `onClick` on the trigger stops
 // propagation since it's always nested inside a clickable row/card.
-export default function TagPickerPopover({ tags, selectedIds, onToggle, onCreate, triggerClassName }) {
+export default function TagPickerPopover({
+  tags,
+  selectedIds,
+  onToggle,
+  onCreate,
+  triggerClassName,
+  dropUp = false,
+}) {
   const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [newLabel, setNewLabel] = useState('')
@@ -67,7 +74,10 @@ export default function TagPickerPopover({ tags, selectedIds, onToggle, onCreate
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute left-0 top-full z-50 mt-1.5 w-52 rounded-xl border border-border bg-surface p-2 shadow-lg"
+          className={[
+            'absolute left-0 z-50 w-52 rounded-xl border border-border bg-surface p-2 shadow-lg',
+            dropUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
+          ].join(' ')}
         >
           <div className="flex max-h-48 flex-col gap-0.5 overflow-auto">
             {tags.map((t) => {

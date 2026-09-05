@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AmountInput from '../common/AmountInput'
 import TagPickerPopover from '../common/TagPickerPopover'
 import { vencimentoDaCompra } from '../../lib/creditCard'
 import { fmt, fromDateInput } from '../../lib/date'
@@ -26,7 +27,7 @@ export default function FinanceEntryModal({
 }) {
   const [type, setType] = useState('expense')
   const [title, setTitle] = useState('')
-  const [amount, setAmount] = useState('')
+  const [amount, setAmount] = useState(null)
   const [date, setDate] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [paymentMethodId, setPaymentMethodId] = useState('')
@@ -59,7 +60,7 @@ export default function FinanceEntryModal({
     onSave({
       type,
       title: title.trim(),
-      amount: amount === '' ? 0 : Number(amount),
+      amount: amount ?? 0,
       date,
       categoryId: categoryId || null,
       paymentMethodId: paymentMethodId || null,
@@ -125,13 +126,9 @@ export default function FinanceEntryModal({
             <Field label="Valor">
               <div className="flex items-center gap-1.5">
                 <span className="text-[13px] text-text-muted">R$</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <AmountInput
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0,00"
+                  onCommit={setAmount}
                   className={inputClass}
                 />
               </div>

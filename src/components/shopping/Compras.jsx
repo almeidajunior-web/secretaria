@@ -132,7 +132,6 @@ export default function Compras({
   const handleQuickAdd = (partial) => {
     addItem({
       title: '',
-      description: '',
       categoryId: null,
       priorityId: null,
       purchased: false,

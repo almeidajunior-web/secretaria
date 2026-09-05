@@ -18,6 +18,7 @@ export default function ChipSelect({
   colorless = false,
   align = 'right',
   className = '',
+  dropUp = false,
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -68,7 +69,8 @@ export default function ChipSelect({
         <div
           onClick={(e) => e.stopPropagation()}
           className={[
-            'absolute top-full z-50 mt-1.5 max-h-56 w-48 overflow-auto rounded-xl border border-border bg-surface p-1.5 shadow-lg',
+            'absolute z-50 max-h-56 w-48 overflow-auto rounded-xl border border-border bg-surface p-1.5 shadow-lg',
+            dropUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
             align === 'left' ? 'left-0' : 'right-0',
           ].join(' ')}
         >
