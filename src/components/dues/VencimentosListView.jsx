@@ -27,7 +27,12 @@ export default function VencimentosListView({
   const isEmpty = groups.every((g) => g.bills.length === 0)
 
   return (
-    <div className="thin-scroll flex h-full flex-col overflow-auto">
+    <div className="flex h-full flex-col">
+      {/* Outside the scroll area, directly under the module's pendente/pago
+          bar — so adding a conta never means scrolling to the end first. */}
+      <QuickAddRow categories={categories} onQuickAdd={onQuickAdd} />
+
+      <div className="thin-scroll flex-1 overflow-auto">
       {isEmpty ? (
         <p className="px-5 py-8 text-center text-sm text-text-muted">
           Nenhuma conta por aqui. Use a linha abaixo para adicionar a primeira.
@@ -56,8 +61,7 @@ export default function VencimentosListView({
           ))}
         </div>
       )}
-
-      <QuickAddRow categories={categories} onQuickAdd={onQuickAdd} />
+      </div>
     </div>
   )
 }
@@ -196,7 +200,7 @@ function QuickAddRow({ categories, onQuickAdd }) {
   }
 
   return (
-    <div className="mt-auto flex items-center gap-2 border-t border-border px-4 py-2">
+    <div className="flex shrink-0 items-center gap-2 border-b border-border bg-accent-soft/30 px-4 py-2">
       <Plus size={14} className="shrink-0 text-text-muted" />
       <input
         value={title}

@@ -107,6 +107,20 @@ export default function FinanceTable({
       else next.add(gid)
       return next
     })
+  // The quick-add row sticks directly below the sticky header, so it needs
+  // that header's live height — the column filters can wrap and change it.
+  const theadRef = useRef(null)
+  const [headerHeight, setHeaderHeight] = useState(0)
+  useEffect(() => {
+    const el = theadRef.current
+    if (!el) return
+    const measure = () => setHeaderHeight(el.getBoundingClientRect().height)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const grouping = groupInstallments && !selectMode
   const showAccounts = accounts.length > 0
   const allCategories = [...expenseCategories, ...incomeCategories]
@@ -117,7 +131,7 @@ export default function FinanceTable({
   return (
     <div className="thin-scroll h-full overflow-auto">
       <table className="w-full border-collapse text-[12px]">
-        <thead className="glass sticky top-0 z-[2]">
+        <thead ref={theadRef} className="glass sticky top-0 z-[2]">
           <tr className="border-b border-border text-left text-[11px] text-text-muted">
             {selectMode && <th className="w-8 px-2 py-2" />}
             <th className="px-2 py-2">
@@ -196,6 +210,21 @@ export default function FinanceTable({
           </tr>
         </thead>
         <tbody>
+          {onQuickAdd && (
+            <QuickAddRow
+              expenseCategories={expenseCategories}
+              incomeCategories={incomeCategories}
+              paymentMethods={paymentMethods}
+              accounts={accounts}
+              tags={tags}
+              showAccounts={showAccounts}
+              onCreateTag={onCreateTag}
+              onQuickAdd={onQuickAdd}
+              selectMode={selectMode}
+              creditCardConfig={creditCardConfig}
+              stickyTop={headerHeight}
+            />
+          )}
           {entries.length === 0 && !onQuickAdd && (
             <tr>
               <td colSpan={colSpanEmpty} className="px-4 py-8 text-center text-sm text-text-muted">
@@ -265,20 +294,6 @@ export default function FinanceTable({
                 />
               )
             }
-          )}
-          {onQuickAdd && (
-            <QuickAddRow
-              expenseCategories={expenseCategories}
-              incomeCategories={incomeCategories}
-              paymentMethods={paymentMethods}
-              accounts={accounts}
-              tags={tags}
-              showAccounts={showAccounts}
-              onCreateTag={onCreateTag}
-              onQuickAdd={onQuickAdd}
-              selectMode={selectMode}
-              creditCardConfig={creditCardConfig}
-            />
           )}
         </tbody>
       </table>
@@ -647,6 +662,7 @@ function QuickAddRow({
   onQuickAdd,
   selectMode,
   creditCardConfig,
+  stickyTop = 0,
 }) {
   const [type, setType] = useState('expense')
   const [title, setTitle] = useState('')
@@ -700,16 +716,18 @@ function QuickAddRow({
     setFormKey((k) => k + 1)
   }
 
-  // Pinned to the bottom of the scroll area so it stays reachable however far
-  // down the list you are — the background has to be opaque (not the old
-  // accent/20) now that rows scroll underneath it. Its popovers open upward
-  // for the same reason: downward they'd be clipped by the scroll container.
-  const cell = 'sticky bottom-0 z-[2] border-t border-border-strong bg-accent-soft px-2 py-1.5 align-middle'
+  // Pinned directly under the column header, so it stays reachable however
+  // far down the list you are. The background has to be opaque (not a
+  // translucent tint) now that rows scroll underneath it, and it sits one
+  // layer below the header it tucks against.
+  const cell =
+    'sticky z-[1] border-b border-border-strong bg-accent-soft px-2 py-1.5 align-middle'
+  const cellStyle = { top: stickyTop }
 
   return (
     <tr>
       {selectMode && <td className={cell} />}
-      <td className={cell}>
+      <td className={cell} style={cellStyle}>
         <button
           type="button"
           onClick={() => {
@@ -722,7 +740,7 @@ function QuickAddRow({
           {isIncome ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
         </button>
       </td>
-      <td className={cell}>
+      <td className={cell} style={cellStyle}>
         <div className="flex items-center gap-1">
           <input
             value={title}
@@ -735,11 +753,10 @@ function QuickAddRow({
             key={formKey}
             item={{ description }}
             onUpdateItem={(next) => setDescription(next.description)}
-            dropUp
           />
         </div>
       </td>
-      <td className={`${cell} text-right`}>
+      <td className={`${cell} text-right`} style={cellStyle}>
         <div className="flex items-center justify-end gap-0.5">
           <span className="text-[11px] text-text-muted">R$</span>
           <AmountInput
@@ -750,17 +767,16 @@ function QuickAddRow({
           />
         </div>
       </td>
-      <td className={cell}>
+      <td className={cell} style={cellStyle}>
         <ChipSelect
           value={categoryId || null}
           options={categories}
           onChange={(id) => setCategoryId(id || '')}
           nullLabel="Categoria"
           clearLabel="Sem categoria"
-          dropUp
         />
       </td>
-      <td className={cell}>
+      <td className={cell} style={cellStyle}>
         <ChipSelect
           value={paymentMethodId || null}
           options={paymentMethods}
@@ -768,32 +784,29 @@ function QuickAddRow({
           nullLabel="Pagamento"
           clearLabel="Sem forma"
           colorless
-          dropUp
         />
       </td>
       {showAccounts && (
-        <td className={cell}>
+        <td className={cell} style={cellStyle}>
           <ChipSelect
             value={accountId || null}
             options={accounts}
             onChange={(id) => setAccountId(id || '')}
             nullLabel="Conta"
             clearLabel="Sem conta"
-            dropUp
           />
         </td>
       )}
-      <td className={cell}>
+      <td className={cell} style={cellStyle}>
         <TagPickerPopover
           tags={tags}
           selectedIds={tagIds}
           onToggle={(id) => setTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))}
           onCreate={onCreateTag}
           triggerClassName="flex flex-wrap items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-text-secondary hover:bg-accent-soft/50"
-          dropUp
         />
       </td>
-      <td className={`${cell} text-center`}>
+      <td className={`${cell} text-center`} style={cellStyle}>
         {isIncome ? (
           <span className="text-text-muted/30">—</span>
         ) : (
@@ -807,7 +820,7 @@ function QuickAddRow({
           </button>
         )}
       </td>
-      <td className={cell}>
+      <td className={cell} style={cellStyle}>
         <InlineDate value={date || null} onChange={(v) => setDate(v || '')} placeholder="Data" />
         {dueDatePreview && (
           <p className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] text-text-muted">
@@ -816,17 +829,16 @@ function QuickAddRow({
           </p>
         )}
       </td>
-      <td className={cell}>
+      <td className={cell} style={cellStyle}>
         <ChipSelect
           value={recurrence}
           options={RECURRENCE_CHIP_OPTIONS}
           onChange={(id) => setRecurrence(id || 'none')}
           allowNull={false}
           colorless
-          dropUp
         />
       </td>
-      <td className={`${cell} text-right`}>
+      <td className={`${cell} text-right`} style={cellStyle}>
         <button
           type="button"
           onClick={() => commit()}

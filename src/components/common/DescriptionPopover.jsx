@@ -5,7 +5,7 @@ import { StickyNote } from 'lucide-react'
 // description — outline when empty, filled/colored once there's content.
 // Shared by Compras and Vencimentos, whose rows both edit a plain
 // `item.description` string via a generic `onUpdateItem(fullObject)` call.
-export default function DescriptionPopover({ item, onUpdateItem, dropUp = false }) {
+export default function DescriptionPopover({ item, onUpdateItem }) {
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState(item.description || '')
   const ref = useRef(null)
@@ -51,12 +51,7 @@ export default function DescriptionPopover({ item, onUpdateItem, dropUp = false 
         <StickyNote size={14} fill={hasDescription ? 'currentColor' : 'none'} fillOpacity={0.15} />
       </button>
       {open && (
-        <div
-          className={[
-            'absolute right-0 z-50 w-56 rounded-xl border border-border bg-surface p-2 shadow-lg',
-            dropUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
-          ].join(' ')}
-        >
+        <div className="absolute right-0 top-full z-50 mt-1.5 w-56 rounded-xl border border-border bg-surface p-2 shadow-lg">
           <textarea
             autoFocus
             value={value}

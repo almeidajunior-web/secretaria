@@ -3,7 +3,12 @@ import { formatCurrency } from '../../lib/currency'
 import { tintVars } from '../../lib/color'
 
 const WIDTH = 600
-const HEIGHT = 220
+// Shorter than the other charts' 220 on purpose: this one sits in a
+// full-width panel while TrendChart shares its row, so at the same aspect
+// ratio it rendered about twice as tall as everything around it. The viewBox
+// scales to the container's width, so trimming only the height shrinks the
+// plot ~20% without changing how big the labels come out on screen.
+const HEIGHT = 176
 const PADDING = { top: 16, right: 16, bottom: 26, left: 44 }
 const PLOT_W = WIDTH - PADDING.left - PADDING.right
 const PLOT_H = HEIGHT - PADDING.top - PADDING.bottom
