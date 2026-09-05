@@ -41,7 +41,7 @@ export default function OverviewSection({
     ? `Realizado: ${valuesHidden ? 'R$ ••••' : formatCurrency(indicators.projection.realized)}`
     : null
   return (
-    <div className="max-w-[85%] border-b border-border px-4 py-4">
+    <div className="border-b border-border px-4 py-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-[13px] font-semibold text-text">Overview</h2>
         <button

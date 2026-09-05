@@ -338,7 +338,11 @@ export default function Financas({
 
       {tab === 'resumo' ? (
         <div className="thin-scroll flex-1 overflow-auto">
-          <OverviewSection
+          {/* One centred column for the whole Resumo — the Overview and the
+              "Lançamentos recentes" panel below it share this cap, so they
+              can't drift out of alignment with each other. */}
+          <div className="mx-auto max-w-[96%]">
+            <OverviewSection
             currentTotals={currentTotals}
             incomeChange={incomeChange}
             expenseChange={expenseChange}
@@ -352,15 +356,16 @@ export default function Financas({
             indicators={indicators}
             categoryTrendData={categoryTrendData}
             categoryComparisonData={categoryComparisonData}
-            valuesHidden={valuesHidden}
-            onToggleValuesHidden={toggleValuesHidden}
-          />
-          <div className="px-4 pb-4">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-              Lançamentos recentes
-            </p>
-            <div className="glass-strong rounded-xl border">
-              <FinanceTable {...tableProps} entries={recentEntries} />
+              valuesHidden={valuesHidden}
+              onToggleValuesHidden={toggleValuesHidden}
+            />
+            <div className="px-4 pb-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                Lançamentos recentes
+              </p>
+              <div className="glass-strong rounded-xl border">
+                <FinanceTable {...tableProps} entries={recentEntries} />
+              </div>
             </div>
           </div>
         </div>

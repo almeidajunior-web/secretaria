@@ -104,14 +104,16 @@ export default function PlanningGrid({
         </p>
       )}
       <div
-        className="select-none overflow-hidden rounded-md border-l border-t border-border"
+        className="mx-auto select-none overflow-hidden rounded-md border-l border-t border-border"
         style={{
           display: 'grid',
           gridTemplateColumns: `44px repeat(7, minmax(56px, 1fr))`,
           // The grid would otherwise stretch to whatever width the module
-          // has; capping it is what actually narrows the day columns, since
+          // has; capping it is what actually sets the day-column width, since
           // they're 1fr and the minmax floor never binds on a wide screen.
-          maxWidth: '80%',
+          // Centred (mx-auto above) so the slack sits on both sides instead
+          // of pooling to the right of the table.
+          maxWidth: '96%',
         }}
       >
         <div className="border-b border-r border-border" />
