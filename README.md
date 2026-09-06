@@ -149,10 +149,17 @@ formulário).
 
 - Quatro visões: **Anual**, **Mensal**, **Semanal** (padrão) e **Diária**
 - Criação/edição de eventos com cor, tags, recorrência e status
+- **Início e Fim ao estilo Google Agenda**: mudar o Início desloca o Fim junto,
+  preservando a duração já configurada — editar o Fim sozinho segue mudando só
+  a duração, sem mexer no Início. Um evento novo criado direto pelo botão
+  "Novo evento" (sem ser por arraste na grade) nasce com **1h de duração**
 - Quatro estados visuais de evento: confirmado, não confirmado, provisório e
   recusado
 - Eventos do tipo **aula** com limite de faltas, contador e marcação de
-  presença/falta
+  presença/falta. Aulas podem se **conectar entre si** (ex.: teórica +
+  laboratório da mesma disciplina) para somar faltas num único total —
+  provas não participam dessa conexão nem têm uma "Disciplina" própria,
+  para a lista de provas ficar enxuta
 - Recorrência: diária, semanal, quinzenal, mensal, anual e dias úteis
 - Cada dia da visão semanal tem atalhos "Tarefas" e "Venc." (ícone de boleto,
   para diferenciar do lançamento de gastos/receitas do futuro módulo
@@ -404,10 +411,12 @@ rotinas são o que movem as metas.
   navegação de período e botão "Hoje"
 - Rotinas **não têm cor** — a identificação é só pelo nome, sem uma paleta de
   categoria para gerenciar num módulo onde a lista tende a ser curta
-- Texto da coluna Rotina **centralizado**, título incluído, no mesmo
-  tratamento das colunas de dia
-- **Arraste para reordenar** as rotinas pela alça à esquerda do nome (mesmo
-  padrão de arrastar-e-soltar das listas editáveis do app) — a ordem persiste
+- Texto da coluna Rotina **centralizado** (horizontal e verticalmente), título
+  incluído, no mesmo tratamento das colunas de dia
+- **Arraste para reordenar** as rotinas, mas escondido por padrão — o lápis no
+  canto do cabeçalho "Rotina" entra em modo de reordenação (revela a alça em
+  cada linha), e no lugar do lápis passa a haver um botão de concluir. Mesmo
+  padrão de arrastar-e-soltar das listas editáveis do app; a ordem persiste
 - Grade com **contornos visíveis** célula a célula (mesma técnica do
   Planejamento) e **tons alternados** para ler as colunas de relance: fim de
   semana num tom levemente recuado, semanas alternando um tom mais claro, e o

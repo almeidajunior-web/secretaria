@@ -40,6 +40,8 @@ export default function HabitGrid({
   onEditHabit,
   onReorderHabits,
 }) {
+  const [reorderMode, setReorderMode] = useState(false)
+
   if (habits.length === 0) {
     return (
       <p className="px-4 py-8 text-center text-sm text-text-muted">
@@ -72,8 +74,17 @@ export default function HabitGrid({
         style={{ display: 'grid', gridTemplateColumns }}
       >
         {/* header */}
-        <div className="sticky left-0 z-[1] border-b border-r border-border bg-app-bg px-2 pb-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+        <div className="sticky left-0 z-[1] relative flex items-center justify-center border-b border-r border-border bg-app-bg px-2 text-center text-[10px] font-semibold uppercase tracking-wide text-text-muted">
           Rotina
+          <button
+            type="button"
+            onClick={() => setReorderMode((v) => !v)}
+            aria-label={reorderMode ? 'Concluir reordenação' : 'Reordenar rotinas'}
+            title={reorderMode ? 'Concluir reordenação' : 'Reordenar rotinas'}
+            className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded text-text-muted hover:bg-accent-soft/60 hover:text-primary"
+          >
+            {reorderMode ? <Check size={11} /> : <Pencil size={10} />}
+          </button>
         </div>
         {dayMeta.map(({ date, dateStr, isToday, bg }) => (
           <div key={dateStr} className={`border-b border-r border-border pb-1.5 text-center ${bg}`}>
@@ -115,6 +126,7 @@ export default function HabitGrid({
               onCycleCell={onCycleCell}
               onEditHabit={onEditHabit}
               onDropHere={dropOnHabit(habit.id)}
+              reorderMode={reorderMode}
             />
           )
         })}
@@ -123,10 +135,16 @@ export default function HabitGrid({
   )
 }
 
-function Row({ habit, habitLog, dayMeta, todayStr, streak, period, onCycleCell, onEditHabit, onDropHere }) {
+function Row({ habit, habitLog, dayMeta, todayStr, streak, period, onCycleCell, onEditHabit, onDropHere, reorderMode }) {
   return (
     <>
-      <RoutineLabel habit={habit} streak={streak} onEditHabit={onEditHabit} onDropHere={onDropHere} />
+      <RoutineLabel
+        habit={habit}
+        streak={streak}
+        onEditHabit={onEditHabit}
+        onDropHere={onDropHere}
+        reorderMode={reorderMode}
+      />
 
       {dayMeta.map(({ date, dateStr, bg }) => {
         const active = isHabitActiveOn(habit, dateStr, date)
@@ -151,15 +169,16 @@ function Row({ habit, habitLog, dayMeta, todayStr, streak, period, onCycleCell, 
   )
 }
 
-// The label cell: drag handle, centered title (+ edit pencil on hover), streak
-// badge, and — if the routine has one — a description tooltip that appears on
-// hovering the title. The tooltip is portaled to <body> rather than absolutely
-// positioned in place: this cell sits in a horizontally-scrolling container
-// (`overflow-x-auto` on the wrapper above), and a scrollable ancestor clips
-// any in-place absolutely-positioned child that overflows its box regardless
-// of z-index — the same issue already fixed for the topbar's group dropdown
-// and the finance toolbar's filter popover.
-function RoutineLabel({ habit, streak, onEditHabit, onDropHere }) {
+// The label cell: drag handle (only while reordering), centered title (+ edit
+// pencil on hover), streak badge, and — if the routine has one — a
+// description tooltip that appears on hovering the title. The tooltip is
+// portaled to <body> rather than absolutely positioned in place: this cell
+// sits in a horizontally-scrolling container (`overflow-x-auto` on the
+// wrapper above), and a scrollable ancestor clips any in-place absolutely-
+// positioned child that overflows its box regardless of z-index — the same
+// issue already fixed for the topbar's group dropdown and the finance
+// toolbar's filter popover.
+function RoutineLabel({ habit, streak, onEditHabit, onDropHere, reorderMode }) {
   const titleRef = useRef(null)
   const [tooltipPos, setTooltipPos] = useState(null)
 
@@ -170,23 +189,34 @@ function RoutineLabel({ habit, streak, onEditHabit, onDropHere }) {
   }
   const hideTooltip = () => setTooltipPos(null)
 
+  // The drop target only exists in reorder mode — outside it there's no grip
+  // to drag from, so wiring dragover/drop with nothing to trigger them would
+  // just be dead listeners.
+  const dropHandlers = reorderMode
+    ? {
+        onDragOver: (e) => e.preventDefault(),
+        onDrop: (e) => {
+          const draggedId = e.dataTransfer.getData('text/plain')
+          if (draggedId) onDropHere(draggedId)
+        },
+      }
+    : {}
+
   return (
     <div
       className="sticky left-0 z-[1] flex min-w-0 items-center justify-center gap-1.5 border-b border-r border-border bg-app-bg px-2 py-1"
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => {
-        const draggedId = e.dataTransfer.getData('text/plain')
-        if (draggedId) onDropHere(draggedId)
-      }}
+      {...dropHandlers}
     >
-      <span
-        draggable
-        onDragStart={(e) => e.dataTransfer.setData('text/plain', habit.id)}
-        aria-label="Arrastar para reordenar"
-        className="shrink-0 cursor-grab text-text-muted active:cursor-grabbing"
-      >
-        <GripVertical size={13} />
-      </span>
+      {reorderMode && (
+        <span
+          draggable
+          onDragStart={(e) => e.dataTransfer.setData('text/plain', habit.id)}
+          aria-label="Arrastar para reordenar"
+          className="shrink-0 cursor-grab text-text-muted active:cursor-grabbing"
+        >
+          <GripVertical size={13} />
+        </span>
+      )}
       <button
         ref={titleRef}
         type="button"

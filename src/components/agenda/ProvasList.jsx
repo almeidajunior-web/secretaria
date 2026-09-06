@@ -1,73 +1,36 @@
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
 import { differenceInCalendarDays } from 'date-fns'
-import { Layers, Eye, EyeOff, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, Trash2 } from 'lucide-react'
 import { fmt } from '../../lib/date'
 import ListModal, { ToggleChip } from './ListModal'
 import ConfirmDialog from '../common/ConfirmDialog'
 
-// List of exams (Provas), always soonest-first, with discipline grouping,
-// show/hide finished, and click-to-edit. Finished exams are struck through.
+// List of exams (Provas), always soonest-first, with show/hide finished and
+// click-to-edit. Finished exams are struck through.
 export default function ProvasList({ events, onEdit, onDelete, onClose }) {
-  const [groupBy, setGroupBy] = useState(false)
   const [showFinished, setShowFinished] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)
 
   const now = new Date()
   const isFinished = (p) => p.end < now
 
-  const disciplinaOf = (prova) => {
-    const names = (prova.linkedIds || [])
-      .map((id) => events.find((e) => e.id === id)?.title)
-      .filter(Boolean)
-    if (names.length) return names.join(', ')
-    return prova.tags?.length ? prova.tags.join(', ') : '—'
-  }
-
   const all = events.filter((e) => e.kind === 'prova')
   const visible = (showFinished ? all : all.filter((p) => !isFinished(p))).sort(
     (a, b) => a.start - b.start
   )
 
-  const groups = []
-  const groupIndex = new Map()
-  visible.forEach((p) => {
-    const key = disciplinaOf(p)
-    if (!groupIndex.has(key)) {
-      groupIndex.set(key, groups.length)
-      groups.push({ discipline: key, items: [] })
-    }
-    groups[groupIndex.get(key)].items.push(p)
-  })
-
   const finishedCount = all.filter(isFinished).length
 
-  const renderRow = (p) => (
-    <ProvaRow
-      key={p.id}
-      prova={p}
-      now={now}
-      finished={isFinished(p)}
-      discipline={groupBy ? null : disciplinaOf(p)}
-      onEdit={() => onEdit(p)}
-      onDelete={() => setPendingDelete(p)}
-    />
-  )
-
   const controls = (
-    <>
-      <ToggleChip active={groupBy} icon={Layers} onClick={() => setGroupBy((v) => !v)}>
-        Agrupar por disciplina
-      </ToggleChip>
-      <ToggleChip
-        active={showFinished}
-        icon={showFinished ? EyeOff : Eye}
-        onClick={() => setShowFinished((v) => !v)}
-        className="ml-auto"
-      >
-        {showFinished ? 'Ocultar finalizadas' : 'Ver finalizadas'}
-        {!showFinished && finishedCount > 0 ? ` (${finishedCount})` : ''}
-      </ToggleChip>
-    </>
+    <ToggleChip
+      active={showFinished}
+      icon={showFinished ? EyeOff : Eye}
+      onClick={() => setShowFinished((v) => !v)}
+      className="ml-auto"
+    >
+      {showFinished ? 'Ocultar finalizadas' : 'Ver finalizadas'}
+      {!showFinished && finishedCount > 0 ? ` (${finishedCount})` : ''}
+    </ToggleChip>
   )
 
   return (
@@ -83,28 +46,22 @@ export default function ProvasList({ events, onEdit, onDelete, onClose }) {
           <thead className="sticky top-0 bg-inset text-[11px] uppercase tracking-wide text-text-muted">
             <tr>
               <th className="px-5 py-2 font-semibold">Título</th>
-              <th className="px-3 py-2 font-semibold">Disciplina</th>
               <th className="px-3 py-2 font-semibold">Data</th>
               <th className="px-3 py-2 text-right font-semibold">Dias restantes</th>
               <th className="px-5 py-2"></th>
             </tr>
           </thead>
           <tbody>
-            {groupBy
-              ? groups.map((g) => (
-                  <Fragment key={g.discipline}>
-                    <tr className="bg-inset/60">
-                      <td
-                        colSpan={5}
-                        className="px-5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-secondary"
-                      >
-                        {g.discipline}
-                      </td>
-                    </tr>
-                    {g.items.map(renderRow)}
-                  </Fragment>
-                ))
-              : visible.map(renderRow)}
+            {visible.map((p) => (
+              <ProvaRow
+                key={p.id}
+                prova={p}
+                now={now}
+                finished={isFinished(p)}
+                onEdit={() => onEdit(p)}
+                onDelete={() => setPendingDelete(p)}
+              />
+            ))}
           </tbody>
         </table>
       )}
@@ -125,7 +82,7 @@ export default function ProvasList({ events, onEdit, onDelete, onClose }) {
   )
 }
 
-function ProvaRow({ prova, now, finished, discipline, onEdit, onDelete }) {
+function ProvaRow({ prova, now, finished, onEdit, onDelete }) {
   const days = differenceInCalendarDays(prova.start, now)
   return (
     <tr
@@ -144,7 +101,6 @@ function ProvaRow({ prova, now, finished, discipline, onEdit, onDelete }) {
           <span className={finished ? 'line-through' : ''}>{prova.title}</span>
         </span>
       </td>
-      <td className="px-3 py-2.5 text-text-secondary">{discipline ?? ''}</td>
       <td className={`px-3 py-2.5 text-text-secondary ${finished ? 'line-through' : ''}`}>
         {fmt(prova.start, "dd/MM/yyyy 'às' HH:mm")}
       </td>

@@ -73,14 +73,11 @@ export default function EventModal({
   const isProva = kind === 'prova'
   const effRecurrence = isProva ? 'none' : recurrence
 
-  // Offer classes AND exams for connection (an exam counting toward its
-  // discipline's attendance is intentional). Finished one-off items are
-  // hidden unless already linked, so they stay visible to be unlinked.
+  // Only aulas link to each other (e.g. theory + lab sections of the same
+  // discipline, pooled for attendance) — provas no longer offer this at all,
+  // so a prova is never a candidate and never carries a link of its own.
   const linkCandidates = (events || []).filter(
-    (e) =>
-      e.id !== initial.id &&
-      (e.kind === 'aula' || e.kind === 'prova') &&
-      (hasUpcomingOccurrence(e) || linkedIds.includes(e.id))
+    (e) => e.id !== initial.id && e.kind === 'aula' && (hasUpcomingOccurrence(e) || linkedIds.includes(e.id))
   )
   const toggleLink = (id) =>
     setLinkedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
@@ -127,7 +124,7 @@ export default function EventModal({
   // one-off, so recurrence is dropped when switching to Prova.
   const changeKind = (k) => {
     if (k !== 'event' && kind === 'event') setStatus('confirmed')
-    if (k === 'event') setLinkedIds([])
+    if (k === 'event' || k === 'prova') setLinkedIds([])
     if (k === 'prova') setRecurrence('none')
     setKind(k)
   }
@@ -135,6 +132,22 @@ export default function EventModal({
   const deleteTag = (tag) => {
     onDeleteTag(tag)
     setTags((prev) => prev.filter((t) => t !== tag))
+  }
+
+  // Google Calendar-style: nudging the start slides the whole event forward
+  // or back, keeping whatever gap already existed between start and end —
+  // instead of leaving Fim stale (or now inverted) behind a moved Início.
+  // Editing Fim directly still only changes the duration, same as before —
+  // this sync is one-directional, start moves end, never the reverse.
+  const handleStartChange = (value) => {
+    const prevStart = fromInputValue(start)
+    const prevEnd = fromInputValue(end)
+    const nextStart = fromInputValue(value)
+    if (!Number.isNaN(prevStart.getTime()) && !Number.isNaN(prevEnd.getTime()) && !Number.isNaN(nextStart.getTime())) {
+      const duration = prevEnd.getTime() - prevStart.getTime()
+      setEnd(toInputValue(new Date(nextStart.getTime() + duration)))
+    }
+    setStart(value)
   }
 
   const handleRecurrenceChange = (value) => {
@@ -168,7 +181,7 @@ export default function EventModal({
         effRecurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
       isAula: isClass,
       faltasMax: kind === 'aula' ? (faltasMax === '' ? null : Number(faltasMax)) : null,
-      linkedIds: isClass ? linkedIds : [],
+      linkedIds: kind === 'aula' ? linkedIds : [],
       occStatus: initial.occStatus || {},
     })
   }
@@ -226,7 +239,7 @@ export default function EventModal({
               <input
                 type="datetime-local"
                 value={start}
-                onChange={(e) => setStart(e.target.value)}
+                onChange={(e) => handleStartChange(e.target.value)}
                 className={inputClass}
               />
             </Field>
@@ -300,38 +313,29 @@ export default function EventModal({
             </div>
           </Field>
 
-          {isClass && (
+          {kind === 'aula' && (
             <div className="flex flex-col gap-3 rounded-lg border border-border bg-inset p-3">
-              {kind === 'aula' ? (
-                <>
-                  <Field label="Limite de faltas">
-                    <input
-                      type="number"
-                      min="0"
-                      value={faltasMax}
-                      onChange={(e) => setFaltasMax(e.target.value)}
-                      className={inputClass}
-                    />
-                  </Field>
-                  <p className="text-[11px] text-text-secondary">
-                    Faltas (automático):{' '}
-                    <span className="font-semibold text-text">{derivedFaltas}</span>
-                    {faltasMax !== '' && ` de ${faltasMax}`}
-                    {linkedIds.length > 0 && ' · somadas com as aulas conectadas'}
-                  </p>
-                  <p className="text-[11px] leading-relaxed text-text-muted">
-                    Conta as aulas passadas sem status “Confirmado”. Marque a presença pelo
-                    status de cada aula.
-                  </p>
-                </>
-              ) : (
-                <p className="text-[11px] leading-relaxed text-text-muted">
-                  A prova é pontual (sem recorrência) e conta para a presença da disciplina.
-                  Conecte-a à aula correspondente para somar na frequência.
-                </p>
-              )}
+              <Field label="Limite de faltas">
+                <input
+                  type="number"
+                  min="0"
+                  value={faltasMax}
+                  onChange={(e) => setFaltasMax(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+              <p className="text-[11px] text-text-secondary">
+                Faltas (automático):{' '}
+                <span className="font-semibold text-text">{derivedFaltas}</span>
+                {faltasMax !== '' && ` de ${faltasMax}`}
+                {linkedIds.length > 0 && ' · somadas com as aulas conectadas'}
+              </p>
+              <p className="text-[11px] leading-relaxed text-text-muted">
+                Conta as aulas passadas sem status “Confirmado”. Marque a presença pelo status de
+                cada aula.
+              </p>
 
-              <div className={kind === 'aula' ? 'border-t border-border pt-3' : ''}>
+              <div className="border-t border-border pt-3">
                 <LinkedClassesField
                   candidates={linkCandidates}
                   selected={linkedIds}

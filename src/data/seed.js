@@ -54,7 +54,7 @@ export function buildSeedEvents() {
       faltasMax: 15,
       occStatus: {},
       exdates: [],
-      linkedIds: [labId, provaId, prova0Id],
+      linkedIds: [labId],
     },
     {
       id: id(),
@@ -139,7 +139,7 @@ export function buildSeedEvents() {
       faltasMax: null,
       occStatus: {},
       exdates: [],
-      linkedIds: [mecanicaId],
+      linkedIds: [],
     },
     {
       id: prova0Id,
@@ -156,7 +156,7 @@ export function buildSeedEvents() {
       faltasMax: null,
       occStatus: {},
       exdates: [],
-      linkedIds: [mecanicaId],
+      linkedIds: [],
     },
     {
       id: id(),

@@ -32,7 +32,11 @@ import UndoToast from '../common/UndoToast'
 
 function blankEvent(start, end) {
   const s = start || roundToHalfHour(new Date())
-  const e = end || new Date(s.getTime() + 30 * 60000)
+  // `end` only falls back here when there's no drag range to derive it from —
+  // i.e. created straight from the modal's "Novo evento" button — so 1h is
+  // exactly the "created directly, not by drag" default the duration-sync in
+  // EventModal needs something to preserve.
+  const e = end || new Date(s.getTime() + 60 * 60000)
   return {
     kind: 'event',
     title: '',
