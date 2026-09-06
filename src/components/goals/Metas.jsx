@@ -124,7 +124,6 @@ export default function Metas({
 
           <ObjetivosSection
             goals={goals}
-            onUpdateGoal={updateGoal}
             onSetStatus={setGoalStatus}
             onNew={() => setGoalModal({})}
             onEdit={(goal) => setGoalModal({ goal })}

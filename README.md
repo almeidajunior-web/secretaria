@@ -402,6 +402,12 @@ rotinas são o que movem as metas.
 - **Grade de rotinas**: uma linha por rotina, uma coluna por dia, alternando
   entre **semana** (7 colunas) e **mês** (~30) pelo switcher da barra, com
   navegação de período e botão "Hoje"
+- Grade com **contornos visíveis** célula a célula (mesma técnica do
+  Planejamento) e **tons alternados** para ler as colunas de relance: fim de
+  semana num tom levemente recuado, semanas alternando um tom mais claro, e o
+  dia de hoje com o destaque mais forte de todos — prioridade fixa entre os
+  três (hoje vence fim de semana vence a alternância de semana), já que
+  empilhar mais de uma cor de fundo no mesmo elemento não é confiável
 - Cada célula cicla no clique entre **vazio → feito → não feito → N/A**. O
   vazio é um quarto estado de propósito: permite desfazer sem tecla modificadora
   e se lê diferente do N/A — o vazio ainda conta contra o dia, o N/A sai da conta
@@ -430,18 +436,28 @@ rotinas são o que movem as metas.
 ### Objetivos
 
 - Metas de horizonte mais longo, apresentadas como **caixas** de três por
-  linha, no mesmo ritmo dos big numbers do Overview de Finanças (rótulo, uma
-  figura grande, uma subida discreta) porém mais altas, para cada meta se ler
-  como um bloco e não como uma linha de lista. Título, descrição, prazo e
-  status (em andamento / concluída / abandonada)
-- O progresso é **definido à mão**, por uma barra arrastável com um campo
-  numérico ao lado — os dois são visões do mesmo valor. É deliberado não ser
-  calculado: é o que permite uma meta contável ("juntar a reserva") e uma difusa
-  ("trocar de emprego") conviverem na mesma lista sem forçar uma na forma da
-  outra
-- Concluir uma meta fixa a barra em 100% — uma "concluída" parada em 60% se lê
-  como bug toda vez
-- Metas encerradas descem para um bloco "Encerradas" e podem ser reabertas
+  linha. Título **grande, em primeiro plano**, com a porcentagem de progresso
+  ao lado — as duas competem pela atenção de propósito, mas o título domina o
+  espaço enquanto o número fica compacto, do mesmo jeito que os big numbers do
+  Overview de Finanças ficam compactos ao lado do rótulo
+- O progresso é **definido à mão**: não é calculado, o que é o que permite uma
+  meta contável ("juntar a reserva") e uma difusa ("trocar de emprego")
+  conviverem na mesma lista sem forçar uma na forma da outra. A edição — tanto
+  arrastando quanto digitando o número — só acontece dentro do **modal**; o
+  cartão na lista é somente leitura e um alvo de clique, não uma superfície
+  editável
+- A barra usada para arrastar o progresso é a mesma em toda a interface:
+  mais grossa e retangular que o controle nativo do navegador (que por padrão
+  sai fino e com cantos totalmente arredondados), com o trecho já percorrido
+  preenchido para a leitura ficar imediata
+- **A caixa inteira é o alvo de clique** para abrir a edição — não há mais um
+  ícone de lápis separado. Só o botão de concluir/reabrir intercepta o clique
+  antes que ele chegue ao cartão
+- Concluir uma meta fixa o progresso em 100% — uma "concluída" parada em 60% se
+  lê como bug toda vez. Não existe status "abandonada": uma meta que deixou de
+  fazer sentido se **exclui**, não se arquiva — um terceiro estado ali só
+  criava uma gaveta de metas esquecidas
+- Metas concluídas descem para um bloco "Concluídas" e podem ser reabertas
 
 ## Publicar online
 

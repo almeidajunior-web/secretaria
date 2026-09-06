@@ -5,25 +5,30 @@ import ConfirmDialog from '../common/ConfirmDialog'
 const inputClass =
   'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
 
-// Create/edit a meta. Progress isn't here on purpose — it lives on the card in
-// the list, where you can nudge it without opening anything. This modal is for
-// the parts you set once and rarely touch.
+// Create/edit a meta. Progress lives here rather than on the card — the card
+// is a click target for opening this modal now, not an inline-editable
+// surface — so dragging the slider or typing the number both only take effect
+// once you hit Salvar, same as every other field.
 export default function GoalModal({ goal, onSave, onDelete, onClose }) {
   const editing = !!goal
   const [title, setTitle] = useState(goal?.title ?? '')
   const [description, setDescription] = useState(goal?.description ?? '')
   const [targetDate, setTargetDate] = useState(goal?.targetDate ?? '')
+  const [progress, setProgress] = useState(goal?.progress ?? 0)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const canSave = title.trim().length > 0
 
+  const setProgressClamped = (value) => setProgress(Math.max(0, Math.min(100, Math.round(Number(value) || 0))))
+
   const handleSave = () => {
     if (!canSave) return
     onSave({
-      ...(goal ?? { progress: 0, status: 'active' }),
+      ...(goal ?? { status: 'active' }),
       title: title.trim(),
       description: description.trim(),
       targetDate: targetDate || null,
+      progress,
     })
   }
 
@@ -69,6 +74,36 @@ export default function GoalModal({ goal, onSave, onDelete, onClose }) {
               onChange={(e) => setTargetDate(e.target.value)}
               className={inputClass}
             />
+          </Field>
+
+          <Field label="Progresso">
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={progress}
+                onChange={(e) => setProgressClamped(e.target.value)}
+                aria-label="Progresso"
+                className="progress-slider min-w-0 flex-1"
+                style={{
+                  background: `linear-gradient(to right, rgb(var(--c-primary)) ${progress}%, rgb(var(--c-border-strong)) ${progress}%)`,
+                }}
+              />
+              <div className="flex shrink-0 items-center gap-0.5">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={progress}
+                  onChange={(e) => setProgressClamped(e.target.value)}
+                  aria-label="Progresso em porcentagem"
+                  className="w-[50px] rounded-md border border-border-strong bg-surface px-1.5 py-1 text-right text-[12px] tabular-nums text-text outline-none focus:border-primary"
+                />
+                <span className="text-[12px] text-text-muted">%</span>
+              </div>
+            </div>
           </Field>
         </div>
 
