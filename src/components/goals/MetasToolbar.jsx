@@ -63,7 +63,7 @@ export default function MetasToolbar({ period, onChangePeriod, title, onPrev, on
           className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover"
         >
           <Plus size={13} />
-          Novo hábito
+          Nova rotina
         </button>
       </div>
     </div>

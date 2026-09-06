@@ -394,12 +394,12 @@ formulário).
 ## Funcionalidades do módulo Metas
 
 Duas seções empilhadas numa página só — a rotina do dia a dia em cima, os
-objetivos de prazo mais longo embaixo — porque o ponto é ver as duas juntas: os
-hábitos são o que move as metas.
+objetivos de prazo mais longo embaixo — porque o ponto é ver as duas juntas: as
+rotinas são o que movem as metas.
 
 ### Rotina
 
-- **Grade de hábitos**: uma linha por hábito, uma coluna por dia, alternando
+- **Grade de rotinas**: uma linha por rotina, uma coluna por dia, alternando
   entre **semana** (7 colunas) e **mês** (~30) pelo switcher da barra, com
   navegação de período e botão "Hoje"
 - Cada célula cicla no clique entre **vazio → feito → não feito → N/A**. O
@@ -407,29 +407,33 @@ hábitos são o que move as metas.
   e se lê diferente do N/A — o vazio ainda conta contra o dia, o N/A sai da conta
 - Cada estado tem **glifo próprio** (✓ / ✕ / –), não só cor, para continuar
   legível para quem não separa os verdes dos vermelhos
-- Um hábito é definido num **modal** com cor, **dias da semana** em que vale,
+- Uma rotina é definida num **modal** com cor, **dias da semana** em que vale,
   **data de início** e **data de fim** (ou "indefinidamente"). Só esses três
   campos decidem se a célula existe, o que é demais para adivinhar de um campo
   de texto inline — por isso aqui não há linha de adição rápida
-- Dias fora do período do hábito, ou num dia da semana que ele não cobre, ficam
+- Dias fora do período da rotina, ou num dia da semana que ela não cobre, ficam
   **inertes**: não são clicáveis nem entram em nenhum denominador
-- **Gráfico de cumprimento** acima da grade: percentual de hábitos cumpridos por
-  dia. Vai só até hoje (plotar o futuro puxaria a linha a zero pelo resto do
-  mês) e **interrompe o traço** nos dias sem hábito nenhum agendado, em vez de
-  fingir que foram medidos e valeram zero
+- **Gráfico de cumprimento** acima da grade: percentual de rotinas cumpridas por
+  dia. Cobre **exatamente a mesma janela da tabela** — as colunas de um se
+  alinham com as do outro — e **interrompe o traço** onde não há o que medir:
+  dias sem rotina agendada e dias que ainda não chegaram. Nenhum dos dois é um
+  dia fracassado, e desenhá-los como zero puxaria a linha ao chão pelo resto do
+  mês
 - O gráfico é **animado**: ao marcar uma célula a linha desliza até o novo valor
   em vez de saltar. Como o atributo `d` de um path SVG não é transicionável por
   CSS, quem desliza são os *dados* — `useTweenedNumbers` interpola os valores por
   `requestAnimationFrame` e o traço é recalculado a cada quadro. Respeita
   `prefers-reduced-motion`, caso em que a mudança é instantânea
-- **Indicadores**: sequência atual (streak) ao lado de cada hábito, percentual
-  do período visível ao fim de cada linha, e o total do dia (ex.: `3/4`) no
-  cabeçalho de cada coluna
+- **Indicadores**: sequência atual (streak) ao lado de cada rotina e percentual
+  do período visível ao fim de cada linha
 
 ### Objetivos
 
-- Metas de horizonte mais longo, com título, descrição, prazo e status
-  (em andamento / concluída / abandonada)
+- Metas de horizonte mais longo, apresentadas como **caixas** de três por
+  linha, no mesmo ritmo dos big numbers do Overview de Finanças (rótulo, uma
+  figura grande, uma subida discreta) porém mais altas, para cada meta se ler
+  como um bloco e não como uma linha de lista. Título, descrição, prazo e
+  status (em andamento / concluída / abandonada)
 - O progresso é **definido à mão**, por uma barra arrastável com um campo
   numérico ao lado — os dois são visões do mesmo valor. É deliberado não ser
   calculado: é o que permite uma meta contável ("juntar a reserva") e uma difusa
@@ -494,7 +498,7 @@ src/
               # (classificações)
     finance/  # Finanças: Overview (stat tiles + gráficos SVG artesanais),
               # tabela, toolbar, modal e configurações
-    goals/    # Metas: grade de hábitos, gráfico animado e objetivos
+    goals/    # Metas: grade de rotinas, gráfico animado e objetivos
   data/       # dados de exemplo (seed) de cada módulo, modules.js (registro
               # central de módulos)
   constants.js

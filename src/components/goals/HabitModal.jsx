@@ -56,11 +56,11 @@ export default function HabitModal({ habit, colorSeed = 0, onSave, onDelete, onC
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-4 text-base font-semibold text-text">
-          {editing ? 'Editar hábito' : 'Novo hábito'}
+          {editing ? 'Editar rotina' : 'Nova rotina'}
         </h2>
 
         <div className="flex flex-col gap-4">
-          <Field label="Hábito">
+          <Field label="Rotina">
             <div className="flex items-center gap-2">
               <ColorSwatchPicker value={color} onSelect={setColor} size="md" />
               <input
@@ -135,7 +135,7 @@ export default function HabitModal({ habit, colorSeed = 0, onSave, onDelete, onC
           </label>
 
           <p className="text-[11px] text-text-muted">
-            O hábito só aparece na grade — e só entra na conta do gráfico — nos dias escolhidos,
+            A rotina só aparece na grade — e só entra na conta do gráfico — nos dias escolhidos,
             dentro desse período.
           </p>
         </div>
@@ -145,7 +145,7 @@ export default function HabitModal({ habit, colorSeed = 0, onSave, onDelete, onC
             <button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              aria-label="Excluir hábito"
+              aria-label="Excluir rotina"
               className="mr-auto flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:bg-danger/15 hover:text-danger"
             >
               <Trash2 size={15} />
@@ -172,7 +172,7 @@ export default function HabitModal({ habit, colorSeed = 0, onSave, onDelete, onC
       {confirmingDelete && (
         <ConfirmDialog
           title={`Excluir "${habit.label}"?`}
-          message="Todo o histórico de marcações desse hábito também é apagado. Esta ação não pode ser desfeita."
+          message="Todo o histórico de marcações dessa rotina também é apagado. Esta ação não pode ser desfeita."
           confirmLabel="Excluir"
           onConfirm={() => {
             onDelete(habit.id)

@@ -13,9 +13,10 @@ const TICKS = [0, 0.5, 1]
 // CSS, so `useTweenedNumbers` eases the underlying rates instead and the path
 // is rebuilt each frame from the eased values.
 //
-// `points` is [{ dateStr, date, rate, done, counted }], with `rate === null`
-// for days where nothing was scheduled — those become gaps in the line rather
-// than a dive to zero, since "no habit due" is not a failed day.
+// `points` covers the whole visible period, matching the grid below column
+// for column. `rate === null` marks a day with nothing to measure — either
+// nothing was scheduled, or the day hasn't arrived — and those become gaps in
+// the line rather than a dive to zero, since neither is a failed day.
 export default function HabitChart({ points }) {
   const svgRef = useRef(null)
   const wrapRef = useRef(null)
@@ -87,7 +88,7 @@ export default function HabitChart({ points }) {
   if (points.length === 0) {
     return (
       <p ref={wrapRef} className="py-6 text-center text-[12px] text-text-muted">
-        Nenhum hábito ativo neste período.
+        Nenhuma rotina ativa neste período.
       </p>
     )
   }
@@ -205,7 +206,7 @@ export default function HabitChart({ points }) {
         >
           <p className="font-semibold text-text">{fmt(hovered.date, "d 'de' MMM")}</p>
           <p className="text-text-secondary">
-            {hovered.done} de {hovered.counted} {hovered.counted === 1 ? 'hábito' : 'hábitos'}
+            {hovered.done} de {hovered.counted} {hovered.counted === 1 ? 'rotina' : 'rotinas'}
             <span className="ml-1 font-medium text-primary">{Math.round(hovered.rate * 100)}%</span>
           </p>
         </div>

@@ -17,14 +17,13 @@ export default function HabitGrid({
   days,
   todayStr,
   today,
-  dayStats,
   onCycleCell,
   onEditHabit,
 }) {
   if (habits.length === 0) {
     return (
       <p className="px-4 py-8 text-center text-sm text-text-muted">
-        Nenhum hábito ainda. Use "Novo hábito" para criar o primeiro.
+        Nenhuma rotina ainda. Use "Nova rotina" para criar a primeira.
       </p>
     )
   }
@@ -38,12 +37,11 @@ export default function HabitGrid({
       <div className="min-w-[560px]" style={{ display: 'grid', gridTemplateColumns }}>
         {/* header */}
         <div className="sticky left-0 z-[1] bg-app-bg px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
-          Hábito
+          Rotina
         </div>
         {days.map((date) => {
           const dateStr = toKey(date)
           const isToday = dateStr === todayStr
-          const stats = dayStats[dateStr]
           return (
             <div key={dateStr} className="pb-1.5 text-center">
               <p className={['text-[9px] uppercase', isToday ? 'text-primary' : 'text-text-muted'].join(' ')}>
@@ -56,10 +54,6 @@ export default function HabitGrid({
                 ].join(' ')}
               >
                 {fmt(date, 'd')}
-              </p>
-              {/* Day tally, like the reference's "4/5" */}
-              <p className="text-[9px] tabular-nums text-text-muted">
-                {stats ? `${stats.done}/${stats.counted}` : '–'}
               </p>
             </div>
           )

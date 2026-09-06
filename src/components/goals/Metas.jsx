@@ -55,8 +55,7 @@ export default function Metas({
     return `${fmt(start, 'd MMM')} – ${fmt(end, "d MMM 'de' yyyy")}`
   }, [period, anchor, days])
 
-  // One pass over the period feeding both the chart and the per-column tally,
-  // so the two can never disagree about what a day scored.
+  // One pass over the period, scoring every day once.
   const dayStats = useMemo(() => {
     const out = {}
     for (const date of days) {
@@ -66,23 +65,25 @@ export default function Metas({
     return out
   }, [days, habits, habitLog])
 
-  // The chart stops at today: plotting days that haven't happened would drag
-  // the line to zero for the rest of the month.
+  // The chart spans exactly the days the grid below it shows, so the two read
+  // as one picture of the same window. Days that haven't happened yet carry a
+  // null rate rather than being dropped: that keeps the axis at full width —
+  // columns still line up with the grid — while the line itself simply stops
+  // at today instead of diving to zero for the rest of the period.
   const chartPoints = useMemo(
     () =>
-      days
-        .filter((date) => toKey(date) <= todayStr)
-        .map((date) => {
-          const dateStr = toKey(date)
-          const stats = dayStats[dateStr]
-          return {
-            dateStr,
-            date,
-            rate: stats ? stats.rate : null,
-            done: stats ? stats.done : 0,
-            counted: stats ? stats.counted : 0,
-          }
-        }),
+      days.map((date) => {
+        const dateStr = toKey(date)
+        const stats = dayStats[dateStr]
+        const future = dateStr > todayStr
+        return {
+          dateStr,
+          date,
+          rate: future || !stats ? null : stats.rate,
+          done: stats ? stats.done : 0,
+          counted: stats ? stats.counted : 0,
+        }
+      }),
     [days, dayStats, todayStr]
   )
 
@@ -116,7 +117,6 @@ export default function Metas({
               days={days}
               todayStr={todayStr}
               today={today}
-              dayStats={dayStats}
               onCycleCell={cycleCell}
               onEditHabit={(habit) => setHabitModal({ habit })}
             />
