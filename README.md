@@ -402,6 +402,12 @@ rotinas são o que movem as metas.
 - **Grade de rotinas**: uma linha por rotina, uma coluna por dia, alternando
   entre **semana** (7 colunas) e **mês** (~30) pelo switcher da barra, com
   navegação de período e botão "Hoje"
+- Rotinas **não têm cor** — a identificação é só pelo nome, sem uma paleta de
+  categoria para gerenciar num módulo onde a lista tende a ser curta
+- Texto da coluna Rotina **centralizado**, título incluído, no mesmo
+  tratamento das colunas de dia
+- **Arraste para reordenar** as rotinas pela alça à esquerda do nome (mesmo
+  padrão de arrastar-e-soltar das listas editáveis do app) — a ordem persiste
 - Grade com **contornos visíveis** célula a célula (mesma técnica do
   Planejamento) e **tons alternados** para ler as colunas de relance: fim de
   semana num tom levemente recuado, semanas alternando um tom mais claro, e o
@@ -413,10 +419,18 @@ rotinas são o que movem as metas.
   e se lê diferente do N/A — o vazio ainda conta contra o dia, o N/A sai da conta
 - Cada estado tem **glifo próprio** (✓ / ✕ / –), não só cor, para continuar
   legível para quem não separa os verdes dos vermelhos
-- Uma rotina é definida num **modal** com cor, **dias da semana** em que vale,
-  **data de início** e **data de fim** (ou "indefinidamente"). Só esses três
-  campos decidem se a célula existe, o que é demais para adivinhar de um campo
-  de texto inline — por isso aqui não há linha de adição rápida
+- Uma rotina é definida num **modal** com **dias da semana** em que vale,
+  **data de início**, **data de fim** (ou "indefinidamente") e uma
+  **descrição opcional**. Os três primeiros decidem se a célula existe, o que
+  é demais para adivinhar de um campo de texto inline — por isso aqui não há
+  linha de adição rápida
+- A descrição, quando existe, aparece como uma **dica ao passar o mouse**
+  sobre o nome da rotina na grade — não ocupa espaço na tabela o tempo todo,
+  só quando é pedida. Portalizada para `document.body` em vez de posicionada
+  no lugar: a coluna de rotinas fica dentro de um contêiner com rolagem
+  horizontal, e um ancestral com rolagem recorta qualquer filho posicionado
+  que ultrapasse sua própria caixa, não importa o z-index — o mesmo problema
+  já resolvido para o menu de grupos do topbar e o popover de filtros
 - Dias fora do período da rotina, ou num dia da semana que ela não cobre, ficam
   **inertes**: não são clicáveis nem entram em nenhum denominador
 - **Gráfico de cumprimento** acima da grade: percentual de rotinas cumpridas por

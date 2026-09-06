@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import ColorSwatchPicker from '../common/ColorSwatchPicker'
 import ConfirmDialog from '../common/ConfirmDialog'
-import { EVENT_COLORS, WEEKDAYS_LETTERS_ORDERED, WEEKDAYS_SHORT_ORDERED } from '../../constants'
+import { WEEKDAYS_LETTERS_ORDERED, WEEKDAYS_SHORT_ORDERED } from '../../constants'
 import { toKey } from '../../lib/habitStats'
 
 const inputClass =
@@ -14,10 +13,10 @@ const EVERY_DAY = [0, 1, 2, 3, 4, 5, 6]
 // modal-only: a habit carries a run (start/end) and a weekday schedule, and
 // those three fields are what decide whether a cell in the grid even exists —
 // too much to guess from a single inline text field.
-export default function HabitModal({ habit, colorSeed = 0, onSave, onDelete, onClose }) {
+export default function HabitModal({ habit, onSave, onDelete, onClose }) {
   const editing = !!habit
   const [label, setLabel] = useState(habit?.label ?? '')
-  const [color, setColor] = useState(habit?.color ?? EVENT_COLORS[colorSeed % EVENT_COLORS.length])
+  const [description, setDescription] = useState(habit?.description ?? '')
   const [weekdays, setWeekdays] = useState(habit?.weekdays ?? EVERY_DAY)
   const [startDate, setStartDate] = useState(habit?.startDate ?? toKey(new Date()))
   // Two controls for one field: the checkbox is the plain-language version of
@@ -39,7 +38,7 @@ export default function HabitModal({ habit, colorSeed = 0, onSave, onDelete, onC
     onSave({
       ...(habit ?? {}),
       label: label.trim(),
-      color,
+      description: description.trim(),
       weekdays,
       startDate,
       endDate: openEnded ? null : endDate || null,
@@ -61,17 +60,24 @@ export default function HabitModal({ habit, colorSeed = 0, onSave, onDelete, onC
 
         <div className="flex flex-col gap-4">
           <Field label="Rotina">
-            <div className="flex items-center gap-2">
-              <ColorSwatchPicker value={color} onSelect={setColor} size="md" />
-              <input
-                autoFocus
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                placeholder="Ex.: Beber 2 litros de água"
-                className={inputClass}
-              />
-            </div>
+            <input
+              autoFocus
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              placeholder="Ex.: Beber 2 litros de água"
+              className={inputClass}
+            />
+          </Field>
+
+          <Field label="Descrição (opcional)">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Um lembrete rápido — aparece ao passar o mouse sobre a rotina na grade."
+              rows={2}
+              className={`${inputClass} resize-none`}
+            />
           </Field>
 
           <Field label="Dias da semana">

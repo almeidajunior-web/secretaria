@@ -1,8 +1,10 @@
-import { Check, Minus, Pencil, X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Check, GripVertical, Minus, Pencil, X } from 'lucide-react'
 import { fmt } from '../../lib/date'
 import { WEEKDAYS_LETTERS_ORDERED } from '../../constants'
 import { cellKey, isHabitActiveOn, habitStreak, habitPeriodRate, toKey } from '../../lib/habitStats'
-import { tintVars } from '../../lib/color'
+import { reorderIds } from '../../lib/reorderList'
 
 // One background tint per day column, applied to the header cell and to every
 // row's cell for that same day — so the tint reads as a continuous band down
@@ -36,6 +38,7 @@ export default function HabitGrid({
   today,
   onCycleCell,
   onEditHabit,
+  onReorderHabits,
 }) {
   if (habits.length === 0) {
     return (
@@ -51,6 +54,13 @@ export default function HabitGrid({
     return { date, dateStr, isToday, bg: dayColumnBg(date, index, isToday) }
   })
 
+  // Dropping on a row reorders the whole `habits` array; since every row's
+  // cells are rendered in that same order, the grid's implicit row placement
+  // just follows along — no separate reorder logic per column needed.
+  const habitIds = habits.map((h) => h.id)
+  const dropOnHabit = (targetId) => (draggedId) =>
+    onReorderHabits(reorderIds(habitIds, draggedId, targetId))
+
   // Fixed label column, then one equal track per day. `minmax(0, 1fr)` keeps
   // a month's 31 columns from overflowing the module instead of shrinking.
   const gridTemplateColumns = `minmax(185px, 1.4fr) repeat(${days.length}, minmax(0, 1fr)) 46px`
@@ -62,7 +72,7 @@ export default function HabitGrid({
         style={{ display: 'grid', gridTemplateColumns }}
       >
         {/* header */}
-        <div className="sticky left-0 z-[1] border-b border-r border-border bg-app-bg px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+        <div className="sticky left-0 z-[1] border-b border-r border-border bg-app-bg px-2 pb-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-text-muted">
           Rotina
         </div>
         {dayMeta.map(({ date, dateStr, isToday, bg }) => (
@@ -104,6 +114,7 @@ export default function HabitGrid({
               period={period}
               onCycleCell={onCycleCell}
               onEditHabit={onEditHabit}
+              onDropHere={dropOnHabit(habit.id)}
             />
           )
         })}
@@ -112,31 +123,10 @@ export default function HabitGrid({
   )
 }
 
-function Row({ habit, habitLog, dayMeta, todayStr, streak, period, onCycleCell, onEditHabit }) {
+function Row({ habit, habitLog, dayMeta, todayStr, streak, period, onCycleCell, onEditHabit, onDropHere }) {
   return (
     <>
-      <div className="sticky left-0 z-[1] flex min-w-0 items-center gap-2 border-b border-r border-border bg-app-bg py-1 pr-3">
-        <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(habit.color)} />
-        <button
-          type="button"
-          onClick={() => onEditHabit(habit)}
-          className="group flex min-w-0 flex-1 items-center gap-1.5 text-left"
-        >
-          <span className="truncate text-[12px] text-text">{habit.label}</span>
-          <Pencil
-            size={11}
-            className="shrink-0 text-text-muted opacity-0 transition-opacity group-hover:opacity-100"
-          />
-        </button>
-        {streak > 0 && (
-          <span
-            className="shrink-0 rounded-full border border-border px-1.5 text-[10px] tabular-nums text-text-secondary"
-            title={`${streak} ${streak === 1 ? 'dia seguido' : 'dias seguidos'}`}
-          >
-            {streak}
-          </span>
-        )}
-      </div>
+      <RoutineLabel habit={habit} streak={streak} onEditHabit={onEditHabit} onDropHere={onDropHere} />
 
       {dayMeta.map(({ date, dateStr, bg }) => {
         const active = isHabitActiveOn(habit, dateStr, date)
@@ -158,6 +148,79 @@ function Row({ habit, habitLog, dayMeta, todayStr, streak, period, onCycleCell, 
         {period.rate == null ? '–' : `${Math.round(period.rate * 100)}%`}
       </div>
     </>
+  )
+}
+
+// The label cell: drag handle, centered title (+ edit pencil on hover), streak
+// badge, and — if the routine has one — a description tooltip that appears on
+// hovering the title. The tooltip is portaled to <body> rather than absolutely
+// positioned in place: this cell sits in a horizontally-scrolling container
+// (`overflow-x-auto` on the wrapper above), and a scrollable ancestor clips
+// any in-place absolutely-positioned child that overflows its box regardless
+// of z-index — the same issue already fixed for the topbar's group dropdown
+// and the finance toolbar's filter popover.
+function RoutineLabel({ habit, streak, onEditHabit, onDropHere }) {
+  const titleRef = useRef(null)
+  const [tooltipPos, setTooltipPos] = useState(null)
+
+  const showTooltip = () => {
+    if (!habit.description || !titleRef.current) return
+    const rect = titleRef.current.getBoundingClientRect()
+    setTooltipPos({ top: rect.bottom + 6, left: rect.left })
+  }
+  const hideTooltip = () => setTooltipPos(null)
+
+  return (
+    <div
+      className="sticky left-0 z-[1] flex min-w-0 items-center justify-center gap-1.5 border-b border-r border-border bg-app-bg px-2 py-1"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        const draggedId = e.dataTransfer.getData('text/plain')
+        if (draggedId) onDropHere(draggedId)
+      }}
+    >
+      <span
+        draggable
+        onDragStart={(e) => e.dataTransfer.setData('text/plain', habit.id)}
+        aria-label="Arrastar para reordenar"
+        className="shrink-0 cursor-grab text-text-muted active:cursor-grabbing"
+      >
+        <GripVertical size={13} />
+      </span>
+      <button
+        ref={titleRef}
+        type="button"
+        onClick={() => onEditHabit(habit)}
+        onMouseEnter={showTooltip}
+        onMouseLeave={hideTooltip}
+        className="group flex min-w-0 max-w-full items-center gap-1.5"
+      >
+        <span className="truncate text-[12px] text-text">{habit.label}</span>
+        <Pencil
+          size={11}
+          className="shrink-0 text-text-muted opacity-0 transition-opacity group-hover:opacity-100"
+        />
+      </button>
+      {streak > 0 && (
+        <span
+          className="shrink-0 rounded-full border border-border px-1.5 text-[10px] tabular-nums text-text-secondary"
+          title={`${streak} ${streak === 1 ? 'dia seguido' : 'dias seguidos'}`}
+        >
+          {streak}
+        </span>
+      )}
+      {tooltipPos &&
+        createPortal(
+          <div
+            role="tooltip"
+            className="pointer-events-none fixed z-50 max-w-[240px] rounded-md border border-border bg-surface px-2.5 py-1.5 text-[11px] leading-snug text-text shadow-lg"
+            style={{ top: tooltipPos.top, left: tooltipPos.left }}
+          >
+            {habit.description}
+          </div>,
+          document.body
+        )}
+    </div>
   )
 }
 

@@ -23,6 +23,7 @@ export default function Metas({
   updateHabit,
   deleteHabit,
   cycleCell,
+  reorderHabits,
   goals,
   addGoal,
   updateGoal,
@@ -119,6 +120,7 @@ export default function Metas({
               today={today}
               onCycleCell={cycleCell}
               onEditHabit={(habit) => setHabitModal({ habit })}
+              onReorderHabits={reorderHabits}
             />
           </section>
 
@@ -134,7 +136,6 @@ export default function Metas({
       {habitModal && (
         <HabitModal
           habit={habitModal.habit}
-          colorSeed={habits.length}
           onSave={(habit) => {
             if (habit.id) updateHabit(habit)
             else addHabit(habit)

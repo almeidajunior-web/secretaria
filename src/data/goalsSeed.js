@@ -11,10 +11,17 @@ const WEEKDAYS = [0, 1, 2, 3, 4]
 // start instead of only appearing once the user builds them by hand.
 export function buildSeedHabits() {
   return [
-    { id: 'habit_agua', label: 'Beber 2 litros de água', color: '#0891B2', weekdays: EVERY_DAY, startDate: dayStr(-30), endDate: null },
-    { id: 'habit_leitura', label: 'Ler 10 páginas', color: '#7C3AED', weekdays: EVERY_DAY, startDate: dayStr(-30), endDate: null },
-    { id: 'habit_academia', label: 'Academia', color: '#DC2626', weekdays: WEEKDAYS, startDate: dayStr(-30), endDate: null },
-    { id: 'habit_ingles', label: 'Estudar inglês', color: '#059669', weekdays: WEEKDAYS, startDate: dayStr(-6), endDate: null },
+    {
+      id: 'habit_agua',
+      label: 'Beber 2 litros de água',
+      description: 'Levar a garrafa de 500ml e enchê-la 4 vezes ao longo do dia.',
+      weekdays: EVERY_DAY,
+      startDate: dayStr(-30),
+      endDate: null,
+    },
+    { id: 'habit_leitura', label: 'Ler 10 páginas', description: '', weekdays: EVERY_DAY, startDate: dayStr(-30), endDate: null },
+    { id: 'habit_academia', label: 'Academia', description: '', weekdays: WEEKDAYS, startDate: dayStr(-30), endDate: null },
+    { id: 'habit_ingles', label: 'Estudar inglês', description: '', weekdays: WEEKDAYS, startDate: dayStr(-6), endDate: null },
   ]
 }
 

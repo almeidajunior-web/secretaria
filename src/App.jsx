@@ -295,6 +295,7 @@ export default function App() {
               updateHabit={habitsApi.updateHabit}
               deleteHabit={habitsApi.deleteHabit}
               cycleCell={habitsApi.cycleCell}
+              reorderHabits={habitsApi.reorderHabits}
               goals={goalsApi.goals}
               addGoal={goalsApi.addGoal}
               updateGoal={goalsApi.updateGoal}
