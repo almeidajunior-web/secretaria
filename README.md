@@ -1,7 +1,8 @@
 # Secretar.ia
 
 Plataforma pessoal modular. Esta etapa entrega os módulos **Agenda**,
-**Planejamento**, **Tarefas**, **Compras**, **Vencimentos** e **Finanças**.
+**Planejamento**, **Tarefas**, **Compras**, **Vencimentos**, **Finanças** e
+**Metas**.
 
 ## Stack
 
@@ -390,6 +391,54 @@ formulário).
 - Criação via modal ("Nova tarefa") ou direto na lista, numa linha rápida
   sem abrir pop-up — título, tags, prazo e prioridade ali mesmo
 
+## Funcionalidades do módulo Metas
+
+Duas seções empilhadas numa página só — a rotina do dia a dia em cima, os
+objetivos de prazo mais longo embaixo — porque o ponto é ver as duas juntas: os
+hábitos são o que move as metas.
+
+### Rotina
+
+- **Grade de hábitos**: uma linha por hábito, uma coluna por dia, alternando
+  entre **semana** (7 colunas) e **mês** (~30) pelo switcher da barra, com
+  navegação de período e botão "Hoje"
+- Cada célula cicla no clique entre **vazio → feito → não feito → N/A**. O
+  vazio é um quarto estado de propósito: permite desfazer sem tecla modificadora
+  e se lê diferente do N/A — o vazio ainda conta contra o dia, o N/A sai da conta
+- Cada estado tem **glifo próprio** (✓ / ✕ / –), não só cor, para continuar
+  legível para quem não separa os verdes dos vermelhos
+- Um hábito é definido num **modal** com cor, **dias da semana** em que vale,
+  **data de início** e **data de fim** (ou "indefinidamente"). Só esses três
+  campos decidem se a célula existe, o que é demais para adivinhar de um campo
+  de texto inline — por isso aqui não há linha de adição rápida
+- Dias fora do período do hábito, ou num dia da semana que ele não cobre, ficam
+  **inertes**: não são clicáveis nem entram em nenhum denominador
+- **Gráfico de cumprimento** acima da grade: percentual de hábitos cumpridos por
+  dia. Vai só até hoje (plotar o futuro puxaria a linha a zero pelo resto do
+  mês) e **interrompe o traço** nos dias sem hábito nenhum agendado, em vez de
+  fingir que foram medidos e valeram zero
+- O gráfico é **animado**: ao marcar uma célula a linha desliza até o novo valor
+  em vez de saltar. Como o atributo `d` de um path SVG não é transicionável por
+  CSS, quem desliza são os *dados* — `useTweenedNumbers` interpola os valores por
+  `requestAnimationFrame` e o traço é recalculado a cada quadro. Respeita
+  `prefers-reduced-motion`, caso em que a mudança é instantânea
+- **Indicadores**: sequência atual (streak) ao lado de cada hábito, percentual
+  do período visível ao fim de cada linha, e o total do dia (ex.: `3/4`) no
+  cabeçalho de cada coluna
+
+### Objetivos
+
+- Metas de horizonte mais longo, com título, descrição, prazo e status
+  (em andamento / concluída / abandonada)
+- O progresso é **definido à mão**, por uma barra arrastável com um campo
+  numérico ao lado — os dois são visões do mesmo valor. É deliberado não ser
+  calculado: é o que permite uma meta contável ("juntar a reserva") e uma difusa
+  ("trocar de emprego") conviverem na mesma lista sem forçar uma na forma da
+  outra
+- Concluir uma meta fixa a barra em 100% — uma "concluída" parada em 60% se lê
+  como bug toda vez
+- Metas encerradas descem para um bloco "Encerradas" e podem ser reabertas
+
 ## Publicar online
 
 O projeto é uma SPA estática (sem backend) e já está pronto para deploy. O
@@ -445,6 +494,7 @@ src/
               # (classificações)
     finance/  # Finanças: Overview (stat tiles + gráficos SVG artesanais),
               # tabela, toolbar, modal e configurações
+    goals/    # Metas: grade de hábitos, gráfico animado e objetivos
   data/       # dados de exemplo (seed) de cada módulo, modules.js (registro
               # central de módulos)
   constants.js

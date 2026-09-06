@@ -24,6 +24,8 @@ import { useFinanceAccounts } from './hooks/useFinanceAccounts'
 import { useFinanceTags } from './hooks/useFinanceTags'
 import { useFinanceCreditCard } from './hooks/useFinanceCreditCard'
 import { useFinancePaidInvoices } from './hooks/useFinancePaidInvoices'
+import { useHabits } from './hooks/useHabits'
+import { useGoals } from './hooks/useGoals'
 import { MODULE_DEFS } from './data/modules'
 import Topbar from './components/layout/Topbar'
 import ModulesSettingsModal from './components/layout/ModulesSettingsModal'
@@ -35,6 +37,7 @@ import Tarefas from './components/tasks/Tarefas'
 import Compras from './components/shopping/Compras'
 import Vencimentos from './components/dues/Vencimentos'
 import Financas from './components/finance/Financas'
+import Metas from './components/goals/Metas'
 
 const MODULE_NAMES = Object.fromEntries(MODULE_DEFS.map((m) => [m.id, m.label]))
 
@@ -68,6 +71,8 @@ export default function App() {
   const financeTagsApi = useFinanceTags()
   const financeCreditCardApi = useFinanceCreditCard()
   const financePaidInvoicesApi = useFinancePaidInvoices()
+  const habitsApi = useHabits()
+  const goalsApi = useGoals()
   const [activeModule, setActiveModule] = useState('agenda')
   const [currentDate, setCurrentDate] = useState(() => new Date())
   const [modulesSettingsOpen, setModulesSettingsOpen] = useState(false)
@@ -281,6 +286,20 @@ export default function App() {
               onUpdateCreditCardConfig={financeCreditCardApi.updateConfig}
               paidInvoices={financePaidInvoicesApi.paidSet}
               onToggleInvoicePaid={financePaidInvoicesApi.togglePaid}
+            />
+          ) : activeModule === 'metas' ? (
+            <Metas
+              habits={habitsApi.habits}
+              habitLog={habitsApi.habitLog}
+              addHabit={habitsApi.addHabit}
+              updateHabit={habitsApi.updateHabit}
+              deleteHabit={habitsApi.deleteHabit}
+              cycleCell={habitsApi.cycleCell}
+              goals={goalsApi.goals}
+              addGoal={goalsApi.addGoal}
+              updateGoal={goalsApi.updateGoal}
+              deleteGoal={goalsApi.deleteGoal}
+              setGoalStatus={goalsApi.setGoalStatus}
             />
           ) : (
             <ModulePlaceholder module={activeModule} />

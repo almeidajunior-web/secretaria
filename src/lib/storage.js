@@ -28,6 +28,9 @@ const KEYS = {
   financeCreditCard: 'secretaria:financeCreditCard',
   financePaidInvoices: 'secretaria:financePaidInvoices',
   financeValuesHidden: 'secretaria:financeValuesHidden',
+  habits: 'secretaria:habits',
+  habitLog: 'secretaria:habitLog',
+  goals: 'secretaria:goals',
   schemaVersion: 'secretaria:schemaVersion',
 }
 
@@ -492,4 +495,68 @@ export function loadFinanceValuesHidden() {
 
 export function saveFinanceValuesHidden(hidden) {
   localStorage.setItem(KEYS.financeValuesHidden, String(hidden))
+}
+
+export function loadHabits() {
+  try {
+    const raw = localStorage.getItem(KEYS.habits)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return null
+    // Drops malformed entries rather than letting one bad record take the
+    // whole module down (same reasoning as loadFinanceEntries above), and
+    // normalizes the fields the grid indexes by so callers never have to
+    // guard them.
+    return parsed
+      .filter((h) => h && typeof h === 'object' && typeof h.id === 'string')
+      .map((h) => ({
+        ...h,
+        weekdays: Array.isArray(h.weekdays) ? h.weekdays.filter((d) => d >= 0 && d <= 6) : [0, 1, 2, 3, 4, 5, 6],
+        startDate: typeof h.startDate === 'string' ? h.startDate : null,
+        endDate: typeof h.endDate === 'string' ? h.endDate : null,
+      }))
+  } catch {
+    return null
+  }
+}
+
+export function saveHabits(habits) {
+  localStorage.setItem(KEYS.habits, JSON.stringify(habits))
+}
+
+// Sparse map of 'habitId:yyyy-MM-dd' -> 'done' | 'miss' | 'na'. An absent key
+// means the day was never answered, which is a fourth state on purpose: it
+// reads as untouched in the grid and, unlike 'na', still counts against the
+// day's completion.
+const CELL_STATES = new Set(['done', 'miss', 'na'])
+
+export function loadHabitLog() {
+  try {
+    const raw = localStorage.getItem(KEYS.habitLog)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    return Object.fromEntries(Object.entries(parsed).filter(([, v]) => CELL_STATES.has(v)))
+  } catch {
+    return null
+  }
+}
+
+export function saveHabitLog(log) {
+  localStorage.setItem(KEYS.habitLog, JSON.stringify(log))
+}
+
+export function loadGoals() {
+  try {
+    const raw = localStorage.getItem(KEYS.goals)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((g) => g && typeof g === 'object') : null
+  } catch {
+    return null
+  }
+}
+
+export function saveGoals(goals) {
+  localStorage.setItem(KEYS.goals, JSON.stringify(goals))
 }
