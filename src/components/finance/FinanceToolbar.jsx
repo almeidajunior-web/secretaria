@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Settings, ListChecks, Filter, Trash2, X } from 'lucide-react'
+import { Settings, ListChecks, Filter, Trash2, X, Search } from 'lucide-react'
 import { tintVars } from '../../lib/color'
 
 const TABS = [
@@ -27,10 +27,11 @@ export default function FinanceToolbar({
   incomeCategories,
   paymentMethods,
   accounts,
-  tags,
   filters,
   onToggleFilter,
   onClearFilters,
+  search,
+  onSearchChange,
   onManageClick,
   selectMode,
   onToggleSelectMode,
@@ -64,8 +65,7 @@ export default function FinanceToolbar({
     (filters?.types?.length || 0) +
     (filters?.categoryIds?.length || 0) +
     (filters?.paymentMethodIds?.length || 0) +
-    (filters?.accountIds?.length || 0) +
-    (filters?.tagIds?.length || 0)
+    (filters?.accountIds?.length || 0)
 
   return (
     <div className="relative z-30 flex shrink-0 flex-wrap items-center gap-3 glass border-b px-4 py-2.5">
@@ -89,19 +89,21 @@ export default function FinanceToolbar({
       </div>
 
       {tab === 'lancamentos' && (
-        <FilterPopover
-          open={filterOpen}
-          onOpenChange={setFilterOpen}
-          filters={filters}
-          onToggleFilter={onToggleFilter}
-          onClearFilters={onClearFilters}
-          expenseCategories={expenseCategories}
-          incomeCategories={incomeCategories}
-          paymentMethods={paymentMethods}
-          accounts={accounts}
-          tags={tags}
-          activeFilterCount={activeFilterCount}
-        />
+        <>
+          <FilterPopover
+            open={filterOpen}
+            onOpenChange={setFilterOpen}
+            filters={filters}
+            onToggleFilter={onToggleFilter}
+            onClearFilters={onClearFilters}
+            expenseCategories={expenseCategories}
+            incomeCategories={incomeCategories}
+            paymentMethods={paymentMethods}
+            accounts={accounts}
+            activeFilterCount={activeFilterCount}
+          />
+          <SearchField value={search} onChange={onSearchChange} />
+        </>
       )}
 
       <div className="ml-auto flex items-center gap-2">
@@ -133,6 +135,36 @@ export default function FinanceToolbar({
   )
 }
 
+// Matches lançamentos by título as you type (see Financas.jsx#searchEntries,
+// which also ignores accents). Narrow by default so it sits next to Filtros
+// without pushing the right-hand actions around; Escape clears it, which is
+// faster than selecting the text to delete it.
+function SearchField({ value, onChange }) {
+  return (
+    <div className="relative flex items-center">
+      <Search size={12} className="pointer-events-none absolute left-2.5 text-text-muted" />
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => e.key === 'Escape' && onChange('')}
+        placeholder="Buscar lançamento…"
+        aria-label="Buscar lançamento pelo título"
+        className="w-52 rounded-full border border-border bg-surface py-1 pl-7 pr-7 text-[11px] text-text outline-none placeholder:text-text-muted focus:border-primary"
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          aria-label="Limpar busca"
+          className="absolute right-1.5 flex h-4 w-4 items-center justify-center rounded-full text-text-muted hover:bg-accent-soft hover:text-primary"
+        >
+          <X size={11} />
+        </button>
+      )}
+    </div>
+  )
+}
+
 function FilterPopover({
   open,
   onOpenChange,
@@ -143,7 +175,6 @@ function FilterPopover({
   incomeCategories,
   paymentMethods,
   accounts,
-  tags,
   activeFilterCount,
 }) {
   const ref = useRef(null)
@@ -232,22 +263,6 @@ function FilterPopover({
               ))}
             </FilterSection>
           )}
-
-          <FilterSection label="Tags">
-            {tags.length === 0 && (
-              <p className="text-[11px] text-text-muted">Nenhuma tag criada ainda.</p>
-            )}
-            {tags.map((t) => (
-              <FilterChip
-                key={t.id}
-                active={(filters.tagIds || []).includes(t.id)}
-                onClick={() => onToggleFilter('tagIds', t.id)}
-              >
-                <span className="tint-fill h-2 w-2 shrink-0 rounded-full" style={tintVars(t.color)} />
-                {t.label}
-              </FilterChip>
-            ))}
-          </FilterSection>
 
           {activeFilterCount > 0 && (
             <button

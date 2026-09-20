@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AmountInput from '../common/AmountInput'
 import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
 
 const inputClass =
@@ -15,7 +16,7 @@ export default function BillModal({ categories, onSave, onClose }) {
   const [dueDate, setDueDate] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [recurrence, setRecurrence] = useState('none')
-  const [description, setDescription] = useState('')
+  const [recurrenceEnd, setRecurrenceEnd] = useState('')
 
   const canSave = title.trim().length > 0 && dueDate
 
@@ -27,7 +28,7 @@ export default function BillModal({ categories, onSave, onClose }) {
       dueDate,
       categoryId: categoryId || null,
       recurrence,
-      description: description.trim(),
+      recurrenceEnd: recurrence === 'none' ? null : recurrenceEnd || null,
     })
   }
 
@@ -93,7 +94,10 @@ export default function BillModal({ categories, onSave, onClose }) {
             <Field label="Recorrência">
               <select
                 value={recurrence}
-                onChange={(e) => setRecurrence(e.target.value)}
+                onChange={(e) => {
+                  setRecurrence(e.target.value)
+                  if (e.target.value === 'none') setRecurrenceEnd('')
+                }}
                 className={inputClass}
               >
                 {RECURRENCE_OPTIONS.map((r) => (
@@ -105,15 +109,18 @@ export default function BillModal({ categories, onSave, onClose }) {
             </Field>
           </div>
 
-          <Field label="Descrição (opcional)">
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descrição breve…"
-              rows={2}
-              className={`${inputClass} resize-none`}
-            />
-          </Field>
+          {/* Only meaningful once something recurs. Left empty, the conta
+              simply keeps coming back — the common case for a conta fixa. */}
+          {recurrence !== 'none' && (
+            <Field label="Repetir até (opcional)">
+              <input
+                type="date"
+                value={recurrenceEnd}
+                onChange={(e) => setRecurrenceEnd(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          )}
         </div>
 
         <div className="mt-5 flex justify-end gap-2">

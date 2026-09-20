@@ -15,21 +15,18 @@ import {
 } from 'lucide-react'
 import { fmt, fromDateInput } from '../../lib/date'
 import { vencimentoDaCompra } from '../../lib/creditCard'
-import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
 import { formatCurrency } from '../../lib/currency'
 import AmountInput from '../common/AmountInput'
 import DescriptionPopover from '../common/DescriptionPopover'
 import ChipSelect from '../common/ChipSelect'
 import InlineDate from '../common/InlineDate'
-import TagPickerPopover from '../common/TagPickerPopover'
+import RecurrenceChipField from '../common/RecurrenceChipField'
 import { tintVars } from '../../lib/color'
 
 const TYPE_OPTIONS = [
   { id: 'income', label: 'Receita' },
   { id: 'expense', label: 'Despesa' },
 ]
-
-const RECURRENCE_CHIP_OPTIONS = RECURRENCE_OPTIONS.map((r) => ({ id: r.value, label: r.label }))
 
 // The invoice due date for a credit entry, or null for anything else.
 function invoiceDueDate(entry, creditCfg) {
@@ -79,7 +76,6 @@ export default function FinanceTable({
   incomeCategories,
   paymentMethods,
   accounts,
-  tags,
   sortChain,
   onToggleSort,
   filters,
@@ -87,7 +83,6 @@ export default function FinanceTable({
   onUpdateEntry,
   onDeleteClick,
   onDuplicate,
-  onCreateTag,
   selectMode,
   selectedIds,
   onToggleSelect,
@@ -124,9 +119,9 @@ export default function FinanceTable({
   const grouping = groupInstallments && !selectMode
   const showAccounts = accounts.length > 0
   const allCategories = [...expenseCategories, ...incomeCategories]
-  // Always-present columns: Tipo, Título, Valor, Categoria, Pagamento, Tags,
-  // ★(essencial), Data, Recorrência, ações = 10; plus Conta/seleção if shown.
-  const colSpanEmpty = 10 + (showAccounts ? 1 : 0) + (selectMode ? 1 : 0)
+  // Always-present columns: Tipo, Título, Valor, Categoria, Pagamento,
+  // ★(essencial), Data, Recorrência, ações = 9; plus Conta/seleção if shown.
+  const colSpanEmpty = 9 + (showAccounts ? 1 : 0) + (selectMode ? 1 : 0)
 
   return (
     <div className="thin-scroll h-full overflow-auto">
@@ -188,15 +183,6 @@ export default function FinanceTable({
                 />
               </th>
             )}
-            <th className="px-2 py-2">
-              <HeaderCell
-                label="Tags"
-                filterDim="tagIds"
-                filterOptions={tags}
-                filters={filters}
-                onToggleFilter={onToggleFilter}
-              />
-            </th>
             <th className="px-2 py-2 text-center" title="Essencial">
               <Star size={12} className="mx-auto text-text-muted" />
             </th>
@@ -216,9 +202,7 @@ export default function FinanceTable({
               incomeCategories={incomeCategories}
               paymentMethods={paymentMethods}
               accounts={accounts}
-              tags={tags}
               showAccounts={showAccounts}
-              onCreateTag={onCreateTag}
               onQuickAdd={onQuickAdd}
               selectMode={selectMode}
               creditCardConfig={creditCardConfig}
@@ -255,12 +239,10 @@ export default function FinanceTable({
                           incomeCategories={incomeCategories}
                           paymentMethods={paymentMethods}
                           accounts={accounts}
-                          tags={tags}
                           showAccounts={showAccounts}
                           onUpdateEntry={onUpdateEntry}
                           onDeleteClick={() => onDeleteClick(entry.id)}
                           onDuplicate={() => onDuplicate(entry.id)}
-                          onCreateTag={onCreateTag}
                           selectMode={selectMode}
                           selected={selectedIds?.has(entry.id)}
                           onToggleSelect={() => onToggleSelect(entry.id)}
@@ -280,12 +262,10 @@ export default function FinanceTable({
                   incomeCategories={incomeCategories}
                   paymentMethods={paymentMethods}
                   accounts={accounts}
-                  tags={tags}
                   showAccounts={showAccounts}
                   onUpdateEntry={onUpdateEntry}
                   onDeleteClick={() => onDeleteClick(entry.id)}
                   onDuplicate={() => onDuplicate(entry.id)}
-                  onCreateTag={onCreateTag}
                   selectMode={selectMode}
                   selected={selectedIds?.has(entry.id)}
                   onToggleSelect={() => onToggleSelect(entry.id)}
@@ -400,12 +380,10 @@ function EntryRow({
   incomeCategories,
   paymentMethods,
   accounts,
-  tags,
   showAccounts,
   onUpdateEntry,
   onDeleteClick,
   onDuplicate,
-  onCreateTag,
   selectMode,
   selected,
   onToggleSelect,
@@ -420,7 +398,6 @@ function EntryRow({
   // not-yet-reached installment). A card purchase already made is realizado.
   const previsto = entry.date && today && entry.date > today
   const dueDate = invoiceDueDate(entry, creditCardConfig)
-  const tagIds = entry.tagIds || []
 
   useEffect(() => {
     setTitle(entry.title)
@@ -430,11 +407,6 @@ function EntryRow({
     const t = title.trim()
     if (t && t !== entry.title) onUpdateEntry({ ...entry, title: t })
     else setTitle(entry.title)
-  }
-
-  const toggleTag = (tagId) => {
-    const next = tagIds.includes(tagId) ? tagIds.filter((x) => x !== tagId) : [...tagIds, tagId]
-    onUpdateEntry({ ...entry, tagIds: next })
   }
 
   const cell = 'px-2 py-1.5 align-middle'
@@ -534,15 +506,6 @@ function EntryRow({
           />
         </td>
       )}
-      <td className={cell}>
-        <TagPickerPopover
-          tags={tags}
-          selectedIds={tagIds}
-          onToggle={toggleTag}
-          onCreate={onCreateTag}
-          triggerClassName="flex flex-wrap items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-text-secondary hover:bg-accent-soft/50"
-        />
-      </td>
       <td className={`${cell} text-center`}>
         {isIncome ? (
           <span className="text-text-muted/30">—</span>
@@ -575,12 +538,10 @@ function EntryRow({
         )}
       </td>
       <td className={cell}>
-        <ChipSelect
-          value={entry.recurrence || 'none'}
-          options={RECURRENCE_CHIP_OPTIONS}
-          onChange={(id) => onUpdateEntry({ ...entry, recurrence: id || 'none' })}
-          allowNull={false}
-          colorless
+        <RecurrenceChipField
+          recurrence={entry.recurrence}
+          recurrenceEnd={entry.recurrenceEnd}
+          onChange={(patch) => onUpdateEntry({ ...entry, ...patch })}
         />
       </td>
       <td className={`${cell} text-right`}>
@@ -656,9 +617,7 @@ function QuickAddRow({
   incomeCategories,
   paymentMethods,
   accounts,
-  tags,
   showAccounts,
-  onCreateTag,
   onQuickAdd,
   selectMode,
   creditCardConfig,
@@ -672,10 +631,10 @@ function QuickAddRow({
   const [categoryId, setCategoryId] = useState('')
   const [paymentMethodId, setPaymentMethodId] = useState('')
   const [accountId, setAccountId] = useState('')
-  const [tagIds, setTagIds] = useState([])
   // Defaults to essential; the user unchecks it for the exceptions.
   const [essential, setEssential] = useState(true)
   const [recurrence, setRecurrence] = useState('none')
+  const [recurrenceEnd, setRecurrenceEnd] = useState(null)
   // Remounts the description popover after each add, so it doesn't keep the
   // previous entry's draft in its own internal state.
   const [formKey, setFormKey] = useState(0)
@@ -699,9 +658,9 @@ function QuickAddRow({
       categoryId: categoryId || null,
       paymentMethodId: paymentMethodId || null,
       accountId: accountId || null,
-      tagIds,
       essential: isIncome ? false : essential,
       recurrence,
+      recurrenceEnd,
     })
     setTitle('')
     setAmount(null)
@@ -710,9 +669,9 @@ function QuickAddRow({
     setCategoryId('')
     setPaymentMethodId('')
     setAccountId('')
-    setTagIds([])
     setEssential(true)
     setRecurrence('none')
+    setRecurrenceEnd(null)
     setFormKey((k) => k + 1)
   }
 
@@ -797,15 +756,6 @@ function QuickAddRow({
           />
         </td>
       )}
-      <td className={cell} style={cellStyle}>
-        <TagPickerPopover
-          tags={tags}
-          selectedIds={tagIds}
-          onToggle={(id) => setTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))}
-          onCreate={onCreateTag}
-          triggerClassName="flex flex-wrap items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-text-secondary hover:bg-accent-soft/50"
-        />
-      </td>
       <td className={`${cell} text-center`} style={cellStyle}>
         {isIncome ? (
           <span className="text-text-muted/30">—</span>
@@ -830,12 +780,13 @@ function QuickAddRow({
         )}
       </td>
       <td className={cell} style={cellStyle}>
-        <ChipSelect
-          value={recurrence}
-          options={RECURRENCE_CHIP_OPTIONS}
-          onChange={(id) => setRecurrence(id || 'none')}
-          allowNull={false}
-          colorless
+        <RecurrenceChipField
+          recurrence={recurrence}
+          recurrenceEnd={recurrenceEnd}
+          onChange={(patch) => {
+            setRecurrence(patch.recurrence)
+            setRecurrenceEnd(patch.recurrenceEnd)
+          }}
         />
       </td>
       <td className={`${cell} text-right`} style={cellStyle}>

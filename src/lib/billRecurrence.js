@@ -29,8 +29,17 @@ function toDate(dateStr) {
 }
 
 // The due date of the next cycle, or null for a one-off bill.
-export function nextDueDate(dueDateStr, recurrence) {
+//
+// `endDate` (optional 'yyyy-MM-dd') closes the series: once the next cycle
+// would fall past it, there is no next cycle. It's inclusive, so a limit set
+// exactly on a cycle's own date still lets that cycle happen — that's how the
+// date reads in the interface ("recorrente até 10/12" includes 10/12). An
+// already-spawned occurrence beyond the limit is deliberately left alone;
+// this only stops new ones.
+export function nextDueDate(dueDateStr, recurrence, endDate) {
   const months = RECURRENCE_MONTHS[recurrence]
   if (!months) return null
-  return format(addMonths(toDate(dueDateStr), months), 'yyyy-MM-dd')
+  const next = format(addMonths(toDate(dueDateStr), months), 'yyyy-MM-dd')
+  if (endDate && next > endDate) return null
+  return next
 }

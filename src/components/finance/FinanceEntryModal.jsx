@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import AmountInput from '../common/AmountInput'
-import TagPickerPopover from '../common/TagPickerPopover'
 import { vencimentoDaCompra } from '../../lib/creditCard'
 import { fmt, fromDateInput } from '../../lib/date'
 import { formatCurrency } from '../../lib/currency'
@@ -19,9 +18,7 @@ export default function FinanceEntryModal({
   incomeCategories,
   paymentMethods,
   accounts,
-  tags,
   creditCardConfig,
-  onCreateTag,
   onSave,
   onClose,
 }) {
@@ -32,10 +29,10 @@ export default function FinanceEntryModal({
   const [categoryId, setCategoryId] = useState('')
   const [paymentMethodId, setPaymentMethodId] = useState('')
   const [accountId, setAccountId] = useState('')
-  const [tagIds, setTagIds] = useState([])
   // Defaults to essential; the user unchecks it for the exceptions.
   const [essential, setEssential] = useState(true)
   const [recurrence, setRecurrence] = useState('none')
+  const [recurrenceEnd, setRecurrenceEnd] = useState('')
   const [description, setDescription] = useState('')
   const [installmentEnabled, setInstallmentEnabled] = useState(false)
   const [installmentCount, setInstallmentCount] = useState(2)
@@ -65,9 +62,9 @@ export default function FinanceEntryModal({
       categoryId: categoryId || null,
       paymentMethodId: paymentMethodId || null,
       accountId: accountId || null,
-      tagIds,
       essential: isExpense ? essential : false,
       recurrence,
+      recurrenceEnd: recurrence === 'none' ? null : recurrenceEnd || null,
       description: description.trim(),
       installmentCount: showInstallmentOption && installmentEnabled ? installmentCount : null,
     })
@@ -220,7 +217,14 @@ export default function FinanceEntryModal({
               </Field>
             )}
             <Field label="Recorrência">
-              <select value={recurrence} onChange={(e) => setRecurrence(e.target.value)} className={inputClass}>
+              <select
+                value={recurrence}
+                onChange={(e) => {
+                  setRecurrence(e.target.value)
+                  if (e.target.value === 'none') setRecurrenceEnd('')
+                }}
+                className={inputClass}
+              >
                 {RECURRENCE_OPTIONS.map((r) => (
                   <option key={r.value} value={r.value}>
                     {r.label}
@@ -230,28 +234,30 @@ export default function FinanceEntryModal({
             </Field>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <Field label="Tags (opcional)">
-              <TagPickerPopover
-                tags={tags}
-                selectedIds={tagIds}
-                onToggle={(id) =>
-                  setTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-                }
-                onCreate={onCreateTag}
+          {/* Only meaningful once something recurs — an end date on a one-off
+              lançamento has nothing to end. Left empty, the series just runs
+              indefinitely, which is the common case. */}
+          {recurrence !== 'none' && (
+            <Field label="Repetir até (opcional)">
+              <input
+                type="date"
+                value={recurrenceEnd}
+                onChange={(e) => setRecurrenceEnd(e.target.value)}
+                className={inputClass}
               />
             </Field>
-            {isExpense && (
-              <label className="flex cursor-pointer items-center gap-2 self-end pb-1.5 text-[13px] text-text-secondary">
-                <input
-                  type="checkbox"
-                  checked={essential}
-                  onChange={(e) => setEssential(e.target.checked)}
-                />
-                Essencial?
-              </label>
-            )}
-          </div>
+          )}
+
+          {isExpense && (
+            <label className="flex cursor-pointer items-center gap-2 text-[13px] text-text-secondary">
+              <input
+                type="checkbox"
+                checked={essential}
+                onChange={(e) => setEssential(e.target.checked)}
+              />
+              Essencial?
+            </label>
+          )}
 
           <Field label="Descrição (opcional)">
             <textarea

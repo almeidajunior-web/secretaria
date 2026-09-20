@@ -28,7 +28,7 @@ import FinanceEntryModal from './FinanceEntryModal'
 import FinanceSettingsModal from './FinanceSettingsModal'
 
 // Each dimension is read with `|| []` because a filters object persisted by
-// an older version may be missing a key added later (tagIds/types) — reading
+// an older version may be missing a key added later (types) — reading
 // `.length` off an undefined key would otherwise crash the whole module the
 // moment any entry is present for the callback to run over.
 function filterEntries(entries, filters) {
@@ -36,18 +36,32 @@ function filterEntries(entries, filters) {
   const categoryIds = filters.categoryIds || []
   const paymentMethodIds = filters.paymentMethodIds || []
   const accountIds = filters.accountIds || []
-  const tagIds = filters.tagIds || []
   return entries.filter((e) => {
     if (types.length && !types.includes(e.type)) return false
     if (categoryIds.length && !categoryIds.includes(e.categoryId)) return false
     if (paymentMethodIds.length && !paymentMethodIds.includes(e.paymentMethodId)) return false
     if (accountIds.length && !accountIds.includes(e.accountId)) return false
-    if (tagIds.length && !tagIds.some((t) => (e.tagIds || []).includes(t))) return false
     return true
   })
 }
 
-const DEFAULT_FILTERS = { categoryIds: [], paymentMethodIds: [], accountIds: [], tagIds: [], types: [] }
+const DEFAULT_FILTERS = { categoryIds: [], paymentMethodIds: [], accountIds: [], types: [] }
+
+// Accent- and case-insensitive substring match on the título, so "agua"
+// finds "Água" and "SALARIO" finds "Salário" — typing the accents is exactly
+// the friction a search box is supposed to remove.
+function normalize(text) {
+  return (text || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+}
+
+function searchEntries(entries, term) {
+  const needle = normalize(term).trim()
+  if (!needle) return entries
+  return entries.filter((e) => normalize(e.title).includes(needle))
+}
 
 // Finanças module: two tabs (Resumo = métricas + gráficos + tabela recente;
 // Lançamentos = tabela completa). There's no period selector — the Overview
@@ -81,11 +95,6 @@ export default function Financas({
   updateAccount,
   onDeleteAccount,
   reorderAccounts,
-  tags,
-  addTag,
-  updateTag,
-  onDeleteTag,
-  reorderTags,
   creditCardConfig,
   onUpdateCreditCardConfig,
   paidInvoices,
@@ -96,6 +105,10 @@ export default function Financas({
     { field: 'date', direction: 'desc' },
   ])
   const [filters, setFilters] = usePersistentState('secretaria:financeFilters', DEFAULT_FILTERS)
+  // Deliberately not persisted: coming back to a module whose list is silently
+  // narrowed by a search you typed days ago reads as missing data, not as a
+  // preference. Filters persist; the search resets with the session.
+  const [search, setSearch] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
@@ -158,7 +171,13 @@ export default function Financas({
   )
 
   const visibleEntries = useMemo(() => filterEntries(entries, filters), [entries, filters])
-  const sortedEntries = useMemo(() => [...visibleEntries].sort(comparator), [visibleEntries, comparator])
+  // The search narrows the Lançamentos table only — it's typed in that tab's
+  // own toolbar, so letting it reach the Resumo below would quietly change
+  // numbers the user isn't looking at.
+  const sortedEntries = useMemo(
+    () => [...searchEntries(visibleEntries, search)].sort(comparator),
+    [visibleEntries, search, comparator]
+  )
 
   // "Lançamentos recentes" means the newest ones, so it takes the tail of the
   // canonical record order rather than the head of whatever sort the user
@@ -273,12 +292,12 @@ export default function Financas({
       categoryId: null,
       paymentMethodId: null,
       accountId: null,
-      tagIds: [],
       essential: false,
       amount: 0,
       date: null,
       type: 'expense',
       recurrence: 'none',
+      recurrenceEnd: null,
       ...rest,
     }
     if (installmentCount && installmentCount >= 2 && base.paymentMethodId === 'credito') {
@@ -295,7 +314,6 @@ export default function Financas({
     incomeCategories,
     paymentMethods,
     accounts,
-    tags,
     sortChain,
     onToggleSort: toggleSort,
     filters,
@@ -303,7 +321,6 @@ export default function Financas({
     onUpdateEntry: applyEntryUpdate,
     onDeleteClick: deleteEntry,
     onDuplicate: handleDuplicate,
-    onCreateTag: addTag,
     selectMode,
     selectedIds,
     onToggleSelect: toggleSelectEntry,
@@ -320,10 +337,11 @@ export default function Financas({
         incomeCategories={incomeCategories}
         paymentMethods={paymentMethods}
         accounts={accounts}
-        tags={tags}
         filters={filters}
         onToggleFilter={toggleFilter}
         onClearFilters={clearFilters}
+        search={search}
+        onSearchChange={setSearch}
         onManageClick={() => setSettingsOpen(true)}
         selectMode={selectMode}
         onToggleSelectMode={toggleSelectMode}
@@ -399,11 +417,6 @@ export default function Financas({
           onUpdateAccount={updateAccount}
           onDeleteAccount={onDeleteAccount}
           onReorderAccounts={reorderAccounts}
-          tags={tags}
-          onAddTag={addTag}
-          onUpdateTag={updateTag}
-          onDeleteTag={onDeleteTag}
-          onReorderTags={reorderTags}
           onClose={() => setSettingsOpen(false)}
         />
       )}
@@ -414,9 +427,7 @@ export default function Financas({
           incomeCategories={incomeCategories}
           paymentMethods={paymentMethods}
           accounts={accounts}
-          tags={tags}
           creditCardConfig={creditCardConfig}
-          onCreateTag={addTag}
           onSave={(data) => {
             handleQuickAdd(data)
             setModalOpen(false)

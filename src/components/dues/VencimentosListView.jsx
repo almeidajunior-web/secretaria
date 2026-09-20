@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Circle, CircleCheck, Plus, Trash2 } from 'lucide-react'
-import DescriptionPopover from '../common/DescriptionPopover'
 import AmountInput from '../common/AmountInput'
 import ChipSelect from '../common/ChipSelect'
 import InlineDate from '../common/InlineDate'
-import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
+import RecurrenceChipField from '../common/RecurrenceChipField'
 import { isBillOverdue } from '../../lib/billFormat'
-
-const RECURRENCE_CHIP_OPTIONS = RECURRENCE_OPTIONS.map((r) => ({ id: r.value, label: r.label }))
 
 // Flat, always grouped-by-due-date list, every field editable directly in
 // the row — same inline-first philosophy as Compras. A quick-add row at
@@ -125,8 +122,6 @@ function BillRow({
         ].join(' ')}
       />
 
-      <DescriptionPopover item={bill} onUpdateItem={onUpdateBill} />
-
       <div className="flex shrink-0 items-center gap-0.5">
         <span className="text-[11px] text-text-muted">R$</span>
         <AmountInput
@@ -155,12 +150,10 @@ function BillRow({
         placeholder="Sem vencimento"
       />
 
-      <ChipSelect
-        value={bill.recurrence || 'none'}
-        options={RECURRENCE_CHIP_OPTIONS}
-        onChange={(id) => onUpdateBill({ ...bill, recurrence: id || 'none' })}
-        allowNull={false}
-        colorless
+      <RecurrenceChipField
+        recurrence={bill.recurrence}
+        recurrenceEnd={bill.recurrenceEnd}
+        onChange={(patch) => onUpdateBill({ ...bill, ...patch })}
       />
 
       <button
@@ -180,6 +173,11 @@ function QuickAddRow({ categories, onQuickAdd }) {
   const [amount, setAmount] = useState(null)
   const [dueDate, setDueDate] = useState('')
   const [categoryId, setCategoryId] = useState('')
+  // Recorrência is set here rather than only after the conta exists — a conta
+  // fixa is recurring from the moment you think of it, and having to create it
+  // first and then edit it was one step too many.
+  const [recurrence, setRecurrence] = useState('none')
+  const [recurrenceEnd, setRecurrenceEnd] = useState(null)
 
   const canAdd = title.trim() && dueDate
 
@@ -192,11 +190,15 @@ function QuickAddRow({ categories, onQuickAdd }) {
       amount: (amountOverride !== undefined ? amountOverride : amount) ?? 0,
       dueDate,
       categoryId: categoryId || null,
+      recurrence,
+      recurrenceEnd,
     })
     setTitle('')
     setAmount(null)
     setDueDate('')
     setCategoryId('')
+    setRecurrence('none')
+    setRecurrenceEnd(null)
   }
 
   return (
@@ -229,6 +231,14 @@ function QuickAddRow({ categories, onQuickAdd }) {
         value={dueDate || null}
         onChange={(v) => setDueDate(v || '')}
         placeholder="Vencimento"
+      />
+      <RecurrenceChipField
+        recurrence={recurrence}
+        recurrenceEnd={recurrenceEnd}
+        onChange={(patch) => {
+          setRecurrence(patch.recurrence)
+          setRecurrenceEnd(patch.recurrenceEnd)
+        }}
       />
       <button
         type="button"

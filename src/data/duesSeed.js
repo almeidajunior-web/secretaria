@@ -19,7 +19,6 @@ export function buildSeedBills() {
     {
       id: 'bill_seed_1',
       title: 'Conta de luz',
-      description: '',
       categoryId: 'consumo',
       amount: 145.9,
       dueDate: todayStr(-3),
@@ -31,7 +30,6 @@ export function buildSeedBills() {
     {
       id: 'bill_seed_2',
       title: 'Netflix',
-      description: '',
       categoryId: 'assinaturas',
       amount: 44.9,
       dueDate: todayStr(0),
@@ -43,7 +41,6 @@ export function buildSeedBills() {
     {
       id: 'bill_seed_3',
       title: 'Aluguel',
-      description: '',
       categoryId: 'moradia',
       amount: 1500,
       dueDate: todayStr(6),
@@ -55,7 +52,6 @@ export function buildSeedBills() {
     {
       id: 'bill_seed_4',
       title: 'Mensalidade da faculdade',
-      description: '',
       categoryId: 'educacao',
       amount: 890,
       dueDate: format(subMonths(new Date(), 1), 'yyyy-MM-dd'),

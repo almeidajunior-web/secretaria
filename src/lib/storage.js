@@ -24,7 +24,6 @@ const KEYS = {
   financeIncomeCategories: 'secretaria:financeIncomeCategories',
   financePaymentMethods: 'secretaria:financePaymentMethods',
   financeAccounts: 'secretaria:financeAccounts',
-  financeTags: 'secretaria:financeTags',
   financeCreditCard: 'secretaria:financeCreditCard',
   financePaidInvoices: 'secretaria:financePaidInvoices',
   financeValuesHidden: 'secretaria:financeValuesHidden',
@@ -436,21 +435,6 @@ export function loadFinanceAccounts() {
 
 export function saveFinanceAccounts(accounts) {
   localStorage.setItem(KEYS.financeAccounts, JSON.stringify(accounts))
-}
-
-export function loadFinanceTags() {
-  try {
-    const raw = localStorage.getItem(KEYS.financeTags)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : null
-  } catch {
-    return null
-  }
-}
-
-export function saveFinanceTags(tags) {
-  localStorage.setItem(KEYS.financeTags, JSON.stringify(tags))
 }
 
 // Single global card config — { closingDay, dueDay } — not an array like

@@ -21,7 +21,6 @@ import { useFinanceExpenseCategories } from './hooks/useFinanceExpenseCategories
 import { useFinanceIncomeCategories } from './hooks/useFinanceIncomeCategories'
 import { useFinancePaymentMethods } from './hooks/useFinancePaymentMethods'
 import { useFinanceAccounts } from './hooks/useFinanceAccounts'
-import { useFinanceTags } from './hooks/useFinanceTags'
 import { useFinanceCreditCard } from './hooks/useFinanceCreditCard'
 import { useFinancePaidInvoices } from './hooks/useFinancePaidInvoices'
 import { useHabits } from './hooks/useHabits'
@@ -68,7 +67,6 @@ export default function App() {
   const financeIncomeCategoriesApi = useFinanceIncomeCategories()
   const financePaymentMethodsApi = useFinancePaymentMethods()
   const financeAccountsApi = useFinanceAccounts()
-  const financeTagsApi = useFinanceTags()
   const financeCreditCardApi = useFinanceCreditCard()
   const financePaidInvoicesApi = useFinancePaidInvoices()
   const habitsApi = useHabits()
@@ -142,11 +140,6 @@ export default function App() {
   const handleDeleteFinanceAccount = (id) => {
     financeAccountsApi.deleteAccount(id)
     financeEntriesApi.removeAccountFromAllEntries(id)
-  }
-
-  const handleDeleteFinanceTag = (id) => {
-    financeTagsApi.deleteTag(id)
-    financeEntriesApi.removeTagFromAllEntries(id)
   }
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -277,11 +270,6 @@ export default function App() {
               updateAccount={financeAccountsApi.updateAccount}
               onDeleteAccount={handleDeleteFinanceAccount}
               reorderAccounts={financeAccountsApi.reorderAccounts}
-              tags={financeTagsApi.tags}
-              addTag={financeTagsApi.addTag}
-              updateTag={financeTagsApi.updateTag}
-              onDeleteTag={handleDeleteFinanceTag}
-              reorderTags={financeTagsApi.reorderTags}
               creditCardConfig={financeCreditCardApi.config}
               onUpdateCreditCardConfig={financeCreditCardApi.updateConfig}
               paidInvoices={financePaidInvoicesApi.paidSet}

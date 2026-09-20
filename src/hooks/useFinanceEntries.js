@@ -79,7 +79,8 @@ export function useFinanceEntries() {
   // series. For each series, looks at its chronologically-latest member; if
   // that instance is no longer in the future (its date has arrived or passed)
   // and nothing later already exists, spawns the next one via nextDueDate
-  // (billRecurrence.js). Idempotent and safe to call after every mutation:
+  // (billRecurrence.js), which returns null once the series' optional
+  // `recurrenceEnd` is passed. Idempotent and safe to call after every mutation:
   // once a series has its one pending future instance, there's nothing left to
   // spawn. Memoized (stable identity) so it can sit in a useEffect dependency
   // list without re-firing the scan on unrelated re-renders.
@@ -98,7 +99,7 @@ export function useFinanceEntries() {
       for (const siblings of bySeriesId.values()) {
         const latest = siblings.reduce((a, b) => (a.date > b.date ? a : b))
         if (!latest.date || latest.date > todayStr) continue // still previsto, nothing to add yet
-        const nextDate = nextDueDate(latest.date, latest.recurrence)
+        const nextDate = nextDueDate(latest.date, latest.recurrence, latest.recurrenceEnd)
         if (!nextDate) continue
         toSpawn.push({ ...latest, id: genEntryId(), date: nextDate, effectiveDate: undefined })
       }
@@ -124,14 +125,6 @@ export function useFinanceEntries() {
     setEntries((prev) => prev.map((e) => (e.accountId === accountId ? { ...e, accountId: null } : e)))
   }
 
-  const removeTagFromAllEntries = (tagId) => {
-    setEntries((prev) =>
-      prev.map((e) =>
-        (e.tagIds || []).includes(tagId) ? { ...e, tagIds: e.tagIds.filter((t) => t !== tagId) } : e
-      )
-    )
-  }
-
   return {
     entries,
     addEntry,
@@ -142,6 +135,5 @@ export function useFinanceEntries() {
     removeCategoryFromAllEntries,
     removePaymentMethodFromAllEntries,
     removeAccountFromAllEntries,
-    removeTagFromAllEntries,
   }
 }

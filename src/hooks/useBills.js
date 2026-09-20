@@ -63,7 +63,8 @@ export function useBills() {
   // editable starting point since bills like utilities vary month to month.
   // The spawn only happens on the unpaid→paid transition, and only if the
   // series doesn't already have a pending instance — guards against
-  // duplicates from toggling the checkbox on and off.
+  // duplicates from toggling the checkbox on and off. A series carrying a
+  // `recurrenceEnd` simply stops spawning once that date is passed.
   const togglePaid = (id, paid) => {
     setBills((prev) => {
       const bill = prev.find((b) => b.id === id)
@@ -76,7 +77,7 @@ export function useBills() {
           (b) => b.id !== bill.id && b.seriesId === bill.seriesId && !b.paid
         )
         if (!hasPendingSibling) {
-          const next = nextDueDate(bill.dueDate, bill.recurrence)
+          const next = nextDueDate(bill.dueDate, bill.recurrence, bill.recurrenceEnd)
           if (next) {
             updated.push({
               ...bill,

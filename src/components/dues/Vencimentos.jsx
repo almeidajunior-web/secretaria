@@ -129,13 +129,13 @@ export default function Vencimentos({
   const handleQuickAdd = (partial) => {
     addBill({
       title: '',
-      description: '',
       categoryId: null,
       amount: 0,
       dueDate: null,
       paid: false,
       paidDate: null,
       recurrence: 'none',
+      recurrenceEnd: null,
       seriesId: null,
       ...partial,
     })
