@@ -18,6 +18,7 @@ export default function ChipSelect({
   colorless = false,
   align = 'right',
   className = '',
+  footer = null,
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -106,6 +107,10 @@ export default function ChipSelect({
           {options.length === 0 && (
             <p className="px-2 py-1 text-[11px] text-text-muted">Nenhuma opção.</p>
           )}
+          {/* An extra control that belongs to the choice rather than to any one
+              option — today, the recurrence's optional end date. It lives here
+              so the row itself stays a single chip. */}
+          {footer && <div className="mt-1 border-t border-border pt-1">{footer}</div>}
         </div>
       )}
     </div>
