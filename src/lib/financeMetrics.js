@@ -3,8 +3,10 @@ import { fmt } from './date'
 import { dataCaixa } from './creditCard'
 
 // All pure functions, no React — the Overview section composes these over the
-// full entry list. `monthStr` is always 'yyyy-MM': the Overview is a fixed
-// current-calendar-month snapshot, independent of the Lançamentos table.
+// full entry list. `monthStr` is always 'yyyy-MM': the month picked in
+// Finanças' toolbar (the current one by default). Anything that looks back a
+// few months — trends, trailing averages — counts back from that month, not
+// from today, so browsing to March shows the six months ending in March.
 //
 // Two date bases (see creditCard.js): "what did I spend/earn" metrics key off
 // COMPETÊNCIA (`e.date` — when it happened), so a credit-card purchase counts
@@ -12,6 +14,13 @@ import { dataCaixa } from './creditCard'
 // metrics key off CAIXA (`dataCaixa` — when money moves; the invoice due date
 // for card entries), so a card purchase only leaves the balance once its
 // invoice is due.
+
+// First day of a 'yyyy-MM' (or the month of a 'yyyy-MM-dd'), as a local Date —
+// the anchor the trailing-window metrics count back from.
+export function monthAnchor(str) {
+  const [y, m] = str.split('-').map(Number)
+  return new Date(y, m - 1, 1)
+}
 
 export function monthTotals(entries, monthStr) {
   const monthEntries = entries.filter((e) => e.date?.startsWith(monthStr))
@@ -58,11 +67,11 @@ export function categoryBreakdown(entries, type, categoryLabelById, colorById) {
     .sort((a, b) => b.total - a.total)
 }
 
-// Oldest → newest, ending on the current month.
-export function monthlyTrend(entries, monthsBack = 6) {
+// Oldest → newest, ending on the anchor's month (the current one by default).
+export function monthlyTrend(entries, monthsBack = 6, anchor = new Date()) {
   const months = []
   for (let i = monthsBack - 1; i >= 0; i--) {
-    const date = subMonths(new Date(), i)
+    const date = subMonths(anchor, i)
     const monthStr = format(date, 'yyyy-MM')
     const { income, expense } = monthTotals(entries, monthStr)
     months.push({ month: monthStr, label: fmt(date, 'MMM'), income, expense })
@@ -109,11 +118,11 @@ export function consolidatedBalance(entries, accounts, todayStr, creditCfg, { ex
 // Trailing average monthly expense over the last `monthsBack` *completed*
 // months (current month is excluded — it's still partial and would skew the
 // average down).
-export function averageMonthlyExpense(entries, monthsBack = 3) {
+export function averageMonthlyExpense(entries, monthsBack = 3, anchor = new Date()) {
   if (!monthsBack) return 0
   let total = 0
   for (let i = 1; i <= monthsBack; i++) {
-    total += monthTotals(entries, format(subMonths(new Date(), i), 'yyyy-MM')).expense
+    total += monthTotals(entries, format(subMonths(anchor, i), 'yyyy-MM')).expense
   }
   return total / monthsBack
 }
@@ -124,7 +133,9 @@ export function averageMonthlyExpense(entries, monthsBack = 3) {
 export function reserveMonths(entries, accounts, todayStr, creditCfg, monthsBack = 3) {
   const reserveAccounts = accounts.filter((a) => a.isReserve)
   if (!reserveAccounts.length) return null
-  const avgExpense = averageMonthlyExpense(entries, monthsBack)
+  // The months before the cutoff's own month — for a past month that's the
+  // spending pattern as it stood back then, not today's.
+  const avgExpense = averageMonthlyExpense(entries, monthsBack, monthAnchor(todayStr))
   if (!avgExpense) return null
   const reserveTotal = reserveAccounts.reduce(
     (sum, a) => sum + accountBalance(entries, a, todayStr, creditCfg),
@@ -183,7 +194,7 @@ export function averageDailySpend(entries, monthStr, todayStr, monthsBack = 3) {
   let historicalTotal = 0
   let historicalDays = 0
   for (let i = 1; i <= monthsBack; i++) {
-    const date = subMonths(new Date(), i)
+    const date = subMonths(monthAnchor(monthStr), i)
     historicalTotal += monthTotals(entries, format(date, 'yyyy-MM')).expense
     historicalDays += getDaysInMonth(date)
   }
@@ -193,12 +204,20 @@ export function averageDailySpend(entries, monthStr, todayStr, monthsBack = 3) {
 }
 
 // Per-month totals for the top-N `type` categories over the trailing
-// `monthsBack` months (oldest → newest, ending on the current month) — the
+// `monthsBack` months (oldest → newest, ending on the anchor's month) — the
 // rest fold into a single "Outros" series instead of growing the legend
 // indefinitely, per the categorical-color rule (never a generated hue).
-export function categoryMonthlyTrend(entries, type, monthsBack, categoryLabelById, colorById, topN = 5) {
+export function categoryMonthlyTrend(
+  entries,
+  type,
+  monthsBack,
+  categoryLabelById,
+  colorById,
+  topN = 5,
+  anchor = new Date()
+) {
   const monthDates = []
-  for (let i = monthsBack - 1; i >= 0; i--) monthDates.push(subMonths(new Date(), i))
+  for (let i = monthsBack - 1; i >= 0; i--) monthDates.push(subMonths(anchor, i))
   const monthStrs = monthDates.map((d) => format(d, 'yyyy-MM'))
 
   const totalsByCategory = new Map()
@@ -251,7 +270,7 @@ export function categoryComparison(entries, monthStr, monthsBack, categoryLabelB
 
   const averages = new Map()
   for (let i = 1; i <= monthsBack; i++) {
-    const pastMonthStr = format(subMonths(new Date(), i), 'yyyy-MM')
+    const pastMonthStr = format(subMonths(monthAnchor(monthStr), i), 'yyyy-MM')
     categoryBreakdown(
       entries.filter((e) => e.date?.startsWith(pastMonthStr)),
       'expense',

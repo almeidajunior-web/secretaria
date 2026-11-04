@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import { format, subMonths } from 'date-fns'
+import { addMonths, endOfMonth, format, subMonths } from 'date-fns'
 import { usePersistentState } from '../../hooks/usePersistentState'
 import { useFinanceValuesHidden } from '../../hooks/useFinanceValuesHidden'
 import { buildFinanceComparator, compareByRecordOrder } from '../../lib/financeSort'
 import { splitIntoInstallments, creditCardInvoices } from '../../lib/creditCard'
+import { buildFinanceSheets, downloadFinanceXlsx } from '../../lib/financeExport'
+import { capitalize, fmt } from '../../lib/date'
 import {
+  monthAnchor,
   monthTotals,
   percentChange,
   categoryBreakdown,
@@ -109,6 +112,21 @@ export default function Financas({
   // narrowed by a search you typed days ago reads as missing data, not as a
   // preference. Filters persist; the search resets with the session.
   const [search, setSearch] = useState('')
+  // One month for both tabs. Not persisted, same reasoning as the search:
+  // reopening Finanças should land on the present, not on whatever month was
+  // last browsed. `allMonths` only means something in Lançamentos — the
+  // Resumo is always a single month's balance, so it keeps reading `month`.
+  const currentMonthStr = format(new Date(), 'yyyy-MM')
+  const [month, setMonth] = useState(currentMonthStr)
+  const [allMonths, setAllMonths] = useState(false)
+  const stepMonth = (delta) => {
+    setAllMonths(false)
+    setMonth((m) => format(addMonths(monthAnchor(m), delta), 'yyyy-MM'))
+  }
+  const goToCurrentMonth = () => {
+    setAllMonths(false)
+    setMonth(currentMonthStr)
+  }
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
@@ -171,27 +189,40 @@ export default function Financas({
   )
 
   const visibleEntries = useMemo(() => filterEntries(entries, filters), [entries, filters])
+  // Competência, like every month figure in the Resumo: an entry belongs to
+  // the month of its own date, so a card purchase sits in the month it was
+  // made, not the month its invoice falls due.
+  const monthEntries = useMemo(
+    () => visibleEntries.filter((e) => e.date?.startsWith(month)),
+    [visibleEntries, month]
+  )
   // The search narrows the Lançamentos table only — it's typed in that tab's
   // own toolbar, so letting it reach the Resumo below would quietly change
   // numbers the user isn't looking at.
   const sortedEntries = useMemo(
-    () => [...searchEntries(visibleEntries, search)].sort(comparator),
-    [visibleEntries, search, comparator]
+    () => [...searchEntries(allMonths ? visibleEntries : monthEntries, search)].sort(comparator),
+    [allMonths, visibleEntries, monthEntries, search, comparator]
   )
 
   // "Lançamentos recentes" means the newest ones, so it takes the tail of the
   // canonical record order rather than the head of whatever sort the user
-  // happens to have applied to the table.
+  // happens to have applied to the table — within the month being viewed.
   const recentEntries = useMemo(
-    () => [...visibleEntries].sort(compareByRecordOrder(entryOrderById)).slice(-10),
-    [visibleEntries, entryOrderById]
+    () => [...monthEntries].sort(compareByRecordOrder(entryOrderById)).slice(-10),
+    [monthEntries, entryOrderById]
   )
 
-  // Overview always reflects the true current month, independent of
-  // whatever period/filters the table below is browsing.
+  // `todayStr` stays the real today: it's what decides whether a row is still
+  // previsto and which card invoices are open, neither of which changes by
+  // looking at another month. `cutoffStr` is the "as of" date for balances —
+  // today in the current month, the month's last day anywhere else.
   const todayStr = format(new Date(), 'yyyy-MM-dd')
-  const monthStr = format(new Date(), 'yyyy-MM')
-  const prevMonthStr = format(subMonths(new Date(), 1), 'yyyy-MM')
+  const monthStr = month
+  const anchor = monthAnchor(month)
+  const isCurrentMonth = month === currentMonthStr
+  const cutoffStr = isCurrentMonth ? todayStr : format(endOfMonth(anchor), 'yyyy-MM-dd')
+  const prevMonthStr = format(subMonths(anchor, 1), 'yyyy-MM')
+  const monthLabel = capitalize(fmt(anchor, "MMMM 'de' yyyy"))
   const currentTotals = useMemo(() => monthTotals(entries, monthStr), [entries, monthStr])
   const previousTotals = useMemo(() => monthTotals(entries, prevMonthStr), [entries, prevMonthStr])
   const incomeChange = percentChange(currentTotals.income, previousTotals.income)
@@ -213,7 +244,7 @@ export default function Financas({
     () => categoryBreakdown(currentMonthEntries, 'expense', categoryLabelById, expenseCategoryColorById),
     [currentMonthEntries, categoryLabelById, expenseCategoryColorById]
   )
-  const trendData = useMemo(() => monthlyTrend(entries, 6), [entries])
+  const trendData = useMemo(() => monthlyTrend(entries, 6, anchor), [entries, month]) // eslint-disable-line react-hooks/exhaustive-deps
   const invoices = useMemo(
     () => creditCardInvoices(entries, creditCardConfig, todayStr, paidInvoices),
     [entries, creditCardConfig, todayStr, paidInvoices]
@@ -222,30 +253,32 @@ export default function Financas({
   // Caixa: account balances count entries by when money actually moves
   // (dataCaixa — the invoice due date for card entries), so a card purchase
   // only leaves the balance once its invoice is due.
+  // In another month, this is the balance as it stood on that month's last
+  // day — every metric below already takes the cut-off as a plain parameter.
   const accountsSummary = useMemo(
     () => ({
-      balances: accounts.map((a) => ({ ...a, balance: accountBalance(entries, a, todayStr, creditCardConfig) })),
-      unassigned: unassignedBalance(entries, todayStr, creditCardConfig),
-      consolidated: consolidatedBalance(entries, accounts, todayStr, creditCardConfig),
+      balances: accounts.map((a) => ({ ...a, balance: accountBalance(entries, a, cutoffStr, creditCardConfig) })),
+      unassigned: unassignedBalance(entries, cutoffStr, creditCardConfig),
+      consolidated: consolidatedBalance(entries, accounts, cutoffStr, creditCardConfig),
       consolidatedExReserve: hasReserveAccount
-        ? consolidatedBalance(entries, accounts, todayStr, creditCardConfig, { excludeReserve: true })
+        ? consolidatedBalance(entries, accounts, cutoffStr, creditCardConfig, { excludeReserve: true })
         : null,
-      reserveMonths: reserveMonths(entries, accounts, todayStr, creditCardConfig),
+      reserveMonths: reserveMonths(entries, accounts, cutoffStr, creditCardConfig),
     }),
-    [entries, accounts, todayStr, creditCardConfig, hasReserveAccount]
+    [entries, accounts, cutoffStr, creditCardConfig, hasReserveAccount]
   )
   const indicators = useMemo(
     () => ({
       savingsRate: savingsRate(entries, monthStr),
       commitmentRatio: incomeCommitmentRatio(entries, monthStr),
-      projection: projectedMonthBalance(entries, monthStr, todayStr),
-      dailySpend: averageDailySpend(entries, monthStr, todayStr),
+      projection: projectedMonthBalance(entries, monthStr, cutoffStr),
+      dailySpend: averageDailySpend(entries, monthStr, cutoffStr),
     }),
-    [entries, monthStr, todayStr]
+    [entries, monthStr, cutoffStr]
   )
   const categoryTrendData = useMemo(
-    () => categoryMonthlyTrend(entries, 'expense', 6, categoryLabelById, expenseCategoryColorById),
-    [entries, categoryLabelById, expenseCategoryColorById]
+    () => categoryMonthlyTrend(entries, 'expense', 6, categoryLabelById, expenseCategoryColorById, 5, anchor),
+    [entries, categoryLabelById, expenseCategoryColorById, month] // eslint-disable-line react-hooks/exhaustive-deps
   )
   const categoryComparisonData = useMemo(
     () => categoryComparison(entries, monthStr, 3, categoryLabelById, expenseCategoryColorById),
@@ -309,6 +342,48 @@ export default function Financas({
 
   const handleDuplicate = (id) => duplicateEntry(id)
 
+  // Exports exactly what the Lançamentos table is showing — month (or all of
+  // them), filters, search and sort — and says so in the file, so a total in
+  // the spreadsheet is never mistaken for the whole month when it wasn't.
+  const describeActiveFilters = () => {
+    const labelsOf = (ids, list) => ids.map((id) => list.find((x) => x.id === id)?.label).filter(Boolean)
+    const parts = []
+    if (search.trim()) parts.push(`busca "${search.trim()}"`)
+    const types = (filters.types || []).map((t) => (t === 'income' ? 'Receita' : 'Despesa'))
+    if (types.length) parts.push(`tipo: ${types.join(', ')}`)
+    const cats = labelsOf(filters.categoryIds || [], [...expenseCategories, ...incomeCategories])
+    if (cats.length) parts.push(`categoria: ${cats.join(', ')}`)
+    const methods = labelsOf(filters.paymentMethodIds || [], paymentMethods)
+    if (methods.length) parts.push(`pagamento: ${methods.join(', ')}`)
+    const accs = labelsOf(filters.accountIds || [], accounts)
+    if (accs.length) parts.push(`conta: ${accs.join(', ')}`)
+    return parts.join('; ')
+  }
+
+  const [exporting, setExporting] = useState(false)
+  const handleExport = async () => {
+    if (exporting) return
+    setExporting(true)
+    try {
+      const sheets = buildFinanceSheets({
+        entries: sortedEntries,
+        periodLabel: allMonths ? 'Todos os meses' : monthLabel,
+        filtersLabel: describeActiveFilters(),
+        categoryLabelById,
+        paymentMethodLabelById: Object.fromEntries(paymentMethods.map((m) => [m.id, m.label])),
+        accountLabelById: Object.fromEntries(accounts.map((a) => [a.id, a.label])),
+        showAccounts: accounts.length > 0,
+        creditCardConfig,
+      })
+      await downloadFinanceXlsx(sheets, `financas-${allMonths ? 'todos-os-meses' : month}.xlsx`)
+    } catch (err) {
+      console.error(err)
+      window.alert('Não foi possível gerar a planilha. Tente novamente.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const tableProps = {
     expenseCategories,
     incomeCategories,
@@ -352,6 +427,16 @@ export default function Financas({
         onBulkSetAccount={bulkSetAccount}
         onBulkDeleteClick={bulkDelete}
         onNew={() => setModalOpen(true)}
+        monthLabel={monthLabel}
+        isCurrentMonth={isCurrentMonth}
+        allMonths={allMonths}
+        onPrevMonth={() => stepMonth(-1)}
+        onNextMonth={() => stepMonth(1)}
+        onCurrentMonth={goToCurrentMonth}
+        onToggleAllMonths={() => setAllMonths((v) => !v)}
+        onExport={handleExport}
+        exporting={exporting}
+        exportCount={sortedEntries.length}
       />
 
       {tab === 'resumo' ? (
@@ -374,6 +459,8 @@ export default function Financas({
             indicators={indicators}
             categoryTrendData={categoryTrendData}
             categoryComparisonData={categoryComparisonData}
+              monthLabel={monthLabel}
+              balanceAsOf={isCurrentMonth ? null : cutoffStr}
               valuesHidden={valuesHidden}
               onToggleValuesHidden={toggleValuesHidden}
             />

@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { Settings, ListChecks, Filter, Trash2, X, Search } from 'lucide-react'
+import {
+  Settings,
+  ListChecks,
+  Filter,
+  Trash2,
+  X,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Loader2,
+} from 'lucide-react'
 import { tintVars } from '../../lib/color'
 
 const TABS = [
@@ -42,6 +53,16 @@ export default function FinanceToolbar({
   onBulkSetAccount,
   onBulkDeleteClick,
   onNew,
+  monthLabel,
+  isCurrentMonth,
+  allMonths,
+  onPrevMonth,
+  onNextMonth,
+  onCurrentMonth,
+  onToggleAllMonths,
+  onExport,
+  exporting,
+  exportCount,
 }) {
   const [filterOpen, setFilterOpen] = useState(false)
 
@@ -88,8 +109,31 @@ export default function FinanceToolbar({
         })}
       </div>
 
+      <MonthStepper
+        // The Resumo is always one month's balance, so "todos os meses" is a
+        // Lançamentos-only view — the Resumo keeps showing the month itself.
+        title={tab === 'lancamentos' && allMonths ? 'Todos os meses' : monthLabel}
+        showToday={!isCurrentMonth || (tab === 'lancamentos' && allMonths)}
+        onPrev={onPrevMonth}
+        onNext={onNextMonth}
+        onToday={onCurrentMonth}
+      />
+
       {tab === 'lancamentos' && (
         <>
+          <button
+            type="button"
+            onClick={onToggleAllMonths}
+            aria-pressed={allMonths}
+            className={[
+              'rounded-full border px-2.5 py-1 text-[11px] font-medium',
+              allMonths
+                ? 'border-primary bg-accent-soft text-primary'
+                : 'border-border text-text-secondary hover:border-border-strong',
+            ].join(' ')}
+          >
+            Todos os meses
+          </button>
           <FilterPopover
             open={filterOpen}
             onOpenChange={setFilterOpen}
@@ -123,6 +167,22 @@ export default function FinanceToolbar({
           <ListChecks size={13} />
           Selecionar
         </button>
+        {tab === 'lancamentos' && (
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={exporting || exportCount === 0}
+            title={
+              exportCount === 0
+                ? 'Nenhum lançamento na tela para exportar'
+                : `Baixar os ${exportCount} lançamentos da tela em .xlsx`
+            }
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:border-border-strong disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+            Exportar
+          </button>
+        )}
         <button
           type="button"
           onClick={onNew}
@@ -131,6 +191,38 @@ export default function FinanceToolbar({
           Novo lançamento
         </button>
       </div>
+    </div>
+  )
+}
+
+// Same stepper vocabulary as the Agenda's and Metas' toolbars (bordered
+// arrows, a pill to jump back, the period as a title), so moving through time
+// reads the same in every module. The pill says "Mês atual" rather than
+// "Hoje" — the unit here is the month — and only shows up once you've left
+// the present: it's the way back, not a control you need while already there.
+function MonthStepper({ title, showToday, onPrev, onNext, onToday }) {
+  const arrow =
+    'flex h-7 w-7 items-center justify-center rounded-md border border-border text-text-secondary hover:border-border-strong hover:text-primary'
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        <button type="button" onClick={onPrev} aria-label="Mês anterior" className={arrow}>
+          <ChevronLeft size={16} />
+        </button>
+        <button type="button" onClick={onNext} aria-label="Próximo mês" className={arrow}>
+          <ChevronRight size={16} />
+        </button>
+      </div>
+      <h2 className="min-w-[150px] text-[14px] font-semibold text-text">{title}</h2>
+      {showToday && (
+        <button
+          type="button"
+          onClick={onToday}
+          className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-text-secondary hover:border-border-strong"
+        >
+          Mês atual
+        </button>
+      )}
     </div>
   )
 }

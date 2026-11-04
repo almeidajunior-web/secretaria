@@ -6,10 +6,11 @@ import TrendChart from './TrendChart'
 import CategoryTrendChart from './CategoryTrendChart'
 import { tintVars } from '../../lib/color'
 
-// Always the current calendar month, independent of whatever period the
-// table below is browsing — this is the fixed "how am I doing right now"
-// snapshot the user asked for. Three stat tiles with month-over-month
-// deltas, plus the two charts.
+// One month's balance — the one picked in the toolbar, the current month by
+// default. Three stat tiles with month-over-month deltas, the accounts as they
+// stood at the end of that month, and the charts, whose trailing windows end
+// on it. Only the card invoices stay anchored to today: an invoice is open or
+// paid now, whatever month you happen to be looking at.
 export default function OverviewSection({
   currentTotals,
   incomeChange,
@@ -26,6 +27,8 @@ export default function OverviewSection({
   categoryComparisonData,
   valuesHidden,
   onToggleValuesHidden,
+  monthLabel,
+  balanceAsOf,
 }) {
   const essentialSubline =
     essential && essential.total > 0
@@ -37,13 +40,19 @@ export default function OverviewSection({
   // every entry dated in the month, including this month's previstos); the
   // realized figure as a subline is what makes it distinct from a raw
   // projection — this is why there's no separate "Saldo projetado" tile.
-  const saldoSubline = indicators
-    ? `Realizado: ${valuesHidden ? 'R$ ••••' : formatCurrency(indicators.projection.realized)}`
-    : null
+  // Only worth saying while part of the month is still previsto — once a
+  // month is over, realized and projected are the same number twice.
+  const saldoSubline =
+    indicators && indicators.projection.realized !== indicators.projection.projected
+      ? `Realizado: ${valuesHidden ? 'R$ ••••' : formatCurrency(indicators.projection.realized)}`
+      : null
   return (
     <div className="border-b border-border px-4 py-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[13px] font-semibold text-text">Overview</h2>
+        <h2 className="text-[13px] font-semibold text-text">
+          Overview
+          {monthLabel && <span className="ml-1.5 font-normal text-text-muted">· {monthLabel}</span>}
+        </h2>
         <button
           type="button"
           onClick={onToggleValuesHidden}
@@ -85,12 +94,22 @@ export default function OverviewSection({
           invoices={invoices}
           valuesHidden={valuesHidden}
           onToggleInvoicePaid={onToggleInvoicePaid}
+          // Away from the current month the panel would otherwise read as that
+          // month's invoices — say plainly that these are today's.
+          currentOnlyHint={!!balanceAsOf}
         />
       )}
 
       {accountsSummary && accountsSummary.balances.length > 0 && (
         <div className="mb-4 glass-strong rounded-xl border p-4">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">Contas</p>
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+            Contas
+            {balanceAsOf && (
+              <span className="ml-1.5 font-normal normal-case tracking-normal">
+                · saldo em {fmt(fromDateInput(balanceAsOf), 'dd/MM/yyyy')}
+              </span>
+            )}
+          </p>
           <div className="flex flex-col gap-2">
             {accountsSummary.balances.map((a) => (
               <div key={a.id} className="flex items-center gap-2 text-[12px]">
@@ -214,7 +233,7 @@ export default function OverviewSection({
           <div className="flex items-center gap-2 pb-1.5 text-[10px] text-text-muted">
             <span className="flex-1">Categoria</span>
             <span className="w-24 text-right">Média (3m)</span>
-            <span className="w-24 text-right">Este mês</span>
+            <span className="w-24 text-right">No mês</span>
             <span className="w-16 shrink-0 text-right">Variação</span>
           </div>
           <div className="flex flex-col gap-2">
@@ -263,7 +282,7 @@ const INVOICE_STATUS = {
 // The credit-card invoices as first-class objects: the accumulating "aberta"
 // invoice up top, then the rest most-urgent-first (vencida, fechada, futura,
 // paga), each with a mark-as-paid toggle where it makes sense.
-function InvoicesPanel({ invoices, valuesHidden, onToggleInvoicePaid }) {
+function InvoicesPanel({ invoices, valuesHidden, onToggleInvoicePaid, currentOnlyHint = false }) {
   const money = (v) => (valuesHidden ? 'R$ ••••' : formatCurrency(v))
   const open = invoices.find((i) => i.status === 'aberta')
   const order = { vencida: 0, fechada: 1, futura: 2, paga: 3 }
@@ -279,7 +298,12 @@ function InvoicesPanel({ invoices, valuesHidden, onToggleInvoicePaid }) {
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-primary">
           <CreditCard size={13} />
         </span>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">Cartão de crédito</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+          Cartão de crédito
+          {currentOnlyHint && (
+            <span className="ml-1.5 font-normal normal-case tracking-normal">· faturas atuais</span>
+          )}
+        </p>
       </div>
 
       {open && (
