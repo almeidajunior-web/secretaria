@@ -1,5 +1,4 @@
 import { formatCurrency } from '../../lib/currency'
-import { tintVars } from '../../lib/color'
 
 // Ranked horizontal bar list — scales better than a pie/donut past a
 // handful of categories, and reads the exact value directly instead of

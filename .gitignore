@@ -21,3 +21,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Test artifacts (visual baselines are machine-specific — see tests/e2e/visual.spec.js)
+playwright-report/
+test-results/
+tests/e2e/*-snapshots/
