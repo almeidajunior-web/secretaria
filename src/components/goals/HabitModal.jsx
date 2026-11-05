@@ -26,7 +26,9 @@ export default function HabitModal({ habit, onSave, onDelete, onClose }) {
   const [endDate, setEndDate] = useState(habit?.endDate ?? '')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
-  const canSave = label.trim().length > 0 && weekdays.length > 0 && !!startDate
+  // An end before the start would leave a routine with no day it applies to.
+  const datesValid = openEnded || !endDate || !startDate || endDate >= startDate
+  const canSave = label.trim().length > 0 && weekdays.length > 0 && !!startDate && datesValid
 
   const toggleWeekday = (index) =>
     setWeekdays((prev) =>
@@ -129,6 +131,9 @@ export default function HabitModal({ habit, onSave, onDelete, onClose }) {
               />
             </Field>
           </div>
+          {!datesValid && (
+            <p className="-mt-2 text-[11px] text-danger">O fim deve ser depois do início.</p>
+          )}
 
           <label className="flex items-center gap-2 text-[12px] text-text-secondary">
             <input

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getDay } from 'date-fns'
 import { OctagonAlert } from 'lucide-react'
 import {
@@ -25,6 +25,7 @@ export default function EventModal({
   onDeleteTag,
   onSave,
   onClose,
+  suspended = false,
 }) {
   const [kind, setKind] = useState(initial.kind || (initial.isAula ? 'aula' : 'event'))
   const [title, setTitle] = useState(initial.title || '')
@@ -92,8 +93,7 @@ export default function EventModal({
       end: fromInputValue(end),
       recurrence: effRecurrence,
       recurrenceDays: effRecurrence === 'custom' ? recurrenceDays : [],
-      recurrenceUntil:
-        effRecurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
+      recurrenceUntil: untilFor(effRecurrence, recurrenceUntil),
       occStatus: initial.occStatus || {},
     })
     const linkedTotal = linkedIds.reduce((sum, id) => {
@@ -108,14 +108,20 @@ export default function EventModal({
     Number(faltasMax) > 0 &&
     derivedFaltas >= Number(faltasMax)
 
+  // Esc closes the form only while it's the dialog on top: the discard
+  // confirmation, or the recurrence-scope choice the parent opens over it
+  // (`suspended`), own Esc while they're showing. Both listen on document, so
+  // without this one key press closed the choice AND the form underneath.
+  const requestCloseRef = useRef(requestClose)
+  requestCloseRef.current = requestClose
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key !== 'Escape' || confirmDiscard) return // ConfirmDialog owns Escape while open
-      requestClose()
+      if (e.key !== 'Escape' || confirmDiscard || suspended) return
+      requestCloseRef.current()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [dirty, confirmDiscard])
+  }, [confirmDiscard, suspended])
 
   const toggleTag = (tag) =>
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
@@ -177,8 +183,7 @@ export default function EventModal({
       status,
       recurrence: effRecurrence,
       recurrenceDays: effRecurrence === 'custom' ? recurrenceDays : [],
-      recurrenceUntil:
-        effRecurrence === 'custom' && recurrenceUntil ? fromDateInput(recurrenceUntil) : null,
+      recurrenceUntil: untilFor(effRecurrence, recurrenceUntil),
       isAula: isClass,
       faltasMax: kind === 'aula' ? (faltasMax === '' ? null : Number(faltasMax)) : null,
       linkedIds: kind === 'aula' ? linkedIds : [],
@@ -383,6 +388,15 @@ export default function EventModal({
       )}
     </div>
   )
+}
+
+// The series' end date. Only "Personalizar…" shows a field for it, but any
+// recurring series can carry one — "este e os próximos" closes the original
+// series by setting it. Dropping it for every other recurrence meant the
+// next edit of that original series (even just its title) erased the end,
+// and it started repeating forever on top of the series that replaced it.
+function untilFor(recurrence, until) {
+  return recurrence !== 'none' && until ? fromDateInput(until) : null
 }
 
 const inputClass =

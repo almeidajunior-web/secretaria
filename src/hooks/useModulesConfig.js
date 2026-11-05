@@ -51,6 +51,18 @@ function repairConfig(stored) {
   return { order: [...repaired, ...missing], hidden, groups }
 }
 
+// The module the top bar lists first, skipping hidden ones and looking inside
+// groups — where the app should open. Null only if every module is hidden.
+export function firstVisibleModuleId({ order, groups, hidden }) {
+  const groupById = Object.fromEntries(groups.map((g) => [g.id, g]))
+  for (const entry of order) {
+    const ids = isGroupEntry(entry) ? groupById[groupIdOf(entry)]?.moduleIds || [] : [entry]
+    const visible = ids.find((id) => ALL_MODULE_IDS.has(id) && !hidden.includes(id))
+    if (visible) return visible
+  }
+  return null
+}
+
 // Topbar module order, hidden set, and user-defined groups ("drawers") that
 // cluster modules under one dropdown. `order` is the literal top-level
 // sequence — each entry is either a bare module id or a `'group:<id>'`

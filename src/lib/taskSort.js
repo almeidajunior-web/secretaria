@@ -5,6 +5,20 @@ export function rankMap(list) {
   return Object.fromEntries(list.map((x, i) => [x.id, i]))
 }
 
+// Position of an item's priority in that ranking; anything unranked sorts
+// after every ranked one.
+export function rankOf(priorityRank, priorityId) {
+  return priorityId != null ? (priorityRank[priorityId] ?? Infinity) : Infinity
+}
+
+// Compares two ranks. Two unranked items are a tie — returning
+// Infinity - Infinity (NaN) here used to stop the sort chain dead, so the
+// due-date/title tiebreakers never ran and those items came out in whatever
+// order they happened to be stored.
+export function compareRanks(a, b) {
+  return a === b ? 0 : a - b
+}
+
 function compareField(a, b, field, priorityRank) {
   switch (field) {
     case 'dueDate': {
@@ -13,11 +27,8 @@ function compareField(a, b, field, priorityRank) {
       const bv = b.dueDate || '9999-99-99'
       return av < bv ? -1 : av > bv ? 1 : 0
     }
-    case 'priority': {
-      const av = a.priorityId != null ? (priorityRank[a.priorityId] ?? Infinity) : Infinity
-      const bv = b.priorityId != null ? (priorityRank[b.priorityId] ?? Infinity) : Infinity
-      return av - bv
-    }
+    case 'priority':
+      return compareRanks(rankOf(priorityRank, a.priorityId), rankOf(priorityRank, b.priorityId))
     case 'title':
       return a.title.localeCompare(b.title, 'pt-BR')
     default:

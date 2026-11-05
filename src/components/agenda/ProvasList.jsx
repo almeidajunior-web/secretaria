@@ -69,7 +69,7 @@ export default function ProvasList({ events, onEdit, onDelete, onClose }) {
       {pendingDelete && (
         <ConfirmDialog
           title={`Excluir "${pendingDelete.title}"?`}
-          message="A prova será removida da agenda. Esta ação não pode ser desfeita."
+          message="A prova será removida da agenda."
           confirmLabel="Excluir"
           onConfirm={() => {
             onDelete(pendingDelete)

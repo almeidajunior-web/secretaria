@@ -65,6 +65,7 @@ export default function Agenda({
   addEvent,
   updateEvent,
   deleteEvent,
+  restoreEvents,
   moveOccurrence,
   deleteOccurrence,
   editOccurrence,
@@ -96,14 +97,16 @@ export default function Agenda({
   const [undo, setUndo] = useState(null) // { message, onUndo }
 
   // Shows a brief "Desfazer" toast after a delete. `restoreWith` is 'add'
-  // (the event object was fully removed — recreate it) or 'update' (the
-  // event still exists but got mutated — revert the mutated fields).
+  // (the events were fully removed — put them back as they were) or 'update'
+  // (the event still exists but got mutated — revert the mutated fields).
+  // `snapshot` is one event, or several deleted together.
   const showUndo = (message, snapshot, restoreWith) => {
+    const snapshots = Array.isArray(snapshot) ? snapshot : [snapshot]
     setUndo({
       message,
       onUndo: () => {
-        if (restoreWith === 'add') addEvent(snapshot)
-        else updateEvent(snapshot)
+        if (restoreWith === 'add') restoreEvents(snapshots)
+        else snapshots.forEach((s) => updateEvent(s))
         setUndo(null)
       },
     })
@@ -116,7 +119,7 @@ export default function Agenda({
   const handleToday = () => onChangeDate(new Date())
   // Two-finger trackpad swipe steps the period by whatever "one step" means
   // for the current view — same unit the ◀ ▶ buttons use.
-  const onSwipeWheel = useSwipeNavigation(handlePrev, handleNext)
+  const swipeRef = useSwipeNavigation(handlePrev, handleNext)
 
   const openCreate = (start, end) => {
     setPopover(null)
@@ -127,10 +130,15 @@ export default function Agenda({
     setPopover(null)
     const original = events.find((e) => e.id === occ.eventId)
     // Edit the specific instance's date/time/status while keeping the series
-    // identity — occ.status is the effective per-occurrence status, which may
-    // differ from the series' base status.
+    // identity. The status is read from the live event, not from `occ`: the
+    // popover's `occ` was captured when it opened, so a status picked in the
+    // popover just before clicking "Editar" would otherwise be reverted on save.
     if (original) {
-      setModal({ event: { ...original, start: occ.start, end: occ.end, status: occ.status }, occ })
+      const status =
+        original.recurrence === 'none'
+          ? original.status
+          : (original.occStatus || {})[occ.occKey] || original.status
+      setModal({ event: { ...original, start: occ.start, end: occ.end, status }, occ })
     }
   }
 
@@ -231,11 +239,13 @@ export default function Agenda({
     }
   }
 
-  // Used by the Provas/Eventos/Aulas lists, which delete a whole event
-  // directly (no recurring-scope choice involved there).
-  const deleteFromList = (event) => {
-    deleteEvent(event.id)
-    showUndo('Evento excluído.', event, 'add')
+  // Used by the Provas/Eventos/Aulas lists, which delete whole events
+  // directly (no recurring-scope choice involved there) — one, or every
+  // class of a discipline at once, undone together.
+  const deleteFromList = (eventOrEvents) => {
+    const list = Array.isArray(eventOrEvents) ? eventOrEvents : [eventOrEvents]
+    list.forEach((e) => deleteEvent(e.id))
+    showUndo(list.length > 1 ? `${list.length} eventos excluídos.` : 'Evento excluído.', list, 'add')
   }
 
   const selectDay = (day) => {
@@ -299,7 +309,7 @@ export default function Agenda({
           leading={calendarCollapsed ? collapseToggle : null}
         />
 
-        <div className="flex-1 overflow-hidden overscroll-x-contain" onWheel={onSwipeWheel}>
+        <div ref={swipeRef} className="flex-1 overflow-hidden overscroll-x-contain">
           {view === 'week' && <WeekView {...viewProps} />}
           {view === 'day' && <DayView {...viewProps} />}
           {view === 'month' && (
@@ -330,6 +340,7 @@ export default function Agenda({
             onDeleteTag={onDeleteTag}
             onSave={handleSave}
             onClose={() => setModal(null)}
+            suspended={!!scopeAction}
           />
         )}
 

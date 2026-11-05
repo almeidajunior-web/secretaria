@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { addMonths, endOfMonth, format, subMonths } from 'date-fns'
-import { usePersistentState } from '../../hooks/usePersistentState'
+import { usePersistentState, withDefaults } from '../../hooks/usePersistentState'
 import { useFinanceValuesHidden } from '../../hooks/useFinanceValuesHidden'
 import { buildFinanceComparator, compareByRecordOrder } from '../../lib/financeSort'
 import { splitIntoInstallments, creditCardInvoices } from '../../lib/creditCard'
@@ -107,7 +107,11 @@ export default function Financas({
   const [sortChain, setSortChain] = usePersistentState('secretaria:financeSortChain', [
     { field: 'date', direction: 'desc' },
   ])
-  const [filters, setFilters] = usePersistentState('secretaria:financeFilters', DEFAULT_FILTERS)
+  const [filters, setFilters] = usePersistentState(
+    'secretaria:financeFilters',
+    DEFAULT_FILTERS,
+    withDefaults(DEFAULT_FILTERS)
+  )
   // Deliberately not persisted: coming back to a module whose list is silently
   // narrowed by a search you typed days ago reads as missing data, not as a
   // preference. Filters persist; the search resets with the session.

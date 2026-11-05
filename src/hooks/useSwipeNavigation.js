@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Cumulative horizontal delta (px) needed to trigger a period change.
 const THRESHOLD = 70
@@ -10,42 +10,59 @@ const GAP_RESET_MS = 150
 
 // Trackpad two-finger horizontal swipe → step to the previous/next period.
 // Vertical-dominant wheel events (normal scrolling) are left untouched so the
-// grid keeps scrolling natively. Returns an `onWheel` handler to spread onto
-// the agenda's view container.
+// grid keeps scrolling natively. Returns a ref callback for the agenda's view
+// container.
+//
+// The listener is attached natively with `passive: false`: React registers
+// its own onWheel as passive, where preventDefault() is ignored (and Chrome
+// logs a warning) — so the browser's own swipe-back gesture could still fire
+// on top of the period change.
 export function useSwipeNavigation(onPrev, onNext) {
-  const accum = useRef(0)
-  const locked = useRef(false)
-  const lastEventTime = useRef(0)
-  const unlockTimer = useRef(null)
+  const [el, setEl] = useState(null)
+  // Latest callbacks, read at event time so the listener never needs
+  // re-binding when the parent re-renders.
+  const handlers = useRef({ onPrev, onNext })
+  handlers.current = { onPrev, onNext }
 
-  const onWheel = useCallback(
-    (event) => {
+  useEffect(() => {
+    if (!el) return
+    let accum = 0
+    let locked = false
+    let lastEventTime = 0
+    let unlockTimer = null
+
+    const onWheel = (event) => {
       if (event.ctrlKey) return // pinch-to-zoom, not a pan
       const { deltaX, deltaY } = event
       if (Math.abs(deltaX) <= Math.abs(deltaY)) return // vertical scroll, ignore
 
       const now = Date.now()
-      if (now - lastEventTime.current > GAP_RESET_MS) accum.current = 0
-      lastEventTime.current = now
+      if (now - lastEventTime > GAP_RESET_MS) accum = 0
+      lastEventTime = now
 
       event.preventDefault()
-      if (locked.current) return
+      if (locked) return
 
-      accum.current += deltaX
-      if (Math.abs(accum.current) < THRESHOLD) return
+      accum += deltaX
+      if (Math.abs(accum) < THRESHOLD) return
 
-      if (accum.current > 0) onNext()
-      else onPrev()
+      if (accum > 0) handlers.current.onNext()
+      else handlers.current.onPrev()
 
-      accum.current = 0
-      locked.current = true
-      clearTimeout(unlockTimer.current)
-      unlockTimer.current = setTimeout(() => {
-        locked.current = false
+      accum = 0
+      locked = true
+      clearTimeout(unlockTimer)
+      unlockTimer = setTimeout(() => {
+        locked = false
       }, COOLDOWN_MS)
-    },
-    [onPrev, onNext]
-  )
+    }
 
-  return onWheel
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      el.removeEventListener('wheel', onWheel)
+      clearTimeout(unlockTimer)
+    }
+  }, [el])
+
+  return setEl
 }

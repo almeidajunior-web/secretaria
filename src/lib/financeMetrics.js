@@ -35,10 +35,12 @@ export function monthTotals(entries, monthStr) {
 
 // Returns null when there's nothing to compare against (previous month was
 // zero) — the caller should render "novo" instead of a nonsensical
-// infinite/undefined percentage.
+// infinite/undefined percentage. Divides by the size of the previous value,
+// not its sign: a saldo going from -100 to +50 is an improvement (+150%),
+// which a plain division by -100 would report as a drop.
 export function percentChange(current, previous) {
   if (!previous) return null
-  return ((current - previous) / previous) * 100
+  return ((current - previous) / Math.abs(previous)) * 100
 }
 
 // Essential vs. total expense for a month: how much of the spending was on

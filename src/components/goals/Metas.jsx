@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { addMonths, addWeeks, endOfMonth, startOfMonth } from 'date-fns'
 import { usePersistentState } from '../../hooks/usePersistentState'
+import { useNow } from '../../hooks/useNow'
 import { capitalize, fmt, getWeekDays, weekStart } from '../../lib/date'
 import { dayCompletion, toKey } from '../../lib/habitStats'
 import MetasToolbar from './MetasToolbar'
@@ -37,8 +38,11 @@ export default function Metas({
   const [habitModal, setHabitModal] = useState(null) // null | { habit? }
   const [goalModal, setGoalModal] = useState(null)
 
-  const today = useMemo(() => new Date(), [])
-  const todayStr = toKey(today)
+  // Ticks once a minute, so leaving the app open past midnight moves "today"
+  // (the highlighted column, the chart cut-off, the streaks) to the new day.
+  const now = useNow()
+  const todayStr = toKey(now)
+  const today = useMemo(() => new Date(now), [todayStr]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const days = useMemo(() => {
     if (period === 'week') return getWeekDays(anchor)

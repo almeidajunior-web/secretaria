@@ -7,6 +7,15 @@ function genStatusId() {
   return `status_${Date.now()}_${nextId++}`
 }
 
+// Whether a status may be deleted: never the last one, never the last
+// "done" one (recurrence rollover and the hide-finished filter need it).
+export function canDeleteStatus(statuses, id) {
+  if (statuses.length <= 1) return false
+  const target = statuses.find((s) => s.id === id)
+  if (!target) return false
+  return !(target.isDone && statuses.filter((s) => s.isDone).length <= 1)
+}
+
 // User-editable, reorderable status list for Tarefas — also the Kanban
 // column order. `isDone` marks which status(es) count as "completed" (drives
 // recurrence rollover and the hide-finished filter); at least one status and
@@ -46,12 +55,7 @@ export function useTaskStatuses() {
   // isDone status (mirrors setStatusDone's guard above — deleting it would
   // silently break the same things unchecking it is prevented from breaking).
   const deleteStatus = (id) => {
-    setStatuses((prev) => {
-      if (prev.length <= 1) return prev
-      const target = prev.find((s) => s.id === id)
-      if (target?.isDone && prev.filter((s) => s.isDone).length <= 1) return prev
-      return prev.filter((s) => s.id !== id)
-    })
+    setStatuses((prev) => (canDeleteStatus(prev, id) ? prev.filter((s) => s.id !== id) : prev))
   }
 
   const reorderStatuses = (newOrderIds) => {

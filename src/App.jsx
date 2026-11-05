@@ -9,8 +9,8 @@ import { usePlanning } from './hooks/usePlanning'
 import { useTasks } from './hooks/useTasks'
 import { useTaskPriorities } from './hooks/useTaskPriorities'
 import { useTaskTags } from './hooks/useTaskTags'
-import { useTaskStatuses } from './hooks/useTaskStatuses'
-import { useModulesConfig } from './hooks/useModulesConfig'
+import { useTaskStatuses, canDeleteStatus } from './hooks/useTaskStatuses'
+import { useModulesConfig, firstVisibleModuleId } from './hooks/useModulesConfig'
 import { useShoppingItems } from './hooks/useShoppingItems'
 import { useShoppingCategories } from './hooks/useShoppingCategories'
 import { useShoppingPriorities } from './hooks/useShoppingPriorities'
@@ -71,7 +71,12 @@ export default function App() {
   const financePaidInvoicesApi = useFinancePaidInvoices()
   const habitsApi = useHabits()
   const goalsApi = useGoals()
-  const [activeModule, setActiveModule] = useState('agenda')
+  // Opens on the first module the top bar shows — normally the Agenda, but
+  // not when the Agenda has been hidden, which used to land on a module with
+  // no nav item lit.
+  const [activeModule, setActiveModule] = useState(
+    () => firstVisibleModuleId(modulesConfigApi) ?? 'agenda'
+  )
   const [currentDate, setCurrentDate] = useState(() => new Date())
   const [modulesSettingsOpen, setModulesSettingsOpen] = useState(false)
 
@@ -96,6 +101,10 @@ export default function App() {
   // Deleting a status (only allowed when more than one remains — enforced in
   // useTaskStatuses) reassigns its tasks to whichever status is now first.
   const handleDeleteTaskStatus = (id) => {
+    // Checked here too, not only inside deleteStatus: when the deletion is
+    // refused, the tasks must stay where they are rather than being moved
+    // off a status that still exists.
+    if (!canDeleteStatus(taskStatusesApi.statuses, id)) return
     const fallback = taskStatusesApi.statuses.find((s) => s.id !== id)?.id
     taskStatusesApi.deleteStatus(id)
     if (fallback) tasksApi.reassignStatusOnAllTasks(id, fallback)
