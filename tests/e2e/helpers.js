@@ -8,10 +8,17 @@ export const NOW = new Date('2026-03-10T10:00:00-03:00')
 // the storage names without the 'secretaria:' prefix). Keys left out are
 // simply absent, so that module falls back to its first-run demo data —
 // pass an empty array to start a module empty instead.
+//
+// The data is written before any of the app's own scripts run, and only on
+// the page's first load (a sessionStorage marker survives reloads), so later
+// reloads in a test see what the app saved. Writing it after a first load
+// instead raced the lazily-loaded module screens, which could save their
+// default preferences on top of the test's.
 export async function openApp(page, data = {}, { module } = {}) {
   await page.clock.setFixedTime(NOW)
-  await page.goto('/')
-  await page.evaluate((entries) => {
+  await page.addInitScript((entries) => {
+    if (sessionStorage.getItem('__seeded')) return
+    sessionStorage.setItem('__seeded', '1')
     localStorage.clear()
     for (const [key, value] of Object.entries(entries)) {
       // The theme is the one key stored as a bare string, not as JSON.
@@ -19,7 +26,7 @@ export async function openApp(page, data = {}, { module } = {}) {
       localStorage.setItem(`secretaria:${key}`, raw)
     }
   }, data)
-  await page.reload()
+  await page.goto('/')
   if (module) await goTo(page, module)
 }
 

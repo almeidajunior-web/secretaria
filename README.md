@@ -10,8 +10,11 @@ Plataforma pessoal modular. Esta etapa entrega os módulos **Agenda**,
 - Tailwind CSS
 - lucide-react (ícones)
 - date-fns
-- Persistência via `localStorage` (camada isolada em `src/lib/storage.js`,
-  pronta para troca futura por backend Supabase)
+- write-excel-file (exportação .xlsx, carregada só quando usada)
+- Persistência no navegador (`localStorage`), atrás de uma camada única em
+  `src/storage/` — pronta para ser trocada por um serviço com login e
+  sincronização (ver [docs/ARQUITETURA.md](docs/ARQUITETURA.md))
+- Vitest (testes de unidade), Playwright (testes no navegador), ESLint
 
 ## Como rodar
 
@@ -166,6 +169,18 @@ formulário).
 - Independente do "olho" local do módulo Vencimentos (que só mascara os
   totais em R$ da barra de resumo) — são dois recursos separados: um oculta
   valores específicos, o outro oculta a tela inteira
+
+## Seus dados
+
+- Tudo fica salvo **neste navegador**, neste aparelho. Nada é enviado a
+  servidor algum. Limpar os dados do site apaga tudo — exporte um backup em
+  **Configurações → Backup** de tempos em tempos
+- O app pode ficar aberto em **várias abas**: uma acompanha as mudanças da
+  outra, sem que uma apague o que a outra salvou
+- Se o navegador recusar a gravação (armazenamento cheio ou bloqueado), uma
+  faixa sob a barra superior avisa que as mudanças não estão sendo salvas
+- Se algum dado salvo estiver ilegível, ele **não** é substituído: o original
+  é guardado à parte, o módulo começa vazio e a mesma faixa explica o que houve
 
 ## Funcionalidades do módulo Agenda
 
@@ -525,33 +540,32 @@ subpasta, caso um dia seja servido de outro lugar.
 
 ```
 src/
-  lib/        # storage (persistência), backup (exportar/importar .json),
-              # currency (formatCurrency), date e recurrence (helpers)
-  hooks/      # useTheme, useEvents, usePlanning, useTasks, useShoppingItems,
-              # useBills, useFinanceEntries, useModulesConfig,
-              # usePersistentState (preferências de visualização por
-              # módulo)...
+  main.jsx        # entrada: carimba a versão do formato salvo e monta o App
+  App.jsx         # casca: barra superior, avisos, módulo ativo (carregado sob demanda)
+  app/
+    useModuleData.js   # dados e ações de todos os módulos, prontos para as telas
+  storage/        # tudo o que é salvo no navegador — ver docs/ARQUITETURA.md
+    backend.js         # o único ponto que toca o localStorage
+    stores.js          # registro de cada coleção/preferência (chave, formato, migrações)
+    useStoredState.js  # useState persistente, sincronizado entre abas
+    useEditableList.js # listas editáveis (categorias, prioridades, tags...)
+    problems.js        # falhas de leitura/gravação, exibidas pelo StorageNotice
+  hooks/          # regras de cada domínio sobre os dados (useEvents, useTasks,
+                  # useBills, useFinanceEntries, useFinanceOverview...) e
+                  # utilitários de tela (useListControls, usePersistentState)
+  lib/            # funções puras, sem React: recorrência, cartão de crédito,
+                  # métricas, ordenação, filtros, exportação, Metas...
   components/
-    layout/   # Topbar (marca + navegação), MiniCalendar, ModulesSettingsModal,
-              # PrivacyOverlay (modo privado global)
-    common/   # componentes compartilhados entre módulos (TagSelector,
-              # RecurrenceField, ConfirmDialog, EditableListSection,
-              # DescriptionPopover)
-    agenda/   # Agenda e suas visões, card, popover e modal
-    planning/ # Planejamento: grade, paleta de categorias e gerenciador
-    tasks/    # Tarefas: lista, kanban, modal e configurações
-              # (prioridades, tags e status)
-    shopping/ # Compras: lista, toolbar e configurações
-              # (classificações e prioridades)
-    dues/     # Vencimentos: lista, toolbar, modal e configurações
-              # (classificações)
-    finance/  # Finanças: Overview (stat tiles + gráficos SVG artesanais),
-              # tabela, toolbar, modal e configurações
-    goals/    # Metas: grade de rotinas, gráfico animado e objetivos
-  data/       # dados de exemplo (seed) de cada módulo, modules.js (registro
-              # central de módulos)
+    layout/       # Topbar, configurações gerais, modo privado, avisos
+    common/       # peças compartilhadas (Form, FilterControls, ChipSelect...)
+    agenda/ planning/ tasks/ shopping/ dues/ goals/
+    finance/      # Finanças — table/ e toolbar/ divididos em peças
+  data/           # dados de exemplo da primeira execução e o registro de módulos
   constants.js
+tests/e2e/        # testes no navegador, um arquivo por módulo
+docs/ARQUITETURA.md
 ```
 
-A camada de persistência é versionada (`secretaria:schemaVersion`) para permitir
-migrações futuras sem perda de dados.
+As camadas de baixo não conhecem as de cima: `lib/` não importa React,
+`storage/` não conhece telas, e as telas recebem dados prontos. É isso que
+permite a versão mobile reaproveitar tudo abaixo de `components/`.

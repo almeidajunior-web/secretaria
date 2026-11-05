@@ -11,3 +11,25 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Bundles are content-hashed (a new build means a new file name), so they can
+# be cached for good. index.html keeps Netlify's default (always revalidated),
+# which is what makes a new deploy show up on the next visit.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Security headers for every page. The CSP allows only this site's own
+# scripts, the Google Fonts stylesheet and font files, and inline style
+# attributes (React's `style` prop). Data never leaves the browser, so
+# nothing else needs to connect anywhere. tests/e2e/headers.spec.js runs the
+# app under exactly this policy.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
