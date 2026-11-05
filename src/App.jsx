@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { Construction } from 'lucide-react'
 import { useTheme } from './hooks/useTheme'
 import { usePrivacyMode } from './hooks/usePrivacyMode'
@@ -10,25 +10,29 @@ import ModulesSettingsModal from './components/layout/ModulesSettingsModal'
 import PrivacyOverlay from './components/layout/PrivacyOverlay'
 import StorageNotice from './components/layout/StorageNotice'
 import ErrorBoundary from './components/common/ErrorBoundary'
-import Agenda from './components/agenda/Agenda'
-import Planejamento from './components/planning/Planejamento'
-import Tarefas from './components/tasks/Tarefas'
-import Compras from './components/shopping/Compras'
-import Vencimentos from './components/dues/Vencimentos'
-import Financas from './components/finance/Financas'
-import Metas from './components/goals/Metas'
 
 const MODULE_NAMES = Object.fromEntries(MODULE_DEFS.map((m) => [m.id, m.label]))
 
-// Screen for each module id (see data/modules.js for the registry).
-const MODULE_SCREENS = {
-  agenda: Agenda,
-  planning: Planejamento,
-  todos: Tarefas,
-  compras: Compras,
-  vencimentos: Vencimentos,
-  finance: Financas,
-  metas: Metas,
+// Screen for each module id (see data/modules.js for the registry). Each is
+// its own bundle: opening the app downloads only the shell, the data layer
+// and the module on screen; the rest follow in the background (see
+// preloadModules), so switching modules stays instant.
+const MODULE_LOADERS = {
+  agenda: () => import('./components/agenda/Agenda'),
+  planning: () => import('./components/planning/Planejamento'),
+  todos: () => import('./components/tasks/Tarefas'),
+  compras: () => import('./components/shopping/Compras'),
+  vencimentos: () => import('./components/dues/Vencimentos'),
+  finance: () => import('./components/finance/Financas'),
+  metas: () => import('./components/goals/Metas'),
+}
+const MODULE_SCREENS = Object.fromEntries(Object.entries(MODULE_LOADERS).map(([id, load]) => [id, lazy(load)]))
+
+// Fetches every module bundle once the browser is idle after the first paint.
+function preloadModules() {
+  const run = () => Object.values(MODULE_LOADERS).forEach((load) => load().catch(() => {}))
+  if ('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 3000 })
+  else setTimeout(run, 1500)
 }
 
 // Application shell: a top bar carrying both the brand and the module
@@ -57,6 +61,8 @@ export default function App() {
   }
   const ActiveModule = MODULE_SCREENS[activeModule]
 
+  useEffect(preloadModules, [])
+
   return (
     <div className="app-ground flex h-full flex-col text-text">
       <Topbar
@@ -77,11 +83,15 @@ export default function App() {
       <div className="relative flex flex-1 overflow-hidden">
         <main className="flex-1 overflow-hidden">
           <ErrorBoundary resetKey={activeModule}>
-          {ActiveModule ? (
-            <ActiveModule {...modules[activeModule]} {...shellProps[activeModule]} />
-          ) : (
-            <ModulePlaceholder module={activeModule} />
-          )}
+          {/* No spinner: a module bundle arrives in a blink, and a flashing
+              loader would read as the app being slow. */}
+          <Suspense fallback={null}>
+            {ActiveModule ? (
+              <ActiveModule {...modules[activeModule]} {...shellProps[activeModule]} />
+            ) : (
+              <ModulePlaceholder module={activeModule} />
+            )}
+          </Suspense>
           </ErrorBoundary>
         </main>
 
