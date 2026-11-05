@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, X, Trash2, Check, GripVertical } from 'lucide-react'
+import { Plus, Trash2, Check, GripVertical } from 'lucide-react'
 import { EVENT_COLORS } from '../../constants'
 import { reorderIds } from '../../lib/reorderList'
 import ConfirmDialog from './ConfirmDialog'

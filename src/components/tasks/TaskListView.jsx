@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { format, addDays } from 'date-fns'
 import { Plus, Repeat, Trash2, Clock } from 'lucide-react'
-import { formatDueDate, isOverdue, parseDueDate } from '../../lib/taskFormat'
+import { isOverdue, parseDueDate } from '../../lib/taskFormat'
 import { groupTasksByDueDate } from '../../lib/taskGroups'
 import TagPickerPopover from '../common/TagPickerPopover'
 import ChipSelect from '../common/ChipSelect'

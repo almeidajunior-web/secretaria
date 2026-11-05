@@ -2,6 +2,10 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  # Same Node major as CI (the test tooling needs 22+).
+  NODE_VERSION = "22"
+
 # Single-page app: serve index.html for any unmatched path.
 [[redirects]]
   from = "/*"

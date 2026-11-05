@@ -159,7 +159,7 @@ export function loadTasks() {
     // silently keeping an unused `tags` array around forever.
     return parsed.map((t) => {
       if (t.tagIds || !t.tags) return t
-      const { tags, ...rest } = t
+      const { tags: _legacyTags, ...rest } = t
       return { ...rest, tagIds: [] }
     })
   } catch {
