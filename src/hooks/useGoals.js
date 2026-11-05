@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
-import { loadGoals, saveGoals } from '../lib/storage'
-import { buildSeedGoals } from '../data/goalsSeed'
+import { useStoredState } from '../storage/useStoredState'
+import { goalsStore } from '../storage/stores'
 
 let nextId = 1
 function genGoalId() {
@@ -12,11 +11,7 @@ function genGoalId() {
 // on how far along they are, which is what keeps a goal like "trocar de
 // emprego" expressible next to one like "juntar reserva".
 export function useGoals() {
-  const [goals, setGoals] = useState(() => loadGoals() ?? buildSeedGoals())
-
-  useEffect(() => {
-    saveGoals(goals)
-  }, [goals])
+  const [goals, setGoals] = useStoredState(goalsStore)
 
   const addGoal = (goal) => {
     const id = genGoalId()

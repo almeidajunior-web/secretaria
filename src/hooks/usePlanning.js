@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
-import { loadPlanning, savePlanning } from '../lib/storage'
-import { PLANNING_SEED_CATEGORIES, DEFAULT_HOUR_START, DEFAULT_HOUR_END } from '../data/planningSeed'
+import { useStoredState } from '../storage/useStoredState'
+import { planningStore } from '../storage/stores'
 import { cellKey, parseCellKey } from '../lib/planningGrid'
 
 let nextId = 1
@@ -14,25 +13,10 @@ function genCategoryId() {
 // optionally carrying a categoryId and/or a free-text description.
 // Persisted as a single localStorage entry.
 export function usePlanning() {
-  const [state, setState] = useState(() => {
-    const stored = loadPlanning()
-    // Seed categories only on a true first run (no stored planning data at
-    // all). Once the user has ever saved — even down to zero categories —
-    // their data is respected as-is; previously, an empty list (e.g. after
-    // deleting every category) was indistinguishable from "never touched"
-    // and silently got replaced with the defaults on the next reload.
-    return {
-      categories: stored ? stored.categories : PLANNING_SEED_CATEGORIES,
-      grid: stored?.grid || {},
-      splits: stored?.splits || {},
-      hourStart: stored?.hourStart ?? DEFAULT_HOUR_START,
-      hourEnd: stored?.hourEnd ?? DEFAULT_HOUR_END,
-    }
-  })
-
-  useEffect(() => {
-    savePlanning(state)
-  }, [state])
+  // First run seeds the default categories. Once anything was saved — even
+  // down to zero categories — it's respected as-is (an emptied list used to
+  // be indistinguishable from "never touched" and got re-seeded).
+  const [state, setState] = useStoredState(planningStore)
 
   // Sets/clears a window's category. categoryId === null clears the color;
   // if the window has a description it's kept (icon stays visible) — full

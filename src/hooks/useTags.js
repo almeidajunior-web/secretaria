@@ -1,18 +1,10 @@
-import { useEffect, useState } from 'react'
-import { loadTags, saveTags } from '../lib/storage'
+import { useStoredState } from '../storage/useStoredState'
+import { agendaTagsStore } from '../storage/stores'
 
 // Manages the user-defined tag list with persistence. On first run (empty
 // storage) it is seeded from whatever tags already exist on the events.
 export function useTags(seedTags) {
-  const [tags, setTags] = useState(() => {
-    const stored = loadTags()
-    if (stored) return stored
-    return seedTags || []
-  })
-
-  useEffect(() => {
-    saveTags(tags)
-  }, [tags])
+  const [tags, setTags] = useStoredState(agendaTagsStore, { seed: () => seedTags || [] })
 
   const addTag = (name) => {
     const n = name.trim()

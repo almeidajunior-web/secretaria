@@ -1,24 +1,18 @@
-import { useEffect, useState } from 'react'
-import { loadTheme, saveTheme } from '../lib/storage'
+import { useEffect } from 'react'
+import { useStoredState } from '../storage/useStoredState'
+import { themeStore } from '../storage/stores'
 
-// Light/dark theme with persistence. Toggles the `dark` class on <html> so the
-// CSS variables in index.css swap palettes.
+const systemTheme = () =>
+  typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+
+// Light/dark theme with persistence; the first visit follows the system
+// setting. Toggles the `dark` class on <html> so the CSS variables in
+// index.css swap palettes.
 export function useTheme() {
-  const [theme, setTheme] = useState(() => {
-    const stored = loadTheme()
-    if (stored) return stored
-    const prefersDark =
-      typeof window !== 'undefined' &&
-      window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    return prefersDark ? 'dark' : 'light'
-  })
+  const [theme, setTheme] = useStoredState(themeStore, { seed: systemTheme })
 
   useEffect(() => {
-    const root = document.documentElement
-    if (theme === 'dark') root.classList.add('dark')
-    else root.classList.remove('dark')
-    saveTheme(theme)
+    document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
 
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))

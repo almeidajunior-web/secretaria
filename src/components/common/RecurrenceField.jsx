@@ -1,7 +1,5 @@
 import { RECURRENCES, WEEKDAYS_LETTERS } from '../../constants'
-
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
+import { inputClass } from './Form'
 
 // Recurrence selector. Choosing "Personalizar…" reveals weekday toggles and an
 // optional end date.

@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import AmountInput from '../common/AmountInput'
 import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
-
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
+import { Field, inputClass } from '../common/Form'
 
 // More visual entry point for creating a new bill — the quick-add row
 // stays as the fast path. Create-only, no dirty/discard-confirmation, same
@@ -142,14 +140,5 @@ export default function BillModal({ categories, onSave, onClose }) {
         </div>
       </div>
     </div>
-  )
-}
-
-function Field({ label, children }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-medium text-text-secondary">{label}</span>
-      {children}
-    </label>
   )
 }

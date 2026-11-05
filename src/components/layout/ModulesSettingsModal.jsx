@@ -18,9 +18,7 @@ import { MODULE_DEFS } from '../../data/modules'
 import { downloadBackup, parseBackupFile, restoreBackupData } from '../../lib/backup'
 import ConfirmDialog from '../common/ConfirmDialog'
 import SettingsShell from '../common/SettingsShell'
-
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
+import { inputClass } from '../common/Form'
 
 // Drag payloads are prefixed with what's being dragged — a bare module id
 // isn't enough once a module and a group can both be dropped onto the same
@@ -67,7 +65,13 @@ export default function ModulesSettingsModal({
   }
 
   const confirmImport = () => {
-    restoreBackupData(pendingImport)
+    try {
+      restoreBackupData(pendingImport)
+    } catch {
+      setPendingImport(null)
+      setImportError('O navegador não conseguiu gravar o backup (espaço insuficiente?). Nada foi alterado além do que já estava salvo.')
+      return
+    }
     window.location.reload()
   }
 

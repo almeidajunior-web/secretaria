@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { usePersistentState, withDefaults } from '../../hooks/usePersistentState'
+import { useSortChain, useSelection, filterToggler } from '../../hooks/useListControls'
 import { buildShoppingComparator, rankMap } from '../../lib/shoppingSort'
 import { groupItemsByCategory } from '../../lib/shoppingGroups'
 import ComprasToolbar from './ComprasToolbar'
@@ -45,7 +46,7 @@ export default function Compras({
 }) {
   // View/sort/filter preferences persist across module navigation (and
   // reloads); modals and selection stay transient.
-  const [sortChain, setSortChain] = usePersistentState('secretaria:shoppingSortChain', [])
+  const [sortChain, toggleSort] = useSortChain('secretaria:shoppingSortChain', [])
   const [filters, setFilters] = usePersistentState(
     'secretaria:shoppingFilters',
     DEFAULT_FILTERS,
@@ -57,43 +58,16 @@ export default function Compras({
   )
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
-  const [selectMode, setSelectMode] = useState(false)
-  const [selectedIds, setSelectedIds] = useState(new Set())
+  const {
+    selectMode,
+    selectedIds,
+    toggleSelectMode,
+    toggleSelected: toggleSelectItem,
+    selectAll,
+    clearSelection,
+  } = useSelection()
 
-  const toggleSort = (field) => {
-    setSortChain((prev) => {
-      const idx = prev.findIndex((s) => s.field === field)
-      if (idx === -1) return [...prev, { field, direction: 'asc' }]
-      if (prev[idx].direction === 'asc') {
-        const next = [...prev]
-        next[idx] = { field, direction: 'desc' }
-        return next
-      }
-      return prev.filter((s) => s.field !== field)
-    })
-  }
-
-  const toggleFilter = (dimension, value) => {
-    setFilters((prev) => {
-      const list = prev[dimension]
-      const next = list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
-      return { ...prev, [dimension]: next }
-    })
-  }
-
-  const toggleSelectMode = () => {
-    setSelectMode((v) => !v)
-    setSelectedIds(new Set())
-  }
-
-  const toggleSelectItem = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
+  const toggleFilter = filterToggler(setFilters)
 
   const priorityRank = useMemo(() => rankMap(priorities), [priorities])
   const categoryLabelById = useMemo(
@@ -116,8 +90,7 @@ export default function Compras({
     [groupByCategory, sortedItems, categories]
   )
 
-  const selectAllVisible = () => setSelectedIds(new Set(sortedItems.map((it) => it.id)))
-  const clearSelection = () => setSelectedIds(new Set())
+  const selectAllVisible = () => selectAll(sortedItems.map((it) => it.id))
 
   const bulkSetCategory = (categoryId) => {
     selectedIds.forEach((id) => updateItem({ id, categoryId: categoryId || null }))

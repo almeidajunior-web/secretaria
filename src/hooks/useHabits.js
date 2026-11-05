@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
-import { loadHabits, saveHabits, loadHabitLog, saveHabitLog } from '../lib/storage'
-import { buildSeedHabits, buildSeedHabitLog } from '../data/goalsSeed'
+import { useStoredState } from '../storage/useStoredState'
+import { habitsStore, habitLogStore } from '../storage/stores'
 import { cellKey, nextCellState } from '../lib/habitStats'
 
 let nextId = 1
@@ -14,16 +13,8 @@ function genHabitId() {
 // means renaming a habit never rewrites its history, and clearing history
 // never touches the definitions.
 export function useHabits() {
-  const [habits, setHabits] = useState(() => loadHabits() ?? buildSeedHabits())
-  const [log, setLog] = useState(() => loadHabitLog() ?? buildSeedHabitLog())
-
-  useEffect(() => {
-    saveHabits(habits)
-  }, [habits])
-
-  useEffect(() => {
-    saveHabitLog(log)
-  }, [log])
+  const [habits, setHabits] = useStoredState(habitsStore)
+  const [log, setLog] = useStoredState(habitLogStore)
 
   const addHabit = (habit) => {
     const id = genHabitId()

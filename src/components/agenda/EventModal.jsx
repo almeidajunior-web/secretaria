@@ -14,6 +14,7 @@ import RecurrenceField from '../common/RecurrenceField'
 import LinkedClassesField from './LinkedClassesField'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ColorSwatchPicker from '../common/ColorSwatchPicker'
+import { Field, inputClass } from '../common/Form'
 
 // Create/edit form. `initial` is a full event object (blank for new events,
 // populated for edits). Title is required.
@@ -399,14 +400,3 @@ function untilFor(recurrence, until) {
   return recurrence !== 'none' && until ? fromDateInput(until) : null
 }
 
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
-
-function Field({ label, children }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-medium text-text-secondary">{label}</span>
-      {children}
-    </label>
-  )
-}

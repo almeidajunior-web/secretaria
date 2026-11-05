@@ -5,9 +5,7 @@ import { reorderIds } from '../../lib/reorderList'
 import ConfirmDialog from '../common/ConfirmDialog'
 import SettingsShell from '../common/SettingsShell'
 import ColorSwatchPicker from '../common/ColorSwatchPicker'
-
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
+import { inputClass } from '../common/Form'
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h)
 

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { format } from 'date-fns'
-import { loadFinanceEntries, saveFinanceEntries } from '../lib/storage'
-import { buildSeedEntries } from '../data/financeSeed'
+import { useStoredState } from '../storage/useStoredState'
+import { financeEntriesStore } from '../storage/stores'
 import { nextDueDate } from '../lib/billRecurrence'
 
 let nextId = 1
@@ -29,15 +29,7 @@ function withSeriesId(entry) {
 // (its effective date has arrived), keeping exactly one future instance
 // pending per series at all times.
 export function useFinanceEntries() {
-  const [entries, setEntries] = useState(() => {
-    const stored = loadFinanceEntries()
-    if (stored !== null) return stored
-    return buildSeedEntries()
-  })
-
-  useEffect(() => {
-    saveFinanceEntries(entries)
-  }, [entries])
+  const [entries, setEntries] = useStoredState(financeEntriesStore)
 
   const addEntry = (entry) => {
     const id = genEntryId()
@@ -105,7 +97,7 @@ export function useFinanceEntries() {
       }
       return toSpawn.length ? [...prev, ...toSpawn] : prev
     })
-  }, [])
+  }, [setEntries])
 
   // categoryId is never shared between the expense and income lists, so
   // matching on it alone is enough — no need to also check entry.type.

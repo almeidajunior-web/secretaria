@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { format } from 'date-fns'
-import { loadTasks, saveTasks } from '../lib/storage'
-import { buildSeedTasks } from '../data/taskSeed'
+import { useStoredState } from '../storage/useStoredState'
+import { tasksStore } from '../storage/stores'
 import { nextOccurrenceAfter, rollForwardIfOverdue } from '../lib/taskRecurrence'
 import { useNow } from './useNow'
 
@@ -15,15 +15,7 @@ function genTaskId() {
 // second task is ever created when a deadline passes or is completed.
 // `statuses` (from useTaskStatuses) drives which status ids count as "done".
 export function useTasks(statuses) {
-  const [tasks, setTasks] = useState(() => {
-    const stored = loadTasks()
-    if (stored !== null) return stored
-    return buildSeedTasks()
-  })
-
-  useEffect(() => {
-    saveTasks(tasks)
-  }, [tasks])
+  const [tasks, setTasks] = useStoredState(tasksStore)
 
   const now = useNow()
   const todayStr = format(now, 'yyyy-MM-dd')
@@ -52,7 +44,7 @@ export function useTasks(statuses) {
       })
       return changed ? next : prev
     })
-  }, [todayStr, doneStatusIds])
+  }, [todayStr, doneStatusIds, setTasks])
 
   const addTask = (task) => {
     const id = genTaskId()
