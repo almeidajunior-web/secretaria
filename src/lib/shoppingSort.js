@@ -1,4 +1,4 @@
-import { rankMap } from './taskSort'
+import { rankMap, rankOf, compareRanks } from './taskSort'
 
 export { rankMap }
 
@@ -14,11 +14,8 @@ function compareField(a, b, field, priorityRank, categoryLabelById) {
       if (!bv) return -1
       return av.localeCompare(bv, 'pt-BR')
     }
-    case 'priority': {
-      const av = a.priorityId != null ? (priorityRank[a.priorityId] ?? Infinity) : Infinity
-      const bv = b.priorityId != null ? (priorityRank[b.priorityId] ?? Infinity) : Infinity
-      return av - bv
-    }
+    case 'priority':
+      return compareRanks(rankOf(priorityRank, a.priorityId), rankOf(priorityRank, b.priorityId))
     case 'title':
       return a.title.localeCompare(b.title, 'pt-BR')
     default:

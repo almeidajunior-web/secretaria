@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { usePersistentState } from '../../hooks/usePersistentState'
+import { usePersistentState, withDefaults } from '../../hooks/usePersistentState'
 import {
   DEFAULT_SORT_CHAIN,
   buildTaskComparator,
@@ -40,20 +40,6 @@ function filterTasks(tasks, filters, { applyHideFinished, doneStatusIds }) {
 }
 
 const DEFAULT_FILTERS = { priorityIds: [], tags: [], hideFinished: true, dueDate: null }
-const TASKS_FILTERS_KEY = 'secretaria:tasksFilters'
-
-// Merges persisted filters over the defaults so a stored shape missing a
-// newer key still resolves it.
-function loadPersistedTaskFilters() {
-  try {
-    const raw = localStorage.getItem(TASKS_FILTERS_KEY)
-    if (!raw) return DEFAULT_FILTERS
-    const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' ? { ...DEFAULT_FILTERS, ...parsed } : DEFAULT_FILTERS
-  } catch {
-    return DEFAULT_FILTERS
-  }
-}
 
 // Tarefas module: list + kanban views over one task collection, sharing the
 // same filter/hierarchical-sort state. Fully independent from Agenda and
@@ -90,10 +76,11 @@ export default function Tarefas({
     DEFAULT_SORT_CHAIN,
     sanitizeSortChain
   )
-  const [filters, setFilters] = useState(loadPersistedTaskFilters)
-  useEffect(() => {
-    localStorage.setItem(TASKS_FILTERS_KEY, JSON.stringify(filters))
-  }, [filters])
+  const [filters, setFilters] = usePersistentState(
+    'secretaria:tasksFilters',
+    DEFAULT_FILTERS,
+    withDefaults(DEFAULT_FILTERS)
+  )
   const [modalTask, setModalTask] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)

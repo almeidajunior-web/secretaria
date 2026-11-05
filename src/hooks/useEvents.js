@@ -1,5 +1,5 @@
 import { isSameDay } from 'date-fns'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { loadEvents, saveEvents } from '../lib/storage'
 import { buildSeedEvents } from '../data/seed'
 import { formatKey } from '../lib/recurrence'
@@ -76,11 +76,8 @@ export function useEvents() {
     return buildSeedEvents()
   })
 
-  // Skip persisting the very first render so seed data is written exactly once.
-  const firstRun = useRef(true)
   useEffect(() => {
     saveEvents(events)
-    firstRun.current = false
   }, [events])
 
   const addEvent = useCallback((event) => {
@@ -92,6 +89,20 @@ export function useEvents() {
     setEvents((prev) => {
       const merged = prev.map((e) => (e.id === event.id ? { ...e, ...event } : e))
       return reconcileLinks(merged, event.id, event.linkedIds)
+    })
+  }, [])
+
+  // Undo for deletions: puts the deleted events back exactly as they were —
+  // same ids, so links pointing at them from other events line up again —
+  // and re-makes the symmetric links that unlinkEverywhere removed. Re-adding
+  // them through addEvent instead gave each a fresh id, which broke the links
+  // between classes restored together.
+  const restoreEvents = useCallback((snapshots) => {
+    setEvents((prev) => {
+      const present = new Set(prev.map((e) => e.id))
+      let next = [...prev, ...snapshots.filter((s) => !present.has(s.id))]
+      for (const s of snapshots) next = reconcileLinks(next, s.id, s.linkedIds)
+      return next
     })
   }, [])
 
@@ -265,7 +276,9 @@ export function useEvents() {
         id: genId(),
         exdates: keysFrom(event.exdates, splitKey),
         occStatus: entriesFrom(event.occStatus, splitKey),
-        recurrenceUntil: event.recurrenceUntil || null,
+        // The form always sends the series' end date (possibly just edited);
+        // fall back to the original only for callers that don't.
+        recurrenceUntil: data.recurrenceUntil !== undefined ? data.recurrenceUntil : event.recurrenceUntil || null,
       }
       const withNewSeries = prev
         .map((e) =>
@@ -301,6 +314,7 @@ export function useEvents() {
     addEvent,
     updateEvent,
     deleteEvent,
+    restoreEvents,
     moveOccurrence,
     deleteOccurrence,
     editOccurrence,

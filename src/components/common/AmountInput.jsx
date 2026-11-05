@@ -5,14 +5,25 @@ const displayFormatter = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 2,
 })
 
+// Dots splitting the number into groups of exactly three digits ("1.500",
+// "12.345.678") are thousands separators — that's how a value is written in
+// pt-BR. A leading "0." ("0.500") can't be a thousands group, so it stays a
+// decimal point.
+const THOUSANDS_ONLY = /^-?[1-9]\d{0,2}(\.\d{3})+$/
+
 // Reads what someone actually types into a money field: "1.500,5", "1500,50"
 // and "1500.50" all mean the same thing. A comma present means the comma is
-// the decimal separator, so every dot is a thousands separator; with no comma,
-// a lone dot is the decimal point.
+// the decimal separator, so every dot is a thousands separator. With no comma,
+// dots in thousands groups ("1.500" = mil e quinhentos) are separators too;
+// any other lone dot ("12.5") is the decimal point.
 export function parseAmount(raw) {
   const s = String(raw ?? '').trim()
   if (!s) return null
-  const normalized = s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s
+  const normalized = s.includes(',')
+    ? s.replace(/\./g, '').replace(',', '.')
+    : THOUSANDS_ONLY.test(s)
+      ? s.replace(/\./g, '')
+      : s
   const n = Number(normalized)
   return Number.isFinite(n) ? n : null
 }

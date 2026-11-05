@@ -23,12 +23,17 @@ export default function GoalModal({ goal, onSave, onDelete, onClose }) {
 
   const handleSave = () => {
     if (!canSave) return
+    const base = goal ?? { status: 'active' }
     onSave({
-      ...(goal ?? { status: 'active' }),
+      ...base,
       title: title.trim(),
       description: description.trim(),
       targetDate: targetDate || null,
       progress,
+      // "Concluída" means 100% (setGoalStatus pins it there). Pulling the bar
+      // back below that says the goal isn't finished after all, so it reopens
+      // instead of showing a completed card at 60%.
+      status: base.status === 'done' && progress < 100 ? 'active' : base.status,
     })
   }
 

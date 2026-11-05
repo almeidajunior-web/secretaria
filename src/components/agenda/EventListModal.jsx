@@ -116,12 +116,12 @@ export default function EventListModal({ mode, events, onEdit, onDelete, onClose
           title={`Excluir "${pendingDelete.label}"?`}
           message={
             pendingDelete.events.length > 1
-              ? `As ${pendingDelete.events.length} aulas conectadas desta disciplina serão removidas. Esta ação não pode ser desfeita.`
-              : 'O item será removido da agenda. Esta ação não pode ser desfeita.'
+              ? `As ${pendingDelete.events.length} aulas conectadas desta disciplina serão removidas.`
+              : 'O item será removido da agenda.'
           }
           confirmLabel="Excluir"
           onConfirm={() => {
-            pendingDelete.events.forEach((e) => onDelete(e))
+            onDelete(pendingDelete.events)
             setPendingDelete(null)
           }}
           onCancel={() => setPendingDelete(null)}

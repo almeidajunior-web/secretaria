@@ -5,7 +5,7 @@ import { DEFAULT_SORT_CHAIN, buildBillComparator, sanitizeSortChain } from '../.
 import { groupBillsByDueDate } from '../../lib/billGroups'
 import { formatCurrency } from '../../lib/currency'
 import { useBillValuesHidden } from '../../hooks/useBillValuesHidden'
-import { usePersistentState } from '../../hooks/usePersistentState'
+import { usePersistentState, withDefaults } from '../../hooks/usePersistentState'
 import VencimentosToolbar from './VencimentosToolbar'
 import VencimentosListView from './VencimentosListView'
 import DuesSettingsModal from './DuesSettingsModal'
@@ -44,7 +44,11 @@ export default function Vencimentos({
     DEFAULT_SORT_CHAIN,
     sanitizeSortChain
   )
-  const [filters, setFilters] = usePersistentState('secretaria:billsFilters', DEFAULT_FILTERS)
+  const [filters, setFilters] = usePersistentState(
+    'secretaria:billsFilters',
+    DEFAULT_FILTERS,
+    withDefaults(DEFAULT_FILTERS)
+  )
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectMode, setSelectMode] = useState(false)

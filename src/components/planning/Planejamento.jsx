@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { WEEKDAYS_SHORT_ORDERED } from '../../constants'
 import { cellKey } from '../../lib/planningGrid'
-import CategoryPalette from './CategoryPalette'
+import CategoryPalette, { ERASER } from './CategoryPalette'
 import PlanningGrid from './PlanningGrid'
 import PlanningSettingsModal from './PlanningSettingsModal'
 import WindowOptionsPopover from './WindowOptionsPopover'
@@ -48,6 +48,11 @@ export default function Planejamento({
   const [eraseConfirm, setEraseConfirm] = useState(null) // { day, hour, half }
 
   const targetEntry = (t) => (t ? grid[cellKey(t.day, t.hour, t.half)] : null)
+  // A brush only stays armed while its category exists — deleting the
+  // category in settings would otherwise leave it painting an id with no
+  // color: invisible cells that still counted toward the hour totals.
+  const brush =
+    activeBrush === ERASER || categories.some((c) => c.id === activeBrush) ? activeBrush : null
 
   return (
     <div className="flex h-full flex-col">
@@ -58,7 +63,7 @@ export default function Planejamento({
       <CategoryPalette
         categories={categories}
         grid={grid}
-        activeBrush={activeBrush}
+        activeBrush={brush}
         onSelectBrush={setActiveBrush}
         onReorder={reorderCategories}
         onManageClick={() => setSettingsOpen(true)}
@@ -72,7 +77,7 @@ export default function Planejamento({
           hourStart={hourStart}
           hourEnd={hourEnd}
           isDark={isDark}
-          activeBrush={activeBrush}
+          activeBrush={brush}
           onPaintCell={paintCell}
           onRequestClearWithConfirm={(day, hour, half) => setEraseConfirm({ day, hour, half })}
           onOpenWindowMenu={(payload) => setWindowPopover(payload)}
@@ -121,7 +126,10 @@ export default function Planejamento({
           windowLabel={windowLabel(descriptionTarget.day, descriptionTarget.hour, descriptionTarget.half)}
           initialText={targetEntry(descriptionTarget)?.description}
           onSave={(text) => {
-            setDescription(descriptionTarget.day, descriptionTarget.hour, descriptionTarget.half, text)
+            const { day, hour, half } = descriptionTarget
+            // Saving a blank note is deleting it — not storing an empty one.
+            if (text.trim()) setDescription(day, hour, half, text)
+            else deleteDescription(day, hour, half)
             setDescriptionTarget(null)
           }}
           onDelete={

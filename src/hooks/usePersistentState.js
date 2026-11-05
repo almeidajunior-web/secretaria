@@ -31,3 +31,12 @@ export function usePersistentState(key, defaultValue, sanitize) {
 
   return [value, setValue]
 }
+
+// Sanitizer for object-shaped preferences (filters): lays the stored value
+// over the current defaults, so a shape saved by an older version that lacks
+// a key added later still gets that key — instead of the module crashing on
+// `filters.newKey.length`.
+export function withDefaults(defaults) {
+  return (stored) =>
+    stored && typeof stored === 'object' && !Array.isArray(stored) ? { ...defaults, ...stored } : defaults
+}

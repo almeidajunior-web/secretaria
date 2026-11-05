@@ -3,15 +3,14 @@ import { GraduationCap, FileText } from 'lucide-react'
 import { fmt } from '../../lib/date'
 import { WEEKDAYS_SHORT } from '../../constants'
 
-// Lets a class or exam event be connected to other classes/exams (e.g. the
-// same discipline meeting on different weekdays, or an exam that counts
-// toward its discipline's attendance) so their absences are pooled into a
-// single count. `candidates` are the other Aula/Prova events available to link.
+// Lets a class be connected to other classes (e.g. the same discipline
+// meeting on different weekdays) so their absences are pooled into a single
+// count. `candidates` are the other Aula events available to link.
 export default function LinkedClassesField({ candidates, selected, onToggle }) {
   if (candidates.length === 0) {
     return (
       <p className="text-[11px] text-text-muted">
-        Nenhuma outra aula/prova cadastrada ainda para conectar.
+        Nenhuma outra aula cadastrada ainda para conectar.
       </p>
     )
   }
@@ -19,7 +18,7 @@ export default function LinkedClassesField({ candidates, selected, onToggle }) {
   return (
     <div className="flex flex-col gap-1.5">
       <span className="text-[11px] font-medium text-text-secondary">
-        Conectar com outras aulas/provas (soma as faltas)
+        Conectar com outras aulas (soma as faltas)
       </span>
       <div className="flex flex-wrap gap-2">
         {candidates.map((c) => {
