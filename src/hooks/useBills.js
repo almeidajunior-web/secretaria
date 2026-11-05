@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
-import { loadBills, saveBills } from '../lib/storage'
-import { buildSeedBills } from '../data/duesSeed'
+import { useStoredState } from '../storage/useStoredState'
+import { billsStore } from '../storage/stores'
 import { nextDueDate } from '../lib/billRecurrence'
 
 let nextId = 1
@@ -28,15 +27,7 @@ function withSeriesId(bill) {
 // someone actually pays it; auto-advancing it forward would just hide an
 // unpaid bill, which is the one thing this module exists to prevent.
 export function useBills() {
-  const [bills, setBills] = useState(() => {
-    const stored = loadBills()
-    if (stored !== null) return stored
-    return buildSeedBills()
-  })
-
-  useEffect(() => {
-    saveBills(bills)
-  }, [bills])
+  const [bills, setBills] = useStoredState(billsStore)
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')
 

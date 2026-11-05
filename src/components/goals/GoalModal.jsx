@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import ConfirmDialog from '../common/ConfirmDialog'
-
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
+import { Field, inputClass } from '../common/Form'
 
 // Create/edit a meta. Progress lives here rather than on the card — the card
 // is a click target for opening this modal now, not an inline-editable
@@ -154,14 +152,5 @@ export default function GoalModal({ goal, onSave, onDelete, onClose }) {
         />
       )}
     </div>
-  )
-}
-
-function Field({ label, children }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-medium text-text-secondary">{label}</span>
-      {children}
-    </label>
   )
 }

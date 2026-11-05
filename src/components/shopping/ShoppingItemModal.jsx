@@ -1,7 +1,5 @@
 import { useState } from 'react'
-
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
+import { Field, inputClass } from '../common/Form'
 
 // Optional, more visual entry point for creating a new item — the quick-add
 // row at the bottom of the list stays as the fast path. Create-only (no
@@ -99,14 +97,5 @@ export default function ShoppingItemModal({ categories, priorities, onSave, onCl
         </div>
       </div>
     </div>
-  )
-}
-
-function Field({ label, children }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-medium text-text-secondary">{label}</span>
-      {children}
-    </label>
   )
 }

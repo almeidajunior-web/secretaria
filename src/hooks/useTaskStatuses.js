@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
-import { loadTaskStatuses, saveTaskStatuses } from '../lib/storage'
-import { TASK_STATUS_SEED } from '../data/taskSeed'
+import { useStoredState } from '../storage/useStoredState'
+import { taskStatusesStore } from '../storage/stores'
 
 let nextId = 1
 function genStatusId() {
@@ -22,14 +21,7 @@ export function canDeleteStatus(statuses, id) {
 // at least one isDone status are always kept, so deleteStatus/setDone are
 // no-ops when they'd violate that.
 export function useTaskStatuses() {
-  const [statuses, setStatuses] = useState(() => {
-    const stored = loadTaskStatuses()
-    return stored ?? TASK_STATUS_SEED
-  })
-
-  useEffect(() => {
-    saveTaskStatuses(statuses)
-  }, [statuses])
+  const [statuses, setStatuses] = useStoredState(taskStatusesStore)
 
   const addStatus = (label, color) => {
     const l = label.trim()

@@ -1,43 +1,15 @@
-import { useEffect, useState } from 'react'
-import { loadShoppingPriorities, saveShoppingPriorities } from '../lib/storage'
-import { SHOPPING_SEED_PRIORITIES } from '../data/shoppingSeed'
+import { useEditableList } from '../storage/useEditableList'
+import { shoppingPrioritiesStore } from '../storage/stores'
 
-let nextId = 1
-function genPriorityId() {
-  return `shopprio_${Date.now()}_${nextId++}`
-}
-
-// User-editable, reorderable priority list for Compras — independent from
-// Tarefas' own priorities (each module owns its domain).
+// User-editable, reorderable priority list for Compras — array order is the
+// rank (first = highest).
 export function useShoppingPriorities() {
-  const [priorities, setPriorities] = useState(() => {
-    const stored = loadShoppingPriorities()
-    return stored ?? SHOPPING_SEED_PRIORITIES
-  })
-
-  useEffect(() => {
-    saveShoppingPriorities(priorities)
-  }, [priorities])
-
-  const addPriority = (label, color) => {
-    const l = label.trim()
-    if (!l) return null
-    const id = genPriorityId()
-    setPriorities((prev) => [...prev, { id, label: l, color }])
-    return id
+  const { items, add, update, remove, reorder } = useEditableList(shoppingPrioritiesStore, 'shopprio')
+  return {
+    priorities: items,
+    addPriority: add,
+    updatePriority: update,
+    deletePriority: remove,
+    reorderPriorities: reorder,
   }
-
-  const updatePriority = (id, patch) => {
-    setPriorities((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
-  }
-
-  const deletePriority = (id) => {
-    setPriorities((prev) => prev.filter((p) => p.id !== id))
-  }
-
-  const reorderPriorities = (newOrderIds) => {
-    setPriorities((prev) => newOrderIds.map((id) => prev.find((p) => p.id === id)).filter(Boolean))
-  }
-
-  return { priorities, addPriority, updatePriority, deletePriority, reorderPriorities }
 }

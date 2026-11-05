@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { readRaw, writeRaw } from '../storage/backend'
 
-// Generic localStorage-backed useState for small UI preferences (view mode,
+// Generic stored useState for small UI preferences (view mode,
 // sort chain, filters) that should survive navigating away from a module and
 // back — unlike domain data (events, tasks, bills...), these need no
 // revive/serialize step, just a plain JSON round-trip.
@@ -13,7 +14,7 @@ import { useEffect, useState } from 'react'
 export function usePersistentState(key, defaultValue, sanitize) {
   const [value, setValue] = useState(() => {
     try {
-      const raw = localStorage.getItem(key)
+      const raw = readRaw(key)
       const parsed = raw != null ? JSON.parse(raw) : defaultValue
       return sanitize ? sanitize(parsed) : parsed
     } catch {
@@ -23,9 +24,10 @@ export function usePersistentState(key, defaultValue, sanitize) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(key, JSON.stringify(value))
+      writeRaw(key, JSON.stringify(value))
     } catch {
-      // best-effort; ignore quota/availability errors
+      // A view preference not sticking isn't worth an alarm — unlike the
+      // domain stores, which report a refused save (see storage/store.js).
     }
   }, [key, value])
 

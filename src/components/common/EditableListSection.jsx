@@ -4,9 +4,7 @@ import { EVENT_COLORS } from '../../constants'
 import { reorderIds } from '../../lib/reorderList'
 import ConfirmDialog from './ConfirmDialog'
 import ColorSwatchPicker from './ColorSwatchPicker'
-
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
+import { inputClass } from './Form'
 
 // Generic add/edit-color/delete-with-confirm/drag-to-reorder list editor,
 // shared by every settings modal that manages a simple {id,label,color}

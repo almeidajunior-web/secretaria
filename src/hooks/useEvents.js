@@ -1,7 +1,7 @@
 import { isSameDay } from 'date-fns'
-import { useCallback, useEffect, useState } from 'react'
-import { loadEvents, saveEvents } from '../lib/storage'
-import { buildSeedEvents } from '../data/seed'
+import { useCallback } from 'react'
+import { useStoredState } from '../storage/useStoredState'
+import { eventsStore } from '../storage/stores'
 import { formatKey } from '../lib/recurrence'
 
 let nextId = 1
@@ -65,32 +65,23 @@ const entriesFrom = (obj, key) =>
 const entriesBefore = (obj, key) =>
   Object.fromEntries(Object.entries(obj || {}).filter(([k]) => k < key))
 
-// CRUD over the event collection with automatic persistence. Seeds example
-// data only when the store is empty.
+// CRUD over the event collection with automatic persistence. Example data
+// is seeded only the very first time — an intentionally emptied calendar
+// stays empty.
 export function useEvents() {
-  const [events, setEvents] = useState(() => {
-    const stored = loadEvents()
-    // Seed only the first time ever. An intentionally emptied calendar
-    // (stored === []) must stay empty instead of re-seeding the examples.
-    if (stored !== null) return stored
-    return buildSeedEvents()
-  })
-
-  useEffect(() => {
-    saveEvents(events)
-  }, [events])
+  const [events, setEvents] = useStoredState(eventsStore)
 
   const addEvent = useCallback((event) => {
     const id = genId()
     setEvents((prev) => reconcileLinks([...prev, { ...event, id }], id, event.linkedIds))
-  }, [])
+  }, [setEvents])
 
   const updateEvent = useCallback((event) => {
     setEvents((prev) => {
       const merged = prev.map((e) => (e.id === event.id ? { ...e, ...event } : e))
       return reconcileLinks(merged, event.id, event.linkedIds)
     })
-  }, [])
+  }, [setEvents])
 
   // Undo for deletions: puts the deleted events back exactly as they were —
   // same ids, so links pointing at them from other events line up again —
@@ -104,11 +95,11 @@ export function useEvents() {
       for (const s of snapshots) next = reconcileLinks(next, s.id, s.linkedIds)
       return next
     })
-  }, [])
+  }, [setEvents])
 
   const deleteEvent = useCallback((id) => {
     setEvents((prev) => unlinkEverywhere(prev.filter((e) => e.id !== id), id))
-  }, [])
+  }, [setEvents])
 
   // Removes a tag from every event that references it (used when the tag is
   // deleted from the managed tag list).
@@ -118,7 +109,7 @@ export function useEvents() {
         e.tags?.includes(tag) ? { ...e, tags: e.tags.filter((t) => t !== tag) } : e
       )
     )
-  }, [])
+  }, [setEvents])
 
   // Moves one occurrence to a new start/end. `scope` is 'all', 'this' or
   // 'following' for recurring series.
@@ -195,7 +186,7 @@ export function useEvents() {
         .concat(newSeries)
       return reconcileLinks(withNewSeries, newSeries.id, newSeries.linkedIds)
     })
-  }, [])
+  }, [setEvents])
 
   // Deletes one occurrence with the same scope options.
   const deleteOccurrence = useCallback((occ, scope) => {
@@ -218,7 +209,7 @@ export function useEvents() {
       }
       return prev.map((e) => (e.id === event.id ? { ...e, recurrenceUntil: until } : e))
     })
-  }, [])
+  }, [setEvents])
 
   // Applies edited fields (from the modal) to one occurrence with scope options.
   const editOccurrence = useCallback((occ, data, scope) => {
@@ -294,7 +285,7 @@ export function useEvents() {
         .concat(newSeries)
       return reconcileLinks(withNewSeries, newSeries.id, newSeries.linkedIds)
     })
-  }, [])
+  }, [setEvents])
 
   // Sets the status of a single occurrence. Non-recurring events update their
   // base status directly; recurring events store a per-occurrence override so
@@ -307,7 +298,7 @@ export function useEvents() {
         return { ...e, occStatus: { ...(e.occStatus || {}), [occKey]: status } }
       })
     )
-  }, [])
+  }, [setEvents])
 
   return {
     events,

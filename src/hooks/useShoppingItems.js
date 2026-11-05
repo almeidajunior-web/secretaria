@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { format } from 'date-fns'
-import { loadShoppingItems, saveShoppingItems } from '../lib/storage'
-import { buildSeedShoppingItems } from '../data/shoppingSeed'
+import { useStoredState } from '../storage/useStoredState'
+import { shoppingItemsStore } from '../storage/stores'
 import { useNow } from './useNow'
 
 let nextId = 1
@@ -14,15 +14,7 @@ function genItemId() {
 // deleted for good the next time the app is open on a later day — no undo,
 // matching the "no confirmation needed to delete" spirit of the module.
 export function useShoppingItems() {
-  const [items, setItems] = useState(() => {
-    const stored = loadShoppingItems()
-    if (stored !== null) return stored
-    return buildSeedShoppingItems()
-  })
-
-  useEffect(() => {
-    saveShoppingItems(items)
-  }, [items])
+  const [items, setItems] = useStoredState(shoppingItemsStore)
 
   const now = useNow()
   const todayStr = format(now, 'yyyy-MM-dd')
@@ -35,7 +27,7 @@ export function useShoppingItems() {
       const next = prev.filter((it) => !(it.purchased && it.purchasedDate && it.purchasedDate < todayStr))
       return next.length !== prev.length ? next : prev
     })
-  }, [todayStr])
+  }, [todayStr, setItems])
 
   const addItem = (item) => {
     const id = genItemId()

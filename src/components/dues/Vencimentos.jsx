@@ -6,6 +6,7 @@ import { groupBillsByDueDate } from '../../lib/billGroups'
 import { formatCurrency } from '../../lib/currency'
 import { useBillValuesHidden } from '../../hooks/useBillValuesHidden'
 import { usePersistentState, withDefaults } from '../../hooks/usePersistentState'
+import { useSortChain, useSelection, filterToggler } from '../../hooks/useListControls'
 import VencimentosToolbar from './VencimentosToolbar'
 import VencimentosListView from './VencimentosListView'
 import DuesSettingsModal from './DuesSettingsModal'
@@ -39,7 +40,7 @@ export default function Vencimentos({
   reorderCategories,
 }) {
   // View/sort/filter preferences persist across module navigation and reloads.
-  const [sortChain, setSortChain] = usePersistentState(
+  const [sortChain, toggleSort] = useSortChain(
     'secretaria:billsSortChain',
     DEFAULT_SORT_CHAIN,
     sanitizeSortChain
@@ -51,44 +52,17 @@ export default function Vencimentos({
   )
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
-  const [selectMode, setSelectMode] = useState(false)
-  const [selectedIds, setSelectedIds] = useState(new Set())
+  const {
+    selectMode,
+    selectedIds,
+    toggleSelectMode,
+    toggleSelected: toggleSelectBill,
+    selectAll,
+    clearSelection,
+  } = useSelection()
   const { hidden: valuesHidden, toggleValuesHidden } = useBillValuesHidden()
 
-  const toggleSort = (field) => {
-    setSortChain((prev) => {
-      const idx = prev.findIndex((s) => s.field === field)
-      if (idx === -1) return [...prev, { field, direction: 'asc' }]
-      if (prev[idx].direction === 'asc') {
-        const next = [...prev]
-        next[idx] = { field, direction: 'desc' }
-        return next
-      }
-      return prev.filter((s) => s.field !== field)
-    })
-  }
-
-  const toggleFilter = (dimension, value) => {
-    setFilters((prev) => {
-      const list = prev[dimension]
-      const next = list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
-      return { ...prev, [dimension]: next }
-    })
-  }
-
-  const toggleSelectMode = () => {
-    setSelectMode((v) => !v)
-    setSelectedIds(new Set())
-  }
-
-  const toggleSelectBill = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
+  const toggleFilter = filterToggler(setFilters)
 
   const comparator = useMemo(() => buildBillComparator(sortChain), [sortChain])
 
@@ -116,8 +90,7 @@ export default function Vencimentos({
     .filter((b) => !b.paid && b.dueDate < todayStr)
     .reduce((sum, b) => sum + (b.amount || 0), 0)
 
-  const selectAllVisible = () => setSelectedIds(new Set(sortedBills.map((b) => b.id)))
-  const clearSelection = () => setSelectedIds(new Set())
+  const selectAllVisible = () => selectAll(sortedBills.map((b) => b.id))
 
   const bulkSetCategory = (categoryId) => {
     selectedIds.forEach((id) => updateBill({ id, categoryId: categoryId || null }))

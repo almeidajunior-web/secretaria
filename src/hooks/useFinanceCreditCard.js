@@ -1,18 +1,11 @@
-import { useEffect, useState } from 'react'
-import { loadFinanceCreditCard, saveFinanceCreditCard } from '../lib/storage'
-
-const DEFAULT_CREDIT_CARD = { closingDay: 25, dueDay: 5 }
+import { useStoredState } from '../storage/useStoredState'
+import { financeCreditCardStore } from '../storage/stores'
 
 // Single global config for the fixed "Cartão de Crédito" payment method —
-// not per-card, not per-transaction. Mirrors useFinanceValuesHidden's shape.
+// closing and due day of the invoice (defaults: closes on the 25th, due on
+// the 5th).
 export function useFinanceCreditCard() {
-  const [config, setConfig] = useState(() => loadFinanceCreditCard() ?? DEFAULT_CREDIT_CARD)
-
-  useEffect(() => {
-    saveFinanceCreditCard(config)
-  }, [config])
-
+  const [config, setConfig] = useStoredState(financeCreditCardStore)
   const updateConfig = (patch) => setConfig((prev) => ({ ...prev, ...patch }))
-
   return { config, updateConfig }
 }

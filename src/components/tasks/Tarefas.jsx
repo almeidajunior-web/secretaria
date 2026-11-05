@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { usePersistentState, withDefaults } from '../../hooks/usePersistentState'
+import { useSortChain, useSelection, filterToggler } from '../../hooks/useListControls'
 import {
   DEFAULT_SORT_CHAIN,
   buildTaskComparator,
@@ -71,7 +72,7 @@ export default function Tarefas({
   // reloads; only the action state below (modals, selection) resets on
   // remount.
   const [view, setView] = usePersistentState('secretaria:tasksViewMode', 'list')
-  const [sortChain, setSortChain] = usePersistentState(
+  const [sortChain, toggleSort] = useSortChain(
     'secretaria:tasksSortChain',
     DEFAULT_SORT_CHAIN,
     sanitizeSortChain
@@ -85,50 +86,23 @@ export default function Tarefas({
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)
   const [pendingBulkDelete, setPendingBulkDelete] = useState(false)
-  const [selectMode, setSelectMode] = useState(false)
-  const [selectedIds, setSelectedIds] = useState(new Set())
+  const {
+    selectMode,
+    selectedIds,
+    toggleSelectMode,
+    toggleSelected: toggleSelectTask,
+    selectAll,
+    clearSelection,
+  } = useSelection()
 
   const doneStatusIds = useMemo(
     () => new Set(statuses.filter((s) => s.isDone).map((s) => s.id)),
     [statuses]
   )
 
-  const toggleSort = (field) => {
-    setSortChain((prev) => {
-      const idx = prev.findIndex((s) => s.field === field)
-      if (idx === -1) return [...prev, { field, direction: 'asc' }]
-      if (prev[idx].direction === 'asc') {
-        const next = [...prev]
-        next[idx] = { field, direction: 'desc' }
-        return next
-      }
-      return prev.filter((s) => s.field !== field)
-    })
-  }
-
-  const toggleFilter = (dimension, value) => {
-    setFilters((prev) => {
-      const list = prev[dimension]
-      const next = list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
-      return { ...prev, [dimension]: next }
-    })
-  }
+  const toggleFilter = filterToggler(setFilters)
 
   const setDateFilter = (dueDate) => setFilters((prev) => ({ ...prev, dueDate: dueDate || null }))
-
-  const toggleSelectMode = () => {
-    setSelectMode((v) => !v)
-    setSelectedIds(new Set())
-  }
-
-  const toggleSelectTask = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
 
   const priorityRank = useMemo(() => rankMap(priorities), [priorities])
   const comparator = useMemo(
@@ -142,8 +116,7 @@ export default function Tarefas({
   )
   const sortedTasks = useMemo(() => [...visibleTasks].sort(comparator), [visibleTasks, comparator])
 
-  const selectAllVisible = () => setSelectedIds(new Set(sortedTasks.map((t) => t.id)))
-  const clearSelection = () => setSelectedIds(new Set())
+  const selectAllVisible = () => selectAll(sortedTasks.map((t) => t.id))
 
   // Bulk actions are a blunt "stamp this value on everything selected" tool,
   // so every field is a direct overwrite via updateTask — including status.

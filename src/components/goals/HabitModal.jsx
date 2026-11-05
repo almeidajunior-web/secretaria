@@ -3,9 +3,7 @@ import { Trash2 } from 'lucide-react'
 import ConfirmDialog from '../common/ConfirmDialog'
 import { WEEKDAYS_LETTERS_ORDERED, WEEKDAYS_SHORT_ORDERED } from '../../constants'
 import { toKey } from '../../lib/habitStats'
-
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
+import { Field, inputClass } from '../common/Form'
 
 const EVERY_DAY = [0, 1, 2, 3, 4, 5, 6]
 
@@ -193,14 +191,5 @@ export default function HabitModal({ habit, onSave, onDelete, onClose }) {
         />
       )}
     </div>
-  )
-}
-
-function Field({ label, children }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-medium text-text-secondary">{label}</span>
-      {children}
-    </label>
   )
 }

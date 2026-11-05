@@ -4,9 +4,7 @@ import { vencimentoDaCompra } from '../../lib/creditCard'
 import { fmt, fromDateInput } from '../../lib/date'
 import { formatCurrency } from '../../lib/currency'
 import { RECURRENCE_OPTIONS } from '../../lib/billRecurrence'
-
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
+import { Field, inputClass } from '../common/Form'
 
 // More visual entry point for creating a new entry — the quick-add row in
 // the table stays as the fast path. Create-only, no dirty/discard
@@ -289,14 +287,5 @@ export default function FinanceEntryModal({
         </div>
       </div>
     </div>
-  )
-}
-
-function Field({ label, children }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-medium text-text-secondary">{label}</span>
-      {children}
-    </label>
   )
 }

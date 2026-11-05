@@ -2,9 +2,7 @@ import { useState } from 'react'
 import RecurrenceField from '../common/RecurrenceField'
 import TagPickerPopover from '../common/TagPickerPopover'
 import ConfirmDialog from '../common/ConfirmDialog'
-
-const inputClass =
-  'w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none focus:border-primary'
+import { Field, inputClass } from '../common/Form'
 
 // Create/edit form. `initial` is a full task object (blank for new tasks,
 // populated for edits). Only título is required — no description field by
@@ -202,14 +200,5 @@ export default function TaskModal({
         />
       )}
     </div>
-  )
-}
-
-function Field({ label, children }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-medium text-text-secondary">{label}</span>
-      {children}
-    </label>
   )
 }

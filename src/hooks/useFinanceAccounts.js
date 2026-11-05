@@ -1,40 +1,15 @@
-import { useEffect, useState } from 'react'
-import { loadFinanceAccounts, saveFinanceAccounts } from '../lib/storage'
+import { useEditableList } from '../storage/useEditableList'
+import { financeAccountsStore } from '../storage/stores'
 
-let nextId = 1
-function genAccountId() {
-  return `finacc_${Date.now()}_${nextId++}`
-}
-
-// User-editable, reorderable account/bank list (Nubank, Itaú, Carteira...).
-// No seed — there's no way to guess the user's real banks, same reasoning
-// as Planejamento's grid starting empty.
+// Bank accounts for Finanças. No seed — there's no guessing someone's real
+// banks. Each may carry `initialBalance` and `isReserve`.
 export function useFinanceAccounts() {
-  const [accounts, setAccounts] = useState(() => loadFinanceAccounts() ?? [])
-
-  useEffect(() => {
-    saveFinanceAccounts(accounts)
-  }, [accounts])
-
-  const addAccount = (label, color) => {
-    const l = label.trim()
-    if (!l) return null
-    const id = genAccountId()
-    setAccounts((prev) => [...prev, { id, label: l, color }])
-    return id
+  const { items, add, update, remove, reorder } = useEditableList(financeAccountsStore, 'finacc')
+  return {
+    accounts: items,
+    addAccount: add,
+    updateAccount: update,
+    deleteAccount: remove,
+    reorderAccounts: reorder,
   }
-
-  const updateAccount = (id, patch) => {
-    setAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)))
-  }
-
-  const deleteAccount = (id) => {
-    setAccounts((prev) => prev.filter((a) => a.id !== id))
-  }
-
-  const reorderAccounts = (newOrderIds) => {
-    setAccounts((prev) => newOrderIds.map((id) => prev.find((a) => a.id === id)).filter(Boolean))
-  }
-
-  return { accounts, addAccount, updateAccount, deleteAccount, reorderAccounts }
 }
